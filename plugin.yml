@@ -1,0 +1,3 @@
+name: MoveCraft
+main: com.bukkit.yogoda.movecraft.MoveCraft
+version: .5
