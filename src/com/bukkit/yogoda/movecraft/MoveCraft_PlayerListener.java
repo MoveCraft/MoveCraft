@@ -1,9 +1,12 @@
 package com.bukkit.yogoda.movecraft;
 
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 //import org.bukkit.ItemStack;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 
 import org.bukkit.event.player.PlayerChatEvent;
@@ -195,6 +198,11 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		 * player.canUseCommand("/reload")){ loadProperties(); return false;
 		 * //continues default processing } else
 		 */
+		if(split[0].equalsIgnoreCase("/electrify")){
+			Location pLoc = player.getLocation();
+			Block block = event.getPlayer().getWorld().getBlockAt(pLoc.getBlockX(), pLoc.getBlockY(), pLoc.getBlockZ());
+			lightup.electrify(event.getPlayer().getWorld(), block, 15);
+		}else		
 		if (split[0].equalsIgnoreCase("/movecraft")) {
 			if (split.length >= 2) {
 				if (split[1].equalsIgnoreCase("types")) {

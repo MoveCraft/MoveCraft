@@ -1,5 +1,6 @@
 package com.bukkit.yogoda.movecraft;
 
+import org.bukkit.Material;
 import org.bukkit.block.*;
 import org.bukkit.entity.Player;
 
@@ -154,10 +155,43 @@ public class MoveCraft_BlockListener extends BlockListener {
 	@Override
 	public void onBlockRedstoneChange(BlockFromToEvent event) {
 		Block toBlock = event.getToBlock();
-		Craft theCraft = Craft.getCraft(toBlock.getX(), toBlock.getY(),
+		Craft craft = Craft.getCraft(toBlock.getX(), toBlock.getY(),
 				toBlock.getZ());
+		
+		if(toBlock.getType() == Material.REDSTONE_WIRE)
+		{
+			System.out.println(toBlock.getData());
+			Block block = event.getBlock().getWorld().getBlockAt(toBlock.getX(), toBlock.getY() + 1, toBlock.getZ());
+			
+			if(block.getType() == Material.FURNACE && toBlock.getData() != (byte) 0 ){
+				int dx = 0;
+				int dy = 0;
+				
+				System.out.println("You are lighting up a furnace with data " + block.getData());
+				
+				if(block.getData() == 2)
+					dy = -1;			
+				if(block.getData() == 3)
+					dx = -1;
+				if(block.getData() == 4)
+					dy = 1;	
+				if(block.getData() == 5)
+					dx = 1;
+				
+				new ReminderBeep(10);
+			}
+		}
 
-		// if(theCraft != null)
-		// theCraft.thePlayer.sendMessage(event.getEventName());
+		/*
+		craft.setSpeed(1);
+		int dx = 0;
+		int dy = 0;
+		craft.move(event.getBlock().getWorld(), dx, dy, 0);
+		*/
+
+		// the craft goes faster every clic
+		//craft.setSpeed(craft.speed
+		//		- (int) ((System.currentTimeMillis() - craft.lastMove) / 500));
+		//craft.setSpeed(craft.speed + 1);
 	}
 }

@@ -90,9 +90,11 @@ public class Craft {
 	String customName = null;
 
 	boolean blockPlaced = false;
+	
+	boolean isPublic = false;
 
 	// Added engine block to test having blocks that propel the craft
-	Block engineBlock = null;
+	ArrayList<Block> engineBlocks;
 
 	Craft(MoveCraft instance, CraftType type, Player player, String customName) {
 
@@ -377,17 +379,16 @@ public class Craft {
 
 						// if the block before this one is not free, can't move
 						// if(!canGoThrough(blockId, blockData)){
-						if (!canGoThrough(blockId, blockData)){
-								//|| (this.type.canDig
-								//		&& matrix[x][y][z] != this.type.digBlockId && blockId != 7)) {
+						if (!canGoThrough(blockId, blockData) || (this.type.canDig
+										&& matrix[x][y][z] != this.type.digBlockId || blockId == 7)) {
 							// player.sendMessage("found block id : " +
 							// etc.getServer().getBlockIdAt(posX + x + dx, posY
 							// + y + dy, posZ + z + dz) + " in the way");
 							if (plugin.DebugMode) {
-								System.out.println("Can go through is "
-										+ canGoThrough(blockId, blockData));
-								System.out.println("Matrix equal block id is "
-												+ (matrix[x][y][z] != this.type.digBlockId));
+								if(matrix[x][y][z] != this.type.digBlockId)
+								{
+									System.out.println(matrix[x][y][z] + " != " + this.type.digBlockId);
+								}
 							}
 							return false;
 						}
@@ -395,7 +396,7 @@ public class Craft {
 				}
 			}
 		}
-
+		
 		return true;
 	}
 
@@ -483,9 +484,18 @@ public class Craft {
 			}
 		}
 
-		for (DataBlock dataBlock : dataBlocks) {
+		for (DataBlock dataBlock : dataBlocks) {			
 			dataBlock.data = world.getBlockAt(posX + dataBlock.x,
 					posY + dataBlock.y, posZ + dataBlock.z).getData();
+			
+			Block block = world.getBlockAt(posX + dataBlock.x,
+					posY + dataBlock.y, posZ + dataBlock.z);
+
+			if(block.getTypeId() == 64 || block.getTypeId() == 71){
+				Block block2 = world.getBlockAt(posX + dataBlock.x,
+						posY + dataBlock.y + 1, posZ + dataBlock.z);
+				System.out.println(block2.getTypeId());
+			}
 		}
 
 		// first pass, remove all items that need a support
@@ -529,8 +539,7 @@ public class Craft {
 					// if(blockId==8)
 					// System.out.println("water !");
 
-					Block block = world
-							.getBlockAt(posX + x, posY + y, posZ + z);
+					Block block = world.getBlockAt(posX + x, posY + y, posZ + z);
 
 					// craft block
 					if (blockId != -1) {
@@ -545,27 +554,8 @@ public class Craft {
 									|| BlocksInfo.needsSupport(matrix[x - dx][y
 											- dy][z - dz])) {
 								if (y > waterLevel
-										|| !(type.canNavigate || type.canDive) /*
-																				 * ||
-																				 * matrix
-																				 * [
-																				 * x
-																				 * -
-																				 * dx
-																				 * ]
-																				 * [
-																				 * y
-																				 * -
-																				 * dy
-																				 * ]
-																				 * [
-																				 * z
-																				 * -
-																				 * dz
-																				 * ]
-																				 * ==
-																				 * 0
-																				 */)
+										|| !(type.canNavigate || type.canDive))
+										//|| matrix [ x - dx ] [ y - dy ] [ z - dz ] == 0)
 									setBlock(0, block);
 								else
 									setBlock(waterType, block);
@@ -580,8 +570,6 @@ public class Craft {
 						}
 
 						if (!BlocksInfo.needsSupport(blockId)) {
-							Location blockLoc = new Location(world, posX + dx
-									+ x, posY + dy + y, posZ + dz + z);
 							Block innerBlock = world.getBlockAt(posX + dx + x,
 									posY + dy + y, posZ + dz + z);
 
@@ -598,11 +586,9 @@ public class Craft {
 							}
 							// outside of the old craft
 							else {
-								// setBlock(world, blockId, posX + dx + x, posY
-								// + dy + y, posZ + dz + z);
 
-								if (this.type.canDig && blockId != 0 && blockId != 7)
-									world.dropItemNaturally(blockLoc, new ItemStack(blockId, 2));
+								//if (this.type.canDig && blockId != 0 && blockId != 7)
+								//	world.dropItemNaturally(blockLoc, new ItemStack(blockId, 2));
 								
 								setBlock(blockId, innerBlock);
 							}
@@ -615,8 +601,7 @@ public class Craft {
 		// restore block data
 		for (DataBlock dataBlock : dataBlocks) {
 			// this is a pop item, the block needs to be created
-			if (BlocksInfo
-					.needsSupport(matrix[dataBlock.x][dataBlock.y][dataBlock.z])) {
+			if (BlocksInfo.needsSupport(matrix[dataBlock.x][dataBlock.y][dataBlock.z])) {
 				Block block = world.getBlockAt(posX + dx + dataBlock.x, posY
 						+ dy + dataBlock.y, posZ + dz + dataBlock.z);
 
@@ -627,10 +612,18 @@ public class Craft {
 
 				block.setTypeId(matrix[dataBlock.x][dataBlock.y][dataBlock.z]);
 				block.setData((byte) dataBlock.data);
-				// block.update();
+				
+				/*
+				if(block.getTypeId() == 64 || block.getTypeId() == 71){
+					world.getBlockAt(posX + dataBlock.x,posY + dataBlock.y + 1, posZ + dataBlock.z).
+							setTypeId(matrix[dataBlock.x][dataBlock.y][dataBlock.z]);
+					world.getBlockAt(posX + dataBlock.x,posY + dataBlock.y + 1, posZ + dataBlock.z).
+							setData( (byte) (block.getData() + 8));
+				}
+				*/
 			}
 			// the block is already there, just set the data
-			else {
+			else {				
 				world.getBlockAt(posX + dx + dataBlock.x,
 						posY + dy + dataBlock.y, posZ + dz + dataBlock.z)
 						.setData((byte) dataBlock.data);
@@ -720,6 +713,13 @@ public class Craft {
 		}
 
 		lastMove = System.currentTimeMillis();
+
+		for (Block engineBlock : engineBlocks) {
+			if(engineBlock.getTypeId() == 62)
+				System.out.println("This is a lit engine block.");
+			else
+				System.out.println("This is an engine block.");
+		}
 
 	}
 

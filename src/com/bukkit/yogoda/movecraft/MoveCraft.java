@@ -131,9 +131,9 @@ public class MoveCraft extends JavaPlugin {
 
 		pm.registerEvent(Event.Type.BLOCK_PLACED, blockListener, Priority.Monitor, this);
 		pm.registerEvent(Event.Type.BLOCK_RIGHTCLICKED, blockListener, Priority.Monitor, this);
-		pm.registerEvent(Event.Type.BLOCK_INTERACT, blockListener, Priority.Normal, this);
-		pm.registerEvent(Event.Type.REDSTONE_CHANGE, blockListener, Priority.Normal, this);
-		//pm.registerEvent(Event.Type.BLOCK_CANBUILD, blockListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.BLOCK_INTERACT, blockListener, Priority.Monitor, this);
+		pm.registerEvent(Event.Type.REDSTONE_CHANGE, blockListener, Priority.Monitor, this);
+		//pm.registerEvent(Event.Type.BLOCK_CANBUILD, blockListener, Priority.Monitor, this);
 
 		loadProperties();
 		// createUpdatrFile();

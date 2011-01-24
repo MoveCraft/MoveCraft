@@ -230,6 +230,9 @@ public class CraftBuilder {
                             addDataBlock(world, craft.posX + x, craft.posY + y, craft.posZ + z);
                         }
 
+                        if(BlocksInfo.isComplexBlock(blockId)){
+                        	System.out.println("Complex block found of ID " + blockId);
+                        }
                         /*
                         if(BlocksInfo.isComplexBlock(blockId)){
                             addComplexBlock(craft.posX + x, craft.posY + y, craft.posZ + z);
@@ -355,6 +358,11 @@ public class CraftBuilder {
                                                             null));
                                                             */
    }
+   
+   private static void addEngineBlock(Block block)
+   {
+	   craft.engineBlocks.add(block);
+   }
 
     //put all data in a standard matrix to be more efficient
     private static void createMatrix(World world){
@@ -391,6 +399,8 @@ public class CraftBuilder {
                         addComplexBlock(world, x, y, z);
                 	   //addDataBlock(world, x, y, z);
                    }
+                   if(blockId == 61 || blockId == 62)
+                	   addEngineBlock(world.getBlockAt(x,y,z));
                }
            }
        }
@@ -409,10 +419,6 @@ public class CraftBuilder {
        //int blockData = etc.getServer().getBlockData(x, y, z);
        blockType = new Short((short) world.getBlockAt(x, y, z).getTypeId());
        //int BlockData = world.getBlockAt(x, y, z).getData();
-       
-       if(blockType == 64){
-        System.out.println("door block detected !");
-      }
 
        //found water, record water level and water type
        if(blockType == 8 || blockType == 9){ //water
