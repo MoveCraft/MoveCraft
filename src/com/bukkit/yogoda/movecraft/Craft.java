@@ -94,7 +94,7 @@ public class Craft {
 	boolean isPublic = false;
 
 	// Added engine block to test having blocks that propel the craft
-	ArrayList<Block> engineBlocks;
+	ArrayList<Block> engineBlocks = new ArrayList<Block>();
 
 	Craft(MoveCraft instance, CraftType type, Player player, String customName) {
 
