@@ -13,9 +13,6 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRightClickEvent;
 import org.bukkit.plugin.Plugin;
 
-import com.sk89q.worldguard.*;
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-
 public class MoveCraft_BlockListener extends BlockListener {
 	private final MoveCraft plugin;
 

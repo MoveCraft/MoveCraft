@@ -15,7 +15,7 @@ import org.bukkit.block.*;
 //import org.bukkit.block.Sign;
 
 /*
- * MoveCraft plugin for Hey0 mod (hMod) by Yogoda
+ * MoveCraft plugin for Bukkit by Yogoda and SycoPrime
  *
  * You are free to modify it for your own server
  * or use part of the code for your own plugins.
@@ -94,7 +94,7 @@ public class Craft {
 	boolean isPublic = false;
 
 	// Added engine block to test having blocks that propel the craft
-	ArrayList<Block> engineBlocks = new ArrayList<Block>();
+	//ArrayList<Block> engineBlocks;
 
 	Craft(MoveCraft instance, CraftType type, Player player, String customName) {
 
@@ -198,10 +198,25 @@ public class Craft {
 	}
 
 	// if the craft can go through this block id
-	private boolean canGoThrough(int blockId, int data) {
+	private boolean canGoThrough(int craftBlockId, int blockId, int data) {
 
 		// all craft types can move through air and flowing water/lava
-		if (blockId == 0 || blockId >= 8 && blockId <= 11 && data != 0)
+		if (blockId == 0 ||
+                    blockId >= 8 && blockId <= 11 && data != 0 ||
+                    blockId == 78) //snow cover
+			return true;
+
+                // we can't go through adminium
+                if(blockId == 7)
+                    return false;
+
+		// drill can move through all block types...for now.
+		if (type.canDig && craftBlockId == type.digBlockId)
+		{
+			return true;
+		}
+		
+		if(BlocksInfo.needsSupport(blockId))
 			return true;
 
 		if (!type.canNavigate && !type.canDive){
@@ -225,17 +240,6 @@ public class Craft {
 			if (waterType == 8)
 				return true;
 
-		// drill can move through all block types...for now.
-		if (type.canDig)
-		{
-			if(plugin.DebugMode)
-				System.out.println("It can dig!");
-			return true;
-		}
-		
-		if(plugin.DebugMode)
-			System.out.println("Didn't find anything that says you can pass, defaulting to YOU SHALL NOT PASS.");
-		
 		return false;
 	}
 
@@ -273,7 +277,7 @@ public class Craft {
 	}
 
 	// SAFE ! setblock
-	public static void setBlock(int id, Block block) {
+	public void setBlock(int id, Block block) {
 
 		// if(y < 0 || y > 127 || id < 0 || id > 255){
 		if (id < 0 || id > 255) {
@@ -330,9 +334,9 @@ public class Craft {
 			Block targetBlock1 = world.getBlockAt(X, Y, Z);
 			Block targetBlock2 = world.getBlockAt(X, Y + 1, Z);
 			if (!isCraftBlock(X - posX, Y - posY, Z - posZ)
-					&& !canGoThrough(targetBlock1.getTypeId(), 0)
+					&& !canGoThrough(0, targetBlock1.getTypeId(), 0)
 					|| !isCraftBlock(X - posX, Y + 1 - posY, Z - posZ)
-					&& !canGoThrough(targetBlock2.getTypeId(), 0)) {
+					&& !canGoThrough(0, targetBlock2.getTypeId(), 0)) {
 				// player.sendMessage("§chead check !");
 				return false;
 			}
@@ -349,11 +353,6 @@ public class Craft {
 					// before
 					if (!isFree(matrix[x][y][z]) && // before move : craft block
 							!isCraftBlock(x + dx, y + dy, z + dz)) { // after
-																		// move
-																		// : not
-																		// a
-																		// craft
-																		// block
 
 						Block theBlock = world.getBlockAt(posX + x + dx, posY
 								+ y + dy, posZ + z + dz);
@@ -377,6 +376,10 @@ public class Craft {
 								newWaterLevel = y - 1;
 						}
 
+                                                if (!canGoThrough(matrix[x][y][z], blockId, blockData))
+                                                        return false;
+
+                                                /*
 						// if the block before this one is not free, can't move
 						// if(!canGoThrough(blockId, blockData)){
 						if (!canGoThrough(blockId, blockData) || (this.type.canDig
@@ -392,6 +395,7 @@ public class Craft {
 							}
 							return false;
 						}
+                                                 */
 					}
 				}
 			}
@@ -399,6 +403,19 @@ public class Craft {
 		
 		return true;
 	}
+
+        private static void dropItem(Block block){
+
+            int itemToDrop = BlocksInfo.getDropItem(block.getTypeId());
+            int quantity = BlocksInfo.getDropQuantity(block.getTypeId());
+
+            if(itemToDrop != -1 && quantity != 0){
+
+                for(int i=0; i<quantity; i++){
+                    block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(itemToDrop, 1));
+                }
+            }
+        }
 
 	// move the craft according to a vector d
 	public void move(World world, int dx, int dy, int dz) {
@@ -547,7 +564,7 @@ public class Craft {
 					// craft block
 					if (blockId != -1) {
 
-						// remove old craft blocks
+						// old block postion (remove)
 						if (x - dx >= 0 && y - dy >= 0 && z - dz >= 0
 								&& x - dx < sizeX && y - dy < sizeY
 								&& z - dz < sizeZ) {
@@ -572,9 +589,15 @@ public class Craft {
 								setBlock(waterType, block);
 						}
 
+                                                // new block position (place)
 						if (!BlocksInfo.needsSupport(blockId)) {
-							Block innerBlock = world.getBlockAt(posX + dx + x,
-									posY + dy + y, posZ + dz + z);
+
+							Block innerBlock = world.getBlockAt(posX + dx + x,posY + dy + y, posZ + dz + z);
+
+                                                        //drop the item corresponding to the block if it is not a craft block
+                                                        if(!isCraftBlock(dx + x,dy + y, dz + z)){
+                                                            dropItem(innerBlock);
+                                                        }
 
 							// inside the craft, the block is different
 							if (x + dx >= 0 && y + dy >= 0 && z + dz >= 0
@@ -587,12 +610,11 @@ public class Craft {
 									setBlock(blockId, innerBlock);
 								}
 							}
-							// outside of the old craft
+							// outside of the previous bounding box
 							else {
 
 								//if (this.type.canDig && blockId != 0 && blockId != 7)
 								//	world.dropItemNaturally(blockLoc, new ItemStack(blockId, 2));
-								
 								setBlock(blockId, innerBlock);
 							}
 						}
@@ -717,12 +739,14 @@ public class Craft {
 
 		lastMove = System.currentTimeMillis();
 
+                /*
 		for (Block engineBlock : engineBlocks) {
 			if(engineBlock.getTypeId() == 62)
 				System.out.println("This is a lit engine block.");
 			else
 				System.out.println("This is an engine block.");
 		}
+                 */
 
 	}
 

@@ -39,7 +39,7 @@ public class MoveCraft extends JavaPlugin {
 	Properties properties;
 
 	static final String pluginName = "MoveCraft";
-	static final String version = "0.6.3";
+	static final String version = "0.6.4";
 	static final String updatrUrl = "http://dl.dropbox.com/u/4422249/Minecraft/Plugins/MoveCraft.updatr";
 	static final String updatrFileUrl = "http://dl.dropbox.com/u/4422249/Minecraft/Plugins/MoveCraft.jar";
 	static final String updatrNotes = "";

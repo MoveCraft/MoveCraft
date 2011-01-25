@@ -361,7 +361,7 @@ public class CraftBuilder {
    
    private static void addEngineBlock(Block block)
    {
-	   craft.engineBlocks.add(block);
+	   //craft.engineBlocks.add(block);
    }
 
     //put all data in a standard matrix to be more efficient
