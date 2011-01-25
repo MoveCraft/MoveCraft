@@ -1,6 +1,7 @@
 package com.bukkit.yogoda.movecraft;
 
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.*;
 import org.bukkit.entity.Player;
 
@@ -10,6 +11,10 @@ import org.bukkit.event.block.BlockInteractEvent;
 import org.bukkit.event.block.BlockListener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRightClickEvent;
+import org.bukkit.plugin.Plugin;
+
+import com.sk89q.worldguard.*;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 
 public class MoveCraft_BlockListener extends BlockListener {
 	private final MoveCraft plugin;
@@ -18,7 +23,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 		plugin = instance;
 	}
 
-	@Override
+	//@Override
 	public void onBlockPlace(BlockPlaceEvent event) {
 		Player player = event.getPlayer();
 		// World world = player.getWorld();
@@ -113,7 +118,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 	 * if(player != null) player.sendMessage("Interact event."); }
 	 */
 
-	@Override
+	//@Override
 	public void onBlockRightClick(BlockRightClickEvent event) {
 		Player player = event.getPlayer();
 		Block block = event.getBlock();
@@ -152,7 +157,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 		}
 	}
 
-	@Override
+	//@Override
 	public void onBlockRedstoneChange(BlockFromToEvent event) {
 		Block toBlock = event.getToBlock();
 		Craft craft = Craft.getCraft(toBlock.getX(), toBlock.getY(),
@@ -194,4 +199,39 @@ public class MoveCraft_BlockListener extends BlockListener {
 		//		- (int) ((System.currentTimeMillis() - craft.lastMove) / 500));
 		//craft.setSpeed(craft.speed + 1);
 	}
+
+/*
+	public void onBlockFlow(BlockFromToEvent event)
+	{
+		Plugin wg = this.plugin.getServer().getPluginManager().getPlugin("WorldGuard");
+
+		if(wg != null)
+		{
+			WorldGuardPlugin worldguard = (WorldGuardPlugin) wg;
+			World world = event.getBlock().getWorld();
+			Block blockFrom = event.getBlock();
+			Block blockTo = event.getToBlock();
+
+			boolean isWater = (blockFrom.getTypeId() == 8) || (blockFrom.getTypeId() == 9);
+			boolean isLava = (blockFrom.getTypeId() == 10) || (blockFrom.getTypeId() == 11);
+
+			if ((worldguard.simulateSponge) && (isWater)) {
+				int ox = blockTo.getX();
+				int oy = blockTo.getY();
+				int oz = blockTo.getZ();
+
+				for (int cx = -this.plugin.spongeRadius; cx <= this.plugin.spongeRadius; cx++) {
+					for (int cy = -this.plugin.spongeRadius; cy <= this.plugin.spongeRadius; cy++) {
+						for (int cz = -this.plugin.spongeRadius; cz <= this.plugin.spongeRadius; cz++) {
+							if (world.getBlockTypeIdAt(ox + cx, oy + cy, oz + cz) == 19) {
+								event.setCancelled(true);
+								return;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	*/
 }

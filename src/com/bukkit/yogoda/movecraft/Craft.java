@@ -481,6 +481,9 @@ public class Craft {
 			} else if (currentBlock.getTypeId() == 54) {
 				if (plugin.DebugMode)
 					System.out.println("I found a chest. It's going to die.");
+				
+				ContainerBlock chest = (ContainerBlock) currentBlock.getState();
+	            ItemStack[] chest_contents = chest.getInventory().getContents();
 			}
 		}
 

@@ -1,10 +1,14 @@
 package com.bukkit.yogoda.movecraft;
 
+import javax.imageio.IIOException;
+
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 //import org.bukkit.ItemStack;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.util.Vector;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -202,7 +206,23 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			Location pLoc = player.getLocation();
 			Block block = event.getPlayer().getWorld().getBlockAt(pLoc.getBlockX(), pLoc.getBlockY(), pLoc.getBlockZ());
 			lightup.electrify(event.getPlayer().getWorld(), block, 15);
-		}else		
+		}else
+			if(split[0].equalsIgnoreCase("/woosh")){
+				try
+				{
+					System.out.println("Attempting to apply vector.");
+					CraftPlayer craftPlayer = (CraftPlayer) player;
+					Vector juan = new Vector();
+					juan.setX(500);
+					juan.setY(500);
+					juan.setZ(500);
+					craftPlayer.setVelocity(juan);//new Vector(500, 500, 500));
+				}
+				catch (ClassCastException e)
+				{
+					System.out.println("Player -> CraftPlayer not happening.");
+				}
+			} else
 		if (split[0].equalsIgnoreCase("/movecraft")) {
 			if (split.length >= 2) {
 				if (split[1].equalsIgnoreCase("types")) {

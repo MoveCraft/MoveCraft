@@ -124,16 +124,16 @@ public class MoveCraft extends JavaPlugin {
 
 		// Register our events
 		PluginManager pm = getServer().getPluginManager();
-		pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener, Priority.Monitor, this);
-		pm.registerEvent(Event.Type.PLAYER_COMMAND, playerListener, Priority.Monitor, this);
-		pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Priority.Monitor, this);
-		pm.registerEvent(Event.Type.PLAYER_ITEM, playerListener, Priority.Monitor, this);
+		pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.PLAYER_COMMAND, playerListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.PLAYER_ITEM, playerListener, Priority.Normal, this);
 
-		pm.registerEvent(Event.Type.BLOCK_PLACED, blockListener, Priority.Monitor, this);
-		pm.registerEvent(Event.Type.BLOCK_RIGHTCLICKED, blockListener, Priority.Monitor, this);
-		pm.registerEvent(Event.Type.BLOCK_INTERACT, blockListener, Priority.Monitor, this);
-		pm.registerEvent(Event.Type.REDSTONE_CHANGE, blockListener, Priority.Monitor, this);
-		//pm.registerEvent(Event.Type.BLOCK_CANBUILD, blockListener, Priority.Monitor, this);
+		pm.registerEvent(Event.Type.BLOCK_PLACED, blockListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.BLOCK_RIGHTCLICKED, blockListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.BLOCK_INTERACT, blockListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.REDSTONE_CHANGE, blockListener, Priority.Normal, this);
+		//pm.registerEvent(Event.Type.BLOCK_CANBUILD, blockListener, Priority.Normal, this);
 
 		loadProperties();
 		// createUpdatrFile();
