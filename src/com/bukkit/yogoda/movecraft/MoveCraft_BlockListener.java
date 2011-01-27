@@ -49,6 +49,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 
 					player.sendMessage("Â§eplease release the "
 							+ craft.type.name + " to add this item");
+					return;
 				}
 
 				craft.addBlock(blockPlaced);
@@ -75,7 +76,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 
 			if (playerCraft == null) {
 				Sign sign = (Sign) blockPlaced.getState();
-
+				
 				// if the first line of the sign is a craft type, get the
 				// matching craft type.
 				CraftType craftType = CraftType.getCraftType(sign.getLine(0)
@@ -119,37 +120,68 @@ public class MoveCraft_BlockListener extends BlockListener {
 	public void onBlockRightClick(BlockRightClickEvent event) {
 		Player player = event.getPlayer();
 		Block block = event.getBlock();
+		Craft playerCraft = Craft.getCraft(player);
+
 
 		if (block.getState() instanceof Sign) {
-			Sign sign = (Sign) block.getState();
-			String craftTypeName = sign.getLine(0).trim().toLowerCase();
+			if(playerCraft == null){
+				Sign sign = (Sign) block.getState();
 
-			if (plugin.DebugMode)
-				player.sendMessage("Crafttypename is " + craftTypeName);
+				if(sign.getLine(0).trim().equals("")) return;
 
-			if (craftTypeName.startsWith("[")) {
-				craftTypeName = craftTypeName.substring(1,
-						craftTypeName.length() - 1);
-			}
+				String craftTypeName = sign.getLine(0).trim().toLowerCase();;
 
-			CraftType craftType = CraftType.getCraftType(craftTypeName);
+				//remove colors
+				craftTypeName = craftTypeName.replaceAll("Â§.", "");
 
-			if (craftType != null) {
-				sign.setLine(0, "[§1" + craftType.name + "§0]");
+				//remove brackets
+				if(craftTypeName.startsWith("["))
+					craftTypeName = craftTypeName.substring(1, craftTypeName.length() - 1);
 
-				String name = sign.getLine(1);
+				//if the first line of the sign is a craft type, get the matching craft type.
+				CraftType craftType = CraftType.getCraftType(craftTypeName);
 
-				if (name.length() > 0) {
-					sign.setLine(1, "§e" + name);
+				//it is a registred craft type !
+				if(craftType != null){
+
+                       if(!craftType.canUse(player)){
+                            player.sendMessage("Â§cyou are not allowed to use this type of craft");
+                            return;
+                       }
+
+					String name = sign.getLine(1).replaceAll("Â§.", "");
+
+					if(name.trim().equals(""))
+						name = null;
+
+					/*
+                        String[] groups = (sign.getLine(2) + " " + sign.getLine(3)).replace(",", "").replace(";", "").split("[ ]");
+
+                        if(!craftType.canUse(player) && !checkPermission(player, groups)){                        
+                            player.sendMessage("Â§cyou are not allowed to take control of that " + craftType.name + " !");
+                            return true;
+                        }
+					 */
+
+					int x = block.getX();
+					int y = block.getY();
+					int z = block.getZ();
+
+					int direction = block.getData();
+
+					//get the block the sign is attached to (not rly needed lol)
+					x = x + (direction == 4 ? 1 : (direction == 5 ? -1 : 0));
+					z = z + (direction == 2 ? 1 : (direction == 3 ? -1 : 0));
+
+					plugin.createCraft(player, craftType, x, y, z, name);
+
+					return;                        
+				} else {                    
+					return;
 				}
-				sign.update();
+			} else {
 
-				// just seeing if this works...need permissions, and if it's
-				// already controlled, etc.
-				plugin.createCraft(player, craftType,
-						(int) Math.floor(player.getLocation().getX()),
-						(int) Math.floor(player.getLocation().getY() - 1),
-						(int) Math.floor(player.getLocation().getZ()), null);
+				plugin.releaseCraft(player, playerCraft);
 			}
 		}
 	}
@@ -162,7 +194,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 		
 		if(toBlock.getType() == Material.REDSTONE_WIRE)
 		{
-			System.out.println(toBlock.getData());
+			//System.out.println(toBlock.getData());
 			Block block = event.getBlock().getWorld().getBlockAt(toBlock.getX(), toBlock.getY() + 1, toBlock.getZ());
 			
 			if(block.getType() == Material.FURNACE && toBlock.getData() != (byte) 0 ){
@@ -180,7 +212,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 				if(block.getData() == 5)
 					dx = 1;
 				
-				new ReminderBeep(10);
+				//new ReminderBeep(10);
 			}
 		}
 
@@ -196,39 +228,4 @@ public class MoveCraft_BlockListener extends BlockListener {
 		//		- (int) ((System.currentTimeMillis() - craft.lastMove) / 500));
 		//craft.setSpeed(craft.speed + 1);
 	}
-
-/*
-	public void onBlockFlow(BlockFromToEvent event)
-	{
-		Plugin wg = this.plugin.getServer().getPluginManager().getPlugin("WorldGuard");
-
-		if(wg != null)
-		{
-			WorldGuardPlugin worldguard = (WorldGuardPlugin) wg;
-			World world = event.getBlock().getWorld();
-			Block blockFrom = event.getBlock();
-			Block blockTo = event.getToBlock();
-
-			boolean isWater = (blockFrom.getTypeId() == 8) || (blockFrom.getTypeId() == 9);
-			boolean isLava = (blockFrom.getTypeId() == 10) || (blockFrom.getTypeId() == 11);
-
-			if ((worldguard.simulateSponge) && (isWater)) {
-				int ox = blockTo.getX();
-				int oy = blockTo.getY();
-				int oz = blockTo.getZ();
-
-				for (int cx = -this.plugin.spongeRadius; cx <= this.plugin.spongeRadius; cx++) {
-					for (int cy = -this.plugin.spongeRadius; cy <= this.plugin.spongeRadius; cy++) {
-						for (int cz = -this.plugin.spongeRadius; cz <= this.plugin.spongeRadius; cz++) {
-							if (world.getBlockTypeIdAt(ox + cx, oy + cy, oz + cz) == 19) {
-								event.setCancelled(true);
-								return;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	*/
 }

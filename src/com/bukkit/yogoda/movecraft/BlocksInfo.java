@@ -1,5 +1,7 @@
 package com.bukkit.yogoda.movecraft;
 
+import org.bukkit.Material;
+
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
@@ -96,30 +98,44 @@ public class BlocksInfo {
 	}
 
 	public static String getName(int blockId) {
-
+		if(blocks[blockId] == null)
+			return Material.getMaterial(blockId).name();
+		
 		return blocks[blockId].name;
 	}
 
 	public static boolean isDataBlock(int blockId) {
+		if(blocks[blockId] == null)
+			return false;
+		
 		return blockId != -1 && blocks[blockId].isDataBlock;
 	}
 
 	public static boolean isComplexBlock(int blockId) {
+		if(blocks[blockId] == null)
+			return false;
+		
 		// So far just a sign or a chest
 		return blockId != -1 && blocks[blockId].isComplexBlock;
 	}
 
 	public static boolean needsSupport(int blockId) {
+		if(blocks[blockId] == null)
+			return false;
 
 		return blockId != -1 && blocks[blockId].needSupport;
 	}
 
         public static int getDropItem(int blockId){
+    		if(blocks[blockId] == null)
+    			return -1;
 
             return blocks[blockId].dropItem;
         }
         
         public static int getDropQuantity(int blockId){
+    		if(blocks[blockId] == null)
+    			return 0;
 
             return blocks[blockId].dropQuantity;
         }

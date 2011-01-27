@@ -229,21 +229,13 @@ public class CraftBuilder {
                         if(BlocksInfo.isDataBlock(blockId)){
                             addDataBlock(world, craft.posX + x, craft.posY + y, craft.posZ + z);
                         }
-
+                        
                         if(BlocksInfo.isComplexBlock(blockId)){
-                        	System.out.println("Complex block found of ID " + blockId);
+                            addComplexBlock(world, craft.posX + x, craft.posY + y, craft.posZ + z);
                         }
-                        /*
-                        if(BlocksInfo.isComplexBlock(blockId)){
-                            addComplexBlock(craft.posX + x, craft.posY + y, craft.posZ + z);
-                        }
-                        */
-                        if(blockId == 63) //sign
-                        {
+                        if(blockId == 63){ //sign
                         	addComplexBlock(world, craft.posX + x, craft.posY + y, craft.posZ + z);
                         }
-
-                       //System.out.println("add " + blockId);
 
                        /*
                        //omg there was water or lava on this ship, we need to detect the waterlevel/watertype again
@@ -254,7 +246,7 @@ public class CraftBuilder {
 
                        //there is a problem with ice that spawn a source block, we can't have ice
                        if(blockId==79){
-                           craft.thePlayer.sendMessage("§cSorry, you can't have ice in the " + craft.name);
+                           craft.player.sendMessage("§cSorry, you can't have ice in the " + craft.name);
                            return false;
                        }
 
@@ -319,15 +311,15 @@ public class CraftBuilder {
          blocksStack = new Stack<BlockLoc>();
 
          //start with the player's head
-         blocksStack.push(new BlockLoc((int)Math.floor(craft.thePlayer.getLocation().getX()) - craft.posX,
-                                          (int)Math.floor(craft.thePlayer.getLocation().getY() + 1 - craft.posY),
-                                          (int)Math.floor(craft.thePlayer.getLocation().getZ()) - craft.posZ));
+         blocksStack.push(new BlockLoc((int)Math.floor(craft.player.getLocation().getX()) - craft.posX,
+                                          (int)Math.floor(craft.player.getLocation().getY() + 1 - craft.posY),
+                                          (int)Math.floor(craft.player.getLocation().getZ()) - craft.posZ));
 
          //detect all connected empty blocks
            do{
                if(!createAirBubble()){
 
-                   craft.thePlayer.sendMessage("§eThis " + craft.type.name + " have holes, it needs to be waterproof");
+                   craft.player.sendMessage("§eThis " + craft.type.name + " have holes, it needs to be waterproof");
                    return false;
                }
            }
@@ -347,16 +339,7 @@ public class CraftBuilder {
    }
 
    private static void addComplexBlock(World world, int x, int y, int z){
-
-	   craft.complexBlocks.add(world.getBlockAt(x - craft.posX,
-                                                            y - craft.posY,
-                                                            z - craft.posZ));
-	   /*
-        craft.complexBlocks.add(new Craft.CraftComplexBlock(x - craft.posX,
-                                                            y - craft.posY,
-                                                            z - craft.posZ,
-                                                            null));
-                                                            */
+	   craft.complexBlocks.add(world.getBlockAt(x - craft.posX, y - craft.posY, z - craft.posZ));
    }
    
    private static void addEngineBlock(Block block)
@@ -369,7 +352,7 @@ public class CraftBuilder {
 
       craft.matrix = new short[craft.sizeX][craft.sizeY][craft.sizeZ];
       craft.dataBlocks = new ArrayList();
-      craft.complexBlocks = new ArrayList();
+      //craft.complexBlocks = new ArrayList();
 
       for(int x=0;x<craft.sizeX;x++){
           for(int z=0;z<craft.sizeZ;z++){
@@ -396,6 +379,7 @@ public class CraftBuilder {
                         addDataBlock(world, x, y, z);
                    }
                    if(BlocksInfo.isComplexBlock(blockId)){
+                	   System.out.println(Integer.toString(blockId));
                         addComplexBlock(world, x, y, z);
                 	   //addDataBlock(world, x, y, z);
                    }
@@ -569,21 +553,21 @@ public class CraftBuilder {
 
        //max block count have been reached, craft can't be detected !
        if(craft.blockCount > craft.type.maxBlocks){
-           craft.thePlayer.sendMessage("§cUnable to detect the " + craft.name + ", be sure it is not connected");
-           craft.thePlayer.sendMessage("§c to the ground, or maybe it is too big for this type of craft");
-           craft.thePlayer.sendMessage("§cThe maximum size is " + craft.type.maxBlocks + " blocks");
+           craft.player.sendMessage("§cUnable to detect the " + craft.name + ", be sure it is not connected");
+           craft.player.sendMessage("§c to the ground, or maybe it is too big for this type of craft");
+           craft.player.sendMessage("§cThe maximum size is " + craft.type.maxBlocks + " blocks");
            return false;
        }
        else
        if(craft.blockCount <  craft.type.minBlocks)
        {
            if(craft.blockCount==0){
-                craft.thePlayer.sendMessage("§cThere is no " + craft.name + " here");
-                craft.thePlayer.sendMessage("§cBe sure you are standing on a block");
+                craft.player.sendMessage("§cThere is no " + craft.name + " here");
+                craft.player.sendMessage("§cBe sure you are standing on a block");
            }
            else{
-                craft.thePlayer.sendMessage("§cThis " + craft.name + " is too small !");
-                craft.thePlayer.sendMessage("§cYou need to add " + (craft.type.minBlocks - craft.blockCount) + " blocks");
+                craft.player.sendMessage("§cThis " + craft.name + " is too small !");
+                craft.player.sendMessage("§cYou need to add " + (craft.type.minBlocks - craft.blockCount) + " blocks");
            }
 
            return false;
@@ -598,7 +582,7 @@ public class CraftBuilder {
                    if( !((craft.minX < craft.minX && craft.maxX < craft.minX) || (craft.minX < craft.minX && craft.maxX < craft.minX )))
                        if( !((craft.minY < craft.minY && craft.maxY < craft.minY) || (craft.minY < craft.minY && craft.maxY < craft.minY )))
                            if( !((craft.minZ < craft.minZ && craft.maxZ < craft.minZ) || (craft.minZ < craft.minZ && craft.maxZ < craft.minZ ))){
-                               craft.thePlayer.sendMessage("§c" + craft.thePlayer.getName() + " is already controling this " + craft.name);
+                               craft.player.sendMessage("§c" + craft.player.getName() + " is already controling this " + craft.name);
                                return false;
                            }
                }
@@ -636,18 +620,18 @@ public class CraftBuilder {
            //the ship is not on water
            //if(craft.type.canNavigate && !craft.type.canFly && craft.waterType == 0){
            if(craft.type.canNavigate && !craft.type.canFly && craft.waterType == 0 && !craft.type.canDig){
-               craft.thePlayer.sendMessage("§cThis " + craft.name + " is not on water...");
+               craft.player.sendMessage("§cThis " + craft.name + " is not on water...");
                return false;
            } else
            //the submarine is not into water
            //if(craft.type.canDive && !craft.type.canFly && craft.waterType == 0){
            if(craft.type.canDive && !craft.type.canFly && craft.waterType == 0 && !craft.type.canDig){
-               craft.thePlayer.sendMessage("§cThis " + craft.name + " is not into water...");
+               craft.player.sendMessage("§cThis " + craft.name + " is not into water...");
                return false;
            } else
            //the airplane / airship is into water
            if(craft.type.canFly && !craft.type.canNavigate && !craft.type.canDive && craft.waterLevel > -1){
-               craft.thePlayer.sendMessage("§cThis " + craft.name + " is into water...");
+               craft.player.sendMessage("§cThis " + craft.name + " is into water...");
                return false;
            }
 
@@ -663,8 +647,8 @@ public class CraftBuilder {
                    flyBlocksNeeded = 1;
 
                if(craft.flyBlockCount < flyBlocksNeeded){
-                   craft.thePlayer.sendMessage("§cNot enough " + craft.type.flyBlockName + " to make this " + craft.name + " move");
-                   craft.thePlayer.sendMessage("§cYou need to add " + (flyBlocksNeeded - craft.flyBlockCount) + " more" );
+                   craft.player.sendMessage("§cNot enough " + craft.type.flyBlockName + " to make this " + craft.name + " move");
+                   craft.player.sendMessage("§cYou need to add " + (flyBlocksNeeded - craft.flyBlockCount) + " more" );
                    return false;
                }
            }
@@ -678,16 +662,16 @@ public class CraftBuilder {
                    flyBlocksNeeded = 1;
 
                if(craft.flyBlockCount < flyBlocksNeeded){
-                   craft.thePlayer.sendMessage("§cNot enough " + craft.type.flyBlockName + " to make this " + craft.name + " move");
-                   craft.thePlayer.sendMessage("§cYou need to add " + (flyBlocksNeeded - craft.flyBlockCount) + " more" );
+                   craft.player.sendMessage("§cNot enough " + craft.type.flyBlockName + " to make this " + craft.name + " move");
+                   craft.player.sendMessage("§cYou need to add " + (flyBlocksNeeded - craft.flyBlockCount) + " more" );
                    return false;
                }
            }
 
            if(craft.customName == null)
-                craft.thePlayer.sendMessage("§e" + craft.type.sayOnControl);
+                craft.player.sendMessage("§e" + craft.type.sayOnControl);
            else
-                craft.thePlayer.sendMessage("§eWelcome on the §a" + craft.customName + "§e !");
+                craft.player.sendMessage("§eWelcome on the §a" + craft.customName + "§e !");
        }
 
        return true;

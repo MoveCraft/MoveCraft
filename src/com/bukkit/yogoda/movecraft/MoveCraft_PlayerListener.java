@@ -11,8 +11,6 @@ import org.bukkit.event.player.PlayerChatEvent;
 
 import org.bukkit.event.player.*;
 
-//import com.bukkit.authorblues.GroupUsers.GroupUsers;
-
 public class MoveCraft_PlayerListener extends PlayerListener {
 	private final MoveCraft plugin;
 
@@ -45,8 +43,11 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				player.sendMessage("§eYou get off the " + craft.name);
 				player.sendMessage("§7type /" + craft.name
 						+ " remote for remote control");
+				player.sendMessage("§eIf you don't, you'll lose control in 30 seconds.");
 				craft.isOnBoard = false;
 				craft.haveControl = false;
+				
+				new MoveCraft_Timer(30, craft);
 			} else if (!craft.isOnBoard && craft.isOnCraft(player, false)) {
 				player.sendMessage("§eWelcome on board");
 				craft.isOnBoard = true;
@@ -196,11 +197,6 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		 * player.canUseCommand("/reload")){ loadProperties(); return false;
 		 * //continues default processing } else
 		 */
-		if(split[0].equalsIgnoreCase("/electrify")){
-			Location pLoc = player.getLocation();
-			Block block = event.getPlayer().getWorld().getBlockAt(pLoc.getBlockX(), pLoc.getBlockY(), pLoc.getBlockZ());
-			lightup.electrify(event.getPlayer().getWorld(), block, 15);
-		}else
 		if (split[0].equalsIgnoreCase("/movecraft")) {
 			if (split.length >= 2) {
 				if (split[1].equalsIgnoreCase("types")) {
@@ -223,7 +219,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					for (Craft craft : Craft.craftList) {
 
 						player.sendMessage("§e" + craft.name
-								+ " controlled by " + craft.thePlayer.getName()
+								+ " controlled by " + craft.player.getName()
 								+ " : " + craft.blockCount + " blocks");
 					}
 				} else if (split[1].equalsIgnoreCase("reload")) {
@@ -266,7 +262,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			}
 		}
 
-		// return false;
+		return;
 	}
 
 	public boolean processCommand(CraftType craftType, Player player,

@@ -151,8 +151,8 @@ public class CraftType {
 			craftType.digBlockName = "diamond";
 			craftType.digBlockId = 57;
 			// craftType.flyBlockPercent = 1;
-			craftType.sayOnControl = "This craft is experimental. You have been warned.";
-			craftType.sayOnRelease = "You release the helm";
+			craftType.sayOnControl = "Armageddon, but down.";
+			craftType.sayOnRelease = name + " controls released.";
 		} else if (name.equalsIgnoreCase("aircraft")) {
 
 			craftType.driveCommand = "pilot";

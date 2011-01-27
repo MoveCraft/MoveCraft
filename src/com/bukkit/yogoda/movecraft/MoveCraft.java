@@ -104,7 +104,7 @@ public class MoveCraft extends JavaPlugin {
 	public void loadProperties() {
 
 		// directory where the craft types are stored
-		File dir = new File("movecraft");
+		File dir = new File("plugins/movecraft");
 		if (!dir.exists())
 			dir.mkdir();
 
@@ -158,12 +158,9 @@ public class MoveCraft extends JavaPlugin {
 	}
 
 	public void releaseCraft(Player player, Craft craft) {
-
 		if (craft != null) {
-
 			player.sendMessage("§e" + craft.type.sayOnRelease);
 			Craft.removeCraft(craft);
-
 		} else
 			player.sendMessage("§eYou don't have anything to release");
 	}
@@ -171,6 +168,12 @@ public class MoveCraft extends JavaPlugin {
 	public void ToggleDebug() {
 		this.DebugMode = !this.DebugMode;
 		System.out.println("Debug mode set to " + this.DebugMode);
+	}
+	
+	public boolean DebugMessage(String message) {
+		if(this.DebugMode == true)
+			System.out.println(message);
+		return this.DebugMode;
 	}
 
 	public void createCraft(Player player, CraftType craftType, int x, int y,

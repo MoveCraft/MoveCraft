@@ -8,6 +8,8 @@ import java.util.logging.Level;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.block.BlockListener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
 import org.bukkit.block.*;
@@ -43,8 +45,8 @@ public class Craft {
 
 	short matrix[][][];
 	ArrayList<DataBlock> dataBlocks;
-	ArrayList<Block> complexBlocks;
-	// ArrayList<String[]> signLines;
+	//convert to LinkedList for preformance boost?
+	ArrayList<Block> complexBlocks = new ArrayList<Block>();
 	ArrayList<ArrayList<String>> signLines = new ArrayList<ArrayList<String>>();
 
 	// size of the craft
@@ -79,18 +81,18 @@ public class Craft {
 	int minZ = 0;
 	int maxZ = 0;
 
-	Player thePlayer;
+	public Player player;
 
 	int speed = 1;
 
 	long lastMove = System.currentTimeMillis(); // record time of the last arm
-												// swing
+	// swing
 	boolean haveControl = true; // if the player have the control of the craft
 	boolean isOnBoard = true; // if the player is on board
 	String customName = null;
 
 	boolean blockPlaced = false;
-	
+
 	boolean isPublic = false;
 
 	// Added engine block to test having blocks that propel the craft
@@ -101,7 +103,7 @@ public class Craft {
 		this.type = type;
 		this.name = type.name;
 		this.customName = customName;
-		this.thePlayer = player;
+		this.player = player;
 		this.plugin = instance;
 	}
 
@@ -111,7 +113,7 @@ public class Craft {
 			return null;
 
 		for (Craft craft : craftList) {
-			if (craft.thePlayer.getName().equalsIgnoreCase(player.getName())) {
+			if (craft.player.getName().equalsIgnoreCase(player.getName())) {
 				return craft;
 			}
 		}
@@ -186,7 +188,7 @@ public class Craft {
 	// return if the point is in the craft box
 	public boolean isIn(int x, int y, int z) {
 		return x >= posX && x < posX + sizeX && y >= posY && y < posY + sizeY
-				&& z >= posZ && z < posZ + sizeZ;
+		&& z >= posZ && z < posZ + sizeZ;
 	}
 
 	static void addCraft(Craft craft) {
@@ -202,28 +204,30 @@ public class Craft {
 
 		// all craft types can move through air and flowing water/lava
 		if (blockId == 0 ||
-                    blockId >= 8 && blockId <= 11 && data != 0 ||
-                    blockId == 78) //snow cover
-			return true;
+				(blockId >= 8 && blockId <= 11 && data != 0) ||
+				blockId == 78 || 
+				BlocksInfo.needsSupport(blockId)) //snow cover
+				return true;
 
-                // we can't go through adminium
-                if(blockId == 7)
-                    return false;
+		// we can't go through adminium
+		if(blockId == 7)
+			return false;
+
+		if (!type.canNavigate && !type.canDive){
+			return false;
+		}
+		
+		if(craftBlockId == 0) {
+			if( (blockId >= 8 && blockId <= 11) // air can go through liquid,
+					|| blockId == 0) //or other air
+				return true;
+			else								//but nothing else
+				return false;
+		}
 
 		// drill can move through all block types...for now.
 		if (type.canDig && craftBlockId == type.digBlockId)
-		{
 			return true;
-		}
-		
-		if(BlocksInfo.needsSupport(blockId))
-			return true;
-
-		if (!type.canNavigate && !type.canDive){
-			if(plugin.DebugMode)
-				System.out.println("Can't dive, can't nav, so can't move.");
-			return false;
-		}
 
 		// ship on water
 		if (blockId == 8 || blockId == 9)
@@ -286,9 +290,12 @@ public class Craft {
 			MoveCraft.logger.log(Level.SEVERE, "Invalid setBlock : id=" + id);
 			return;
 		}
-
 		block.setTypeId(id);
-		// etc.getServer().setBlockAt(id, x, y, z);
+		/*
+		 * call an onblockflow event, or otherwise somehow handle worldguard's sponge fix
+		 BlockFromToEvent blockFlow = new BlockFromToEvent(Type.BLOCK_FLOW, source, blockFace);
+		  getServer().getPluginManager().callEvent(blockFlow);
+		 */
 	}
 
 	private boolean isCraftBlock(int x, int y, int z) {
@@ -325,11 +332,11 @@ public class Craft {
 		}
 
 		// watch out of the head !
-		if (isOnCraft(thePlayer, true)) {
+		if (isOnCraft(player, true)) {
 
-			int X = (int) Math.floor(thePlayer.getLocation().getX()) + dx;
-			int Y = (int) Math.floor(thePlayer.getLocation().getY()) + dy;
-			int Z = (int) Math.floor(thePlayer.getLocation().getZ()) + dz;
+			int X = (int) Math.floor(player.getLocation().getX()) + dx;
+			int Y = (int) Math.floor(player.getLocation().getY()) + dy;
+			int Z = (int) Math.floor(player.getLocation().getZ()) + dz;
 
 			Block targetBlock1 = world.getBlockAt(X, Y, Z);
 			Block targetBlock2 = world.getBlockAt(X, Y + 1, Z);
@@ -368,18 +375,18 @@ public class Craft {
 							if (y > newWaterLevel)
 								newWaterLevel = y;
 						} else
-						// get out of water, into air
-						if (dy > 0 && blockId == 0) {
+							// get out of water, into air
+							if (dy > 0 && blockId == 0) {
 
-							// System.out.println("found air at " + y);
-							if (y - 1 < newWaterLevel)
-								newWaterLevel = y - 1;
-						}
+								// System.out.println("found air at " + y);
+								if (y - 1 < newWaterLevel)
+									newWaterLevel = y - 1;
+							}
 
-                                                if (!canGoThrough(matrix[x][y][z], blockId, blockData))
-                                                        return false;
+						if (!canGoThrough(matrix[x][y][z], blockId, blockData))
+							return false;
 
-                                                /*
+						/*
 						// if the block before this one is not free, can't move
 						// if(!canGoThrough(blockId, blockData)){
 						if (!canGoThrough(blockId, blockData) || (this.type.canDig
@@ -395,27 +402,27 @@ public class Craft {
 							}
 							return false;
 						}
-                                                 */
+						 */
 					}
 				}
 			}
 		}
-		
+
 		return true;
 	}
 
-        private static void dropItem(Block block){
+	private static void dropItem(Block block){
 
-            int itemToDrop = BlocksInfo.getDropItem(block.getTypeId());
-            int quantity = BlocksInfo.getDropQuantity(block.getTypeId());
+		int itemToDrop = BlocksInfo.getDropItem(block.getTypeId());
+		int quantity = BlocksInfo.getDropQuantity(block.getTypeId());
 
-            if(itemToDrop != -1 && quantity != 0){
+		if(itemToDrop != -1 && quantity != 0){
 
-                for(int i=0; i<quantity; i++){
-                    block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(itemToDrop, 1));
-                }
-            }
-        }
+			for(int i=0; i<quantity; i++){
+				block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(itemToDrop, 1));
+			}
+		}
+	}
 
 	// move the craft according to a vector d
 	public void move(World world, int dx, int dy, int dz) {
@@ -463,14 +470,14 @@ public class Craft {
 
 						// block is not here anymore, remove it
 						if (blockId == 0 || blockId >= 8 && blockId <= 11) { // air,
-																				// water
-																				// or
-																				// lava
+							// water
+							// or
+							// lava
 							if (waterType != 0 && y <= waterLevel)
 								matrix[x][y][z] = 0;
 							else
 								matrix[x][y][z] = -1; // make a hole in the
-														// craft
+							// craft
 
 							blockCount--;
 						}
@@ -495,27 +502,15 @@ public class Craft {
 				myLines.add(sign.getLine(2));
 				myLines.add(sign.getLine(3));
 				signLines.add(myLines);
-			} else if (currentBlock.getTypeId() == 54) {
-				if (plugin.DebugMode)
-					System.out.println("I found a chest. It's going to die.");
-				
-				ContainerBlock chest = (ContainerBlock) currentBlock.getState();
-	            ItemStack[] chest_contents = chest.getInventory().getContents();
+			} else if (currentBlock.getTypeId() == 54) {				
+				//ContainerBlock chest = (ContainerBlock) currentBlock.getState();
+				//ItemStack[] chest_contents = chest.getInventory().getContents();
 			}
 		}
 
 		for (DataBlock dataBlock : dataBlocks) {			
 			dataBlock.data = world.getBlockAt(posX + dataBlock.x,
 					posY + dataBlock.y, posZ + dataBlock.z).getData();
-			
-			Block block = world.getBlockAt(posX + dataBlock.x,
-					posY + dataBlock.y, posZ + dataBlock.z);
-
-			if(block.getTypeId() == 64 || block.getTypeId() == 71){
-				Block block2 = world.getBlockAt(posX + dataBlock.x,
-						posY + dataBlock.y + 1, posZ + dataBlock.z);
-				System.out.println(block2.getTypeId());
-			}
 		}
 
 		// first pass, remove all items that need a support
@@ -537,7 +532,7 @@ public class Craft {
 						// lower part have data 0 - 7, upper part have data 8 -
 						// 15
 						if (blockId == 64 || blockId == 71) { // wooden door and
-																// steel door
+							// steel door
 							if (block.getData() >= 8)
 								continue;
 						}
@@ -572,10 +567,10 @@ public class Craft {
 							// anymore
 							if (matrix[x - dx][y - dy][z - dz] == -1
 									|| BlocksInfo.needsSupport(matrix[x - dx][y
-											- dy][z - dz])) {
+									                                          - dy][z - dz])) {
 								if (y > waterLevel
 										|| !(type.canNavigate || type.canDive))
-										//|| matrix [ x - dx ] [ y - dy ] [ z - dz ] == 0)
+									//|| matrix [ x - dx ] [ y - dy ] [ z - dz ] == 0)
 									setBlock(0, block);
 								else
 									setBlock(waterType, block);
@@ -589,22 +584,22 @@ public class Craft {
 								setBlock(waterType, block);
 						}
 
-                                                // new block position (place)
+						// new block position (place)
 						if (!BlocksInfo.needsSupport(blockId)) {
 
 							Block innerBlock = world.getBlockAt(posX + dx + x,posY + dy + y, posZ + dz + z);
 
-                                                        //drop the item corresponding to the block if it is not a craft block
-                                                        if(!isCraftBlock(dx + x,dy + y, dz + z)){
-                                                            dropItem(innerBlock);
-                                                        }
+							//drop the item corresponding to the block if it is not a craft block
+							if(!isCraftBlock(dx + x,dy + y, dz + z)){
+								dropItem(innerBlock);
+							}
 
 							// inside the craft, the block is different
 							if (x + dx >= 0 && y + dy >= 0 && z + dz >= 0
 									&& x + dx < sizeX && y + dy < sizeY
 									&& z + dz < sizeZ) {
 								if (matrix[x][y][z] != matrix[x + dx][y + dy][z
-										+ dz]) {
+								                                              + dz]) {
 									// setBlock(world, blockId, posX + dx + x,
 									// posY + dy + y, posZ + dz + z);
 									setBlock(blockId, innerBlock);
@@ -612,9 +607,6 @@ public class Craft {
 							}
 							// outside of the previous bounding box
 							else {
-
-								//if (this.type.canDig && blockId != 0 && blockId != 7)
-								//	world.dropItemNaturally(blockLoc, new ItemStack(blockId, 2));
 								setBlock(blockId, innerBlock);
 							}
 						}
@@ -637,7 +629,7 @@ public class Craft {
 
 				block.setTypeId(matrix[dataBlock.x][dataBlock.y][dataBlock.z]);
 				block.setData((byte) dataBlock.data);
-				
+
 				/*
 				if(block.getTypeId() == 64 || block.getTypeId() == 71){
 					world.getBlockAt(posX + dataBlock.x,posY + dataBlock.y + 1, posZ + dataBlock.z).
@@ -645,7 +637,7 @@ public class Craft {
 					world.getBlockAt(posX + dataBlock.x,posY + dataBlock.y + 1, posZ + dataBlock.z).
 							setData( (byte) (block.getData() + 8));
 				}
-				*/
+				 */
 			}
 			// the block is already there, just set the data
 			else {				
@@ -664,9 +656,6 @@ public class Craft {
 
 					if (BlocksInfo.needsSupport(blockId)
 							&& !BlocksInfo.isDataBlock(blockId)) {
-
-						// setBlock(world, blockId, posX + dx + x, posY + dy +
-						// y, posZ + dz + z);
 						setBlock(blockId, world.getBlockAt(posX + dx + x, posY
 								+ dy + y, posZ + dz + z));
 					}
@@ -739,14 +728,14 @@ public class Craft {
 
 		lastMove = System.currentTimeMillis();
 
-                /*
+		/*
 		for (Block engineBlock : engineBlocks) {
 			if(engineBlock.getTypeId() == 62)
 				System.out.println("This is a lit engine block.");
 			else
 				System.out.println("This is an engine block.");
 		}
-                 */
+		 */
 
 	}
 
