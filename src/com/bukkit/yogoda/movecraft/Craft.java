@@ -66,6 +66,7 @@ public class Craft {
 
 	int blockCount = 0;
 	int flyBlockCount = 0;
+	int digBlockCount = 0;
 
 	int maxBlocks;
 
@@ -93,6 +94,7 @@ public class Craft {
 
 	boolean blockPlaced = false;
 
+	public MoveCraft_Timer timer = null;
 	boolean isPublic = false;
 
 	// Added engine block to test having blocks that propel the craft
@@ -312,10 +314,9 @@ public class Craft {
 	public boolean canMove(World world, int dx, int dy, int dz) {
 
 		/*
-		 * System.out.println("move dx : " + dx + " dy : " + dy + " dZ : " +
-		 * dz); System.out.println("move speed : " + speed);
-		 * System.out.println("move sizeX : " + sizeX + " sizeY : " + sizeY +
-		 * " sizeZ : " + sizeZ);
+		 * plugin.DebugMessage("move dx : " + dx + " dy : " + dy + " dZ : " + dz);
+		 * plugin.DebugMessage("move speed : " + speed);
+		 * plugin.DebugMessage("move sizeX : " + sizeX + " sizeY : " + sizeY + " sizeZ : " + sizeZ);
 		 */
 		dx = speed * dx;
 		dz = speed * dz;
@@ -344,7 +345,7 @@ public class Craft {
 					&& !canGoThrough(0, targetBlock1.getTypeId(), 0)
 					|| !isCraftBlock(X - posX, Y + 1 - posY, Z - posZ)
 					&& !canGoThrough(0, targetBlock2.getTypeId(), 0)) {
-				// player.sendMessage("§chead check !");
+				// player.sendMessage("Head check !");
 				return false;
 			}
 		}
@@ -371,38 +372,20 @@ public class Craft {
 						// go into water
 						if (dy < 0 && blockId >= 8 && blockId <= 11) {
 
-							// System.out.println("found water at " + y);
+							// plugin.DebugMessage("found water at " + y);
 							if (y > newWaterLevel)
 								newWaterLevel = y;
 						} else
 							// get out of water, into air
 							if (dy > 0 && blockId == 0) {
 
-								// System.out.println("found air at " + y);
+								// plugin.DebugMessage("found air at " + y);
 								if (y - 1 < newWaterLevel)
 									newWaterLevel = y - 1;
 							}
 
 						if (!canGoThrough(matrix[x][y][z], blockId, blockData))
 							return false;
-
-						/*
-						// if the block before this one is not free, can't move
-						// if(!canGoThrough(blockId, blockData)){
-						if (!canGoThrough(blockId, blockData) || (this.type.canDig
-										&& matrix[x][y][z] != this.type.digBlockId || blockId == 7)) {
-							// player.sendMessage("found block id : " +
-							// etc.getServer().getBlockIdAt(posX + x + dx, posY
-							// + y + dy, posZ + z + dz) + " in the way");
-							if (plugin.DebugMode) {
-								if(matrix[x][y][z] != this.type.digBlockId)
-								{
-									System.out.println(matrix[x][y][z] + " != " + this.type.digBlockId);
-								}
-							}
-							return false;
-						}
-						 */
 					}
 				}
 			}
@@ -443,10 +426,9 @@ public class Craft {
 		// player.sendMessage("" + posY + "" + sizeY);
 
 		/*
-		 * System.out.println("move dx : " + dx + " dy : " + dy + " dZ : " +
-		 * dz); System.out.println("move speed : " + speed);
-		 * System.out.println("move sizeX : " + sizeX + " sizeY : " + sizeY +
-		 * " sizeZ : " + sizeZ);
+		 * plugin.DebugMessage("move dx : " + dx + " dy : " + dy + " dZ : " + dz);
+		 * plugin.DebugMessage("move speed : " + speed);
+		 * plugin.DebugMessage("move sizeX : " + sizeX + " sizeY : " + sizeY + " sizeZ : " + sizeZ);
 		 */
 
 		// scan to know if any of the craft blocks are now missing (blocks
@@ -731,9 +713,9 @@ public class Craft {
 		/*
 		for (Block engineBlock : engineBlocks) {
 			if(engineBlock.getTypeId() == 62)
-				System.out.println("This is a lit engine block.");
+				plugin.DebugMessage("This is a lit engine block.");
 			else
-				System.out.println("This is an engine block.");
+				plugin.DebugMessage("This is an engine block.");
 		}
 		 */
 

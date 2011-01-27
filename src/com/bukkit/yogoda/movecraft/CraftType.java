@@ -36,6 +36,7 @@ public class CraftType {
 	String flyBlockName = null;
 	// percent of flystone needed to make it fly
 	int flyBlockPercent = 0;
+	int digBlockPercent = 0;
 
 	boolean canFly = false;
 	boolean canNavigate = false;
@@ -272,9 +273,8 @@ public class CraftType {
 		}
 	}
 
-	public static void saveType(File dir, CraftType craftType, boolean force) {
-
-		File craftFile = new File(dir.getName() + File.separator
+	public static void saveType(File dir, CraftType craftType, boolean force) {		
+		File craftFile = new File(dir + File.separator
 				+ craftType.name + ".txt");
 
 		if (!craftFile.exists()) {
@@ -336,8 +336,7 @@ public class CraftType {
 		}
 	}
 
-	public static void saveTypes(File dir) {
-
+	public static void saveTypes(File dir) {		
 		for (CraftType craftType : craftTypes) {
 			saveType(dir, craftType, false);
 		}
@@ -373,6 +372,7 @@ public class CraftType {
 
 	public static void loadTypes(File dir) {
 		File[] craftTypesList = dir.listFiles();
+		System.out.println("Type count: " + craftTypesList.length);
 		craftTypes.clear();
 
 		for (File craftFile : craftTypesList) {

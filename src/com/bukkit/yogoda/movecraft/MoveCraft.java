@@ -10,6 +10,7 @@ import java.io.File;
 import java.util.Properties;
 
 import org.bukkit.entity.Player;
+import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event;
@@ -40,70 +41,24 @@ public class MoveCraft extends JavaPlugin {
 
 	static final String pluginName = "MoveCraft";
 	static final String version = "0.6.4";
-	static final String updatrUrl = "http://dl.dropbox.com/u/4422249/Minecraft/Plugins/MoveCraft.updatr";
-	static final String updatrFileUrl = "http://dl.dropbox.com/u/4422249/Minecraft/Plugins/MoveCraft.jar";
-	static final String updatrNotes = "";
 
 	static final DateFormat dateFormat = new SimpleDateFormat(
 			"yyyy-MM-dd HH:mm:ss");
 	public static Logger logger = Logger.getLogger("Minecraft");
-
 	boolean DebugMode = false;
 
 	// private Server myServer = this.getServer();
 	// private World myWorld = myServer.getWorlds()[0];
 
-	private final MoveCraft_PlayerListener playerListener = new MoveCraft_PlayerListener(
-			this);
-	private final MoveCraft_BlockListener blockListener = new MoveCraft_BlockListener(
-			this);
+	private final MoveCraft_PlayerListener playerListener = new MoveCraft_PlayerListener(this);
+	private final MoveCraft_BlockListener blockListener = new MoveCraft_BlockListener(this);
 
 	public static void consoleSay(String msg) {
 		System.out.println(getDateTime() + " [INFO] " + pluginName + " " + msg);
 	}
 
-	public void createUpdatrFile() {
-
-		try {
-
-			File updatrDir = new File("Updatr");
-
-			if (updatrDir.exists()) {
-
-				File updatrFile = new File("Updatr" + File.separator
-						+ pluginName + ".updatr");
-
-				// Updatr file does not exist, create it
-				if (!updatrFile.exists()) {
-
-					updatrFile.createNewFile();
-
-					BufferedWriter writer = new BufferedWriter(new FileWriter(
-							updatrFile));
-
-					writer.write("name = " + pluginName);
-					writer.newLine();
-					writer.write("version = " + version);
-					writer.newLine();
-					writer.write("url = " + updatrUrl);
-					writer.newLine();
-					writer.write("file = " + updatrFileUrl);
-					writer.newLine();
-					writer.write("notes = " + updatrNotes);
-					writer.newLine();
-
-					writer.close();
-
-				}
-			}
-		} catch (IOException e) {
-			MoveCraft.logger.log(Level.SEVERE, null, e);
-		}
-	}
-
 	public void loadProperties() {
-
-		// directory where the craft types are stored
+		// directory where the craft types are stored		
 		File dir = new File("plugins/movecraft");
 		if (!dir.exists())
 			dir.mkdir();
@@ -136,7 +91,6 @@ public class MoveCraft extends JavaPlugin {
 		//pm.registerEvent(Event.Type.BLOCK_CANBUILD, blockListener, Priority.Normal, this);
 
 		loadProperties();
-		// createUpdatrFile();
 
 		consoleSay(version + " plugin enabled");
 
@@ -159,10 +113,10 @@ public class MoveCraft extends JavaPlugin {
 
 	public void releaseCraft(Player player, Craft craft) {
 		if (craft != null) {
-			player.sendMessage("§e" + craft.type.sayOnRelease);
+			player.sendMessage(ChatColor.YELLOW + craft.type.sayOnRelease);
 			Craft.removeCraft(craft);
 		} else
-			player.sendMessage("§eYou don't have anything to release");
+			player.sendMessage(ChatColor.YELLOW + "You don't have anything to release");
 	}
 
 	public void ToggleDebug() {

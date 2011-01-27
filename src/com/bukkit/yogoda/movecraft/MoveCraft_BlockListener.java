@@ -1,5 +1,6 @@
 package com.bukkit.yogoda.movecraft;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.*;
@@ -26,8 +27,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 		// World world = player.getWorld();
 		Block blockPlaced = event.getBlockPlaced();
 
-		if (plugin.DebugMode)
-			System.out.println(player.getName() + " placed a block.");
+		plugin.DebugMessage(player.getName() + " placed a block.");
 
 		Craft playerCraft = Craft.getCraft(player);
 
@@ -40,14 +40,12 @@ public class MoveCraft_BlockListener extends BlockListener {
 			// if there is a craft, add the block to it
 			if (craft != null) {
 
-				// System.out.println("" + blockPlaced.getType());
-
 				if (blockPlaced.getTypeId() == 321 || // picture
 						blockPlaced.getTypeId() == 323 || // sign
 						blockPlaced.getTypeId() == 324 || // door
 						blockPlaced.getTypeId() == 330) { // door
 
-					player.sendMessage("§eplease release the "
+					player.sendMessage(ChatColor.YELLOW + "please release the "
 							+ craft.type.name + " to add this item");
 					return;
 				}
@@ -68,10 +66,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 		 * blockPlaced.getY(), blockPlaced.getZ()); player.sendMessage("placed "
 		 * + data);
 		 */
-
-		// right-click a sign
-		// block...Clicked?
-		// if(blockPlaced.getTypeID() == 68){
+		
 		if (blockPlaced.getState() instanceof Sign) {
 
 			if (playerCraft == null) {
@@ -79,8 +74,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 				
 				// if the first line of the sign is a craft type, get the
 				// matching craft type.
-				CraftType craftType = CraftType.getCraftType(sign.getLine(0)
-						.trim());
+				CraftType craftType = CraftType.getCraftType(sign.getLine(0).trim());
 
 				// it is a registered craft type !
 				if (craftType != null) {
@@ -145,7 +139,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 				if(craftType != null){
 
                        if(!craftType.canUse(player)){
-                            player.sendMessage("§cyou are not allowed to use this type of craft");
+                            player.sendMessage(ChatColor.RED + "You are not allowed to use this type of craft");
                             return;
                        }
 
@@ -158,7 +152,7 @@ public class MoveCraft_BlockListener extends BlockListener {
                         String[] groups = (sign.getLine(2) + " " + sign.getLine(3)).replace(",", "").replace(";", "").split("[ ]");
 
                         if(!craftType.canUse(player) && !checkPermission(player, groups)){                        
-                            player.sendMessage("§cyou are not allowed to take control of that " + craftType.name + " !");
+                            player.sendMessage(ChatColor.RED + "You are not allowed to take control of that " + craftType.name + " !");
                             return true;
                         }
 					 */
@@ -194,14 +188,14 @@ public class MoveCraft_BlockListener extends BlockListener {
 		
 		if(toBlock.getType() == Material.REDSTONE_WIRE)
 		{
-			//System.out.println(toBlock.getData());
+			//plugin.DebugMessage(toBlock.getData());
 			Block block = event.getBlock().getWorld().getBlockAt(toBlock.getX(), toBlock.getY() + 1, toBlock.getZ());
 			
 			if(block.getType() == Material.FURNACE && toBlock.getData() != (byte) 0 ){
 				int dx = 0;
 				int dy = 0;
 				
-				System.out.println("You are lighting up a furnace with data " + block.getData());
+				plugin.DebugMessage("You are lighting up a furnace with data " + block.getData());
 				
 				if(block.getData() == 2)
 					dy = -1;			

@@ -98,21 +98,21 @@ public class BlocksInfo {
 	}
 
 	public static String getName(int blockId) {
-		if(blocks[blockId] == null)
+		if(blockId != -1 && blocks[blockId] == null)
 			return Material.getMaterial(blockId).name();
 		
 		return blocks[blockId].name;
 	}
 
 	public static boolean isDataBlock(int blockId) {
-		if(blocks[blockId] == null)
+		if(blockId != -1 && blocks[blockId] == null)
 			return false;
 		
 		return blockId != -1 && blocks[blockId].isDataBlock;
 	}
 
 	public static boolean isComplexBlock(int blockId) {
-		if(blocks[blockId] == null)
+		if(blockId != -1 && blocks[blockId] == null)
 			return false;
 		
 		// So far just a sign or a chest
@@ -120,29 +120,27 @@ public class BlocksInfo {
 	}
 
 	public static boolean needsSupport(int blockId) {
-		if(blocks[blockId] == null)
+		if(blockId != -1 && blocks[blockId] == null)
 			return false;
 
 		return blockId != -1 && blocks[blockId].needSupport;
 	}
 
         public static int getDropItem(int blockId){
-    		if(blocks[blockId] == null)
+    		if(blockId != -1 && blocks[blockId] == null)
     			return -1;
 
             return blocks[blockId].dropItem;
         }
         
         public static int getDropQuantity(int blockId){
-    		if(blocks[blockId] == null)
+    		if(blockId != -1 && blocks[blockId] == null)
     			return 0;
 
             return blocks[blockId].dropQuantity;
         }
 
 	private static class BlockInfo {
-
-        @SuppressWarnings("unused")
 		int id;
 		String name;
 		boolean isDataBlock;

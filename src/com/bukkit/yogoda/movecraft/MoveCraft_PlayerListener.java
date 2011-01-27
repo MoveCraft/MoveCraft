@@ -4,6 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 //import org.bukkit.ItemStack;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 
@@ -40,18 +41,20 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			craft.setSpeed(1);
 
 			if (craft.isOnBoard && !craft.isOnCraft(player, false)) {
-				player.sendMessage("§eYou get off the " + craft.name);
-				player.sendMessage("§7type /" + craft.name
+				player.sendMessage(ChatColor.YELLOW + "You get off the " + craft.name);
+				player.sendMessage(ChatColor.GRAY + "Type /" + craft.name
 						+ " remote for remote control");
-				player.sendMessage("§eIf you don't, you'll lose control in 30 seconds.");
+				player.sendMessage(ChatColor.YELLOW + "If you don't, you'll lose control in 30 seconds.");
 				craft.isOnBoard = false;
 				craft.haveControl = false;
 				
-				new MoveCraft_Timer(30, craft);
+				craft.timer = new MoveCraft_Timer(30, craft);
 			} else if (!craft.isOnBoard && craft.isOnCraft(player, false)) {
-				player.sendMessage("§eWelcome on board");
+				player.sendMessage(ChatColor.YELLOW + "Welcome on board");
 				craft.isOnBoard = true;
 				craft.haveControl = true;
+				if(craft.timer != null)
+					craft.timer.Destroy();
 			}
 		}
 	}
@@ -79,9 +82,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			ItemStack pItem = player.getItemInHand();
 			int item = pItem.getTypeId();
 
-			if (plugin.DebugMode)
-				System.out.println(player.getName() + " used item "
-						+ Integer.toString(item));
+			plugin.DebugMessage(player.getName() + " used item " + Integer.toString(item));
 
 			// the craft won't budge if you have any tool in the hand
 			if (!craft.haveControl ||
@@ -125,7 +126,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			int dy = 0;
 
 			// we are on a flying object, handle height change
-			if (craft.type.canFly || craft.type.canDive) {
+			if (craft.type.canFly || craft.type.canDive || craft.type.canDig) {
 
 				float p = player.getLocation().getPitch();
 
@@ -142,11 +143,11 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			/*
 			 * //check the craft can move there. If not, reduce the speed and
 			 * try again until speed = 1 if(!craft.canMove(dx, dy, dz)){
-			 * player.sendMessage("§cthe " + craft.name +
+			 * player.sendMessage(ChatColor.YELLOW + "the " + craft.name +
 			 * " won't go any further"); return; }
 			 */
 
-			// System.out.println("waterLevel " + craft.waterLevel);
+			// plugin.DebugMessage("waterLevel " + craft.waterLevel);
 
 			// prevent submarines from getting out of water
 			if (craft.type.canDive && !craft.type.canFly
@@ -170,7 +171,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 							break;
 					}
 
-					player.sendMessage("§cthe " + craft.name
+					player.sendMessage(ChatColor.YELLOW + "the " + craft.name
 							+ " won't go any further");
 					return;
 				}
@@ -190,20 +191,14 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 	public void onPlayerCommand(PlayerChatEvent event) {
 		Player player = event.getPlayer();
 		String[] split = event.getMessage().split(" ");
-
-		/*
-		 * //Removed, players can use reloadplugin or bukkit equivalent for the
-		 * time being if(split[0].equalsIgnoreCase("/reload") &&
-		 * player.canUseCommand("/reload")){ loadProperties(); return false;
-		 * //continues default processing } else
-		 */
+		
 		if (split[0].equalsIgnoreCase("/movecraft")) {
 			if (split.length >= 2) {
 				if (split[1].equalsIgnoreCase("types")) {
 
 					for (CraftType craftType : CraftType.craftTypes) {
 
-						player.sendMessage("§e " + craftType.name + " :§f "
+						player.sendMessage(ChatColor.GREEN + craftType.name + ChatColor.YELLOW
 								+ craftType.minBlocks + "-"
 								+ craftType.maxBlocks + " blocks" + " speed : "
 								+ craftType.maxSpeed);
@@ -212,33 +207,33 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					// list all craft currently controlled by a player
 
 					if (Craft.craftList.isEmpty()) {
-						player.sendMessage("§7no player controlled craft");
+						player.sendMessage(ChatColor.YELLOW + "no player controlled craft");
 						// return true;
 					}
 
 					for (Craft craft : Craft.craftList) {
 
-						player.sendMessage("§e" + craft.name
+						player.sendMessage(ChatColor.YELLOW + craft.name
 								+ " controlled by " + craft.player.getName()
 								+ " : " + craft.blockCount + " blocks");
 					}
 				} else if (split[1].equalsIgnoreCase("reload")) {
 
 					plugin.loadProperties();
-					player.sendMessage("§econfiguration reloaded");
+					player.sendMessage(ChatColor.YELLOW + "configuration reloaded");
 				} else if (split[1].equalsIgnoreCase("debug")) {
 					plugin.ToggleDebug();
 				}
 			}
-
-			player.sendMessage("§aMoveCraft v" + MoveCraft.version
-					+ " commands :");
-			player.sendMessage("§e/movecraft types "
-					+ " : §flist the types of craft available");
-			player.sendMessage("§e/movecraft list : §flist the current player controled craft");
-			player.sendMessage("§e/movecraft reload : §freload config files");
-			player.sendMessage("§e/[craft type] "
-					+ " : §fcommands specific to the craft type");
+			else {
+				player.sendMessage(ChatColor.WHITE + "MoveCraft v" + MoveCraft.version + " commands :");
+				player.sendMessage(ChatColor.YELLOW + "/movecraft types "
+						+ " : " + ChatColor.WHITE + "list the types of craft available");
+				player.sendMessage(ChatColor.YELLOW + "/movecraft list : " + ChatColor.WHITE + "list the current player controled craft");
+				player.sendMessage(ChatColor.YELLOW + "/movecraft reload : " + ChatColor.WHITE + "reload config files");
+				player.sendMessage(ChatColor.YELLOW + "/[craft type] "
+						+ " : " + ChatColor.WHITE + "commands specific to the craft type");
+			}
 		} else if (split[0].equalsIgnoreCase("/release")) {
 			plugin.releaseCraft(player, Craft.getCraft(player));
 		} else {
@@ -285,7 +280,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			} else if (split[1].equalsIgnoreCase("setspeed")) {
 
 				if (craft == null) {
-					player.sendMessage("§eYou don't have any "
+					player.sendMessage(ChatColor.YELLOW + "You don't have any "
 							+ craftType.name);
 					return true;
 				}
@@ -293,13 +288,13 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				int speed = Math.abs(Integer.parseInt(split[2]));
 
 				if (speed < 1 || speed > craftType.maxSpeed) {
-					player.sendMessage("§cAllowed speed between 1 and "
+					player.sendMessage(ChatColor.YELLOW + "Allowed speed between 1 and "
 							+ craftType.maxSpeed);
 					return true;
 				}
 
 				craft.setSpeed(speed);
-				player.sendMessage("§e" + craft.name + "'s speed set to "
+				player.sendMessage(ChatColor.YELLOW + craft.name + "'s speed set to "
 						+ craft.speed);
 
 				return true;
@@ -307,42 +302,44 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			if (split[1].equalsIgnoreCase("setname")) {
 
 				if (craft == null) {
-					player.sendMessage("§eYou don't have any "
+					player.sendMessage(ChatColor.YELLOW + "You don't have any "
 							+ craftType.name);
 					return true;
 				}
 
 				craft.name = split[2];
-				player.sendMessage("§e" + craft.name + "'s name set to "
+				player.sendMessage(ChatColor.YELLOW + craft.name + "'s name set to "
 						+ craft.name);
 				return true;
 			} else if (split[1].equalsIgnoreCase("size")) {
 
 				if (craft == null) {
-					player.sendMessage("§eYou don't have any "
+					player.sendMessage(ChatColor.YELLOW + "You don't have any "
 							+ craftType.name);
 					return true;
 				}
 
-				player.sendMessage("§eThe " + craft.name + " is built with "
+				player.sendMessage(ChatColor.YELLOW + "The " + craft.name + " is built with "
 						+ craft.blockCount + " blocks");
 				return true;
 			} else if (split[1].equalsIgnoreCase("remote")) {
 
 				if (craft == null) {
-					player.sendMessage("§eYou don't have any "
+					player.sendMessage(ChatColor.YELLOW + "You don't have any "
 							+ craftType.name);
 					return true;
 				}
 
 				if (craft.isOnCraft(player, true)) {
-					player.sendMessage("§eYou are on the " + craftType.name
+					player.sendMessage(ChatColor.YELLOW + "You are on the " + craftType.name
 							+ ", remote control not possible");
 				} else {
 					if (craft.haveControl) {
-						player.sendMessage("§eYou switch off the remote controller");
+						player.sendMessage(ChatColor.YELLOW + "You switch off the remote controller");
 					} else {
-						player.sendMessage("§eYou switch on the remote controller");
+						if(craft.timer != null)
+							craft.timer.Destroy();
+						player.sendMessage(ChatColor.YELLOW + "You switch on the remote controller");
 					}
 
 					craft.haveControl = !craft.haveControl;
@@ -356,15 +353,16 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 
 			} else if (split[1].equalsIgnoreCase("info")) {
 
-				player.sendMessage("§a" + craftType.name);
-				player.sendMessage("§e" + craftType.minBlocks + "/" + craftType.maxBlocks + " blocks.");
-				player.sendMessage("§eMax speed: " + craftType.maxSpeed);
+				player.sendMessage(ChatColor.WHITE + craftType.name);
+				player.sendMessage(ChatColor.YELLOW + 
+						Integer.toString(craftType.minBlocks) + "/" + craftType.maxBlocks + " blocks.");
+				player.sendMessage(ChatColor.YELLOW +"Max speed: " + craftType.maxSpeed);
 
 				if (plugin.DebugMode)
-					player.sendMessage("§e" + craft.dataBlocks.size() + " data Blocks, " + 
+					player.sendMessage(ChatColor.YELLOW + Integer.toString(craft.dataBlocks.size()) + " data Blocks, " + 
 							craft.complexBlocks.size() + " complex Blocks.");
 				
-				String canDo = "§e" + craftType.name + "s can ";
+				String canDo = ChatColor.YELLOW + craftType.name + "s can ";
 
 				if (craftType.canFly)
 					canDo += "fly, ";
@@ -381,7 +379,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				player.sendMessage(canDo);
 
 				if (craftType.flyBlockType != 0) {
-					player.sendMessage("§cFlight requirement: "
+					player.sendMessage(ChatColor.YELLOW + "Flight requirement: "
 							+ craftType.flyBlockPercent + "%" + " of "
 							+ craftType.flyBlockName);
 				}
@@ -391,20 +389,20 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			}
 		}
 
-		player.sendMessage("§aMoveCraft v" + MoveCraft.version + " commands :");
-		player.sendMessage("§e/" + craftType.name + " "
-				+ craftType.driveCommand + " : §f" + " "
+		player.sendMessage(ChatColor.WHITE + "MoveCraft v" + MoveCraft.version + " commands :");
+		player.sendMessage(ChatColor.YELLOW + "/" + craftType.name + " "
+				+ craftType.driveCommand + " : " + ChatColor.WHITE + "" + " "
 				+ craftType.driveCommand + " the " + craftType.name);
-		player.sendMessage("§e/" + craftType.name + " "
-				+ "release : §frelease the " + craftType.name);
-		player.sendMessage("§e/" + craftType.name + " "
-				+ "remote : §fremote control of the " + craftType.name);
-		player.sendMessage("§e/" + craftType.name + " "
-				+ "size : §fthe size of the " + craftType.name + " in block");
-		player.sendMessage("§e/" + craftType.name + " "
-				+ "setname : §fset the " + craftType.name + "'s name");
-		player.sendMessage("§e/" + craftType.name + " "
-				+ "info : §fdisplays informations about the " + craftType.name);
+		player.sendMessage(ChatColor.YELLOW + "/" + craftType.name + " "
+				+ "release : " + ChatColor.WHITE + "release the " + craftType.name);
+		player.sendMessage(ChatColor.YELLOW + "/" + craftType.name + " "
+				+ "remote : " + ChatColor.WHITE + "remote control of the " + craftType.name);
+		player.sendMessage(ChatColor.YELLOW + "/" + craftType.name + " "
+				+ "size : " + ChatColor.WHITE + "the size of the " + craftType.name + " in block");
+		player.sendMessage(ChatColor.YELLOW + "/" + craftType.name + " "
+				+ "setname : " + ChatColor.WHITE + "set the " + craftType.name + "'s name");
+		player.sendMessage(ChatColor.YELLOW + "/" + craftType.name + " "
+				+ "info : " + ChatColor.WHITE + "displays informations about the " + craftType.name);
 
 		return true;
 	}

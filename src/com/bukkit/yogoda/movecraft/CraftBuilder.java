@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Stack;
 //import java.util.logging.Level;
 
+import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.block.*;
 
@@ -159,7 +160,7 @@ public class CraftBuilder {
       //mark the block as visited
       blocksList.put(block, block);
 
-      //System.out.println("" + block.x + "" + block.y + "" + block.z);
+      //plugin.DebugMessage("" + block.x + "" + block.y + "" + block.z);
 
         if(block.x < 0 || block.x > craft.maxX - craft.posX ||
           block.y < 0 || block.y > craft.maxY - craft.posY ||
@@ -246,7 +247,7 @@ public class CraftBuilder {
 
                        //there is a problem with ice that spawn a source block, we can't have ice
                        if(blockId==79){
-                           craft.player.sendMessage("§cSorry, you can't have ice in the " + craft.name);
+                           craft.player.sendMessage(ChatColor.RED + "Sorry, you can't have ice in the " + craft.name);
                            return false;
                        }
 
@@ -319,7 +320,7 @@ public class CraftBuilder {
            do{
                if(!createAirBubble()){
 
-                   craft.player.sendMessage("§eThis " + craft.type.name + " have holes, it needs to be waterproof");
+                   craft.player.sendMessage(ChatColor.YELLOW + "This " + craft.type.name + " have holes, it needs to be waterproof");
                    return false;
                }
            }
@@ -379,12 +380,22 @@ public class CraftBuilder {
                         addDataBlock(world, x, y, z);
                    }
                    if(BlocksInfo.isComplexBlock(blockId)){
-                	   System.out.println(Integer.toString(blockId));
                         addComplexBlock(world, x, y, z);
                 	   //addDataBlock(world, x, y, z);
                    }
-                   if(blockId == 61 || blockId == 62)
-                	   addEngineBlock(world.getBlockAt(x,y,z));
+                   //if(blockId == 61 || blockId == 62)
+                   //addEngineBlock(world.getBlockAt(x,y,z));
+                   if(blockId == 63 || blockId == 68) {
+                	   Block block = world.getBlockAt(x,y,z);
+                	   if (block.getState() instanceof Sign) {
+                		   Sign sign = (Sign) block.getState();
+                		   
+                		   if(sign.getLine(0).trim().equalsIgnoreCase("engine")) {
+                        	   System.out.println("AND ITS AN ENGINE");
+                			   addEngineBlock(world.getBlockAt(x,y,z));
+                		   }
+                	   }
+                   }
                }
            }
        }
@@ -490,6 +501,10 @@ public class CraftBuilder {
            craft.flyBlockCount ++;
        }
 
+       if(blockType == craft.type.digBlockId){
+           craft.digBlockCount ++;
+       }
+
        if(x < craft.minX) craft.minX = x;
        if(x > craft.maxX) craft.maxX = x;
        if(y < craft.minY) craft.minY = y;
@@ -553,21 +568,21 @@ public class CraftBuilder {
 
        //max block count have been reached, craft can't be detected !
        if(craft.blockCount > craft.type.maxBlocks){
-           craft.player.sendMessage("§cUnable to detect the " + craft.name + ", be sure it is not connected");
-           craft.player.sendMessage("§c to the ground, or maybe it is too big for this type of craft");
-           craft.player.sendMessage("§cThe maximum size is " + craft.type.maxBlocks + " blocks");
+           craft.player.sendMessage(ChatColor.RED + "Unable to detect the " + craft.name + ", be sure it is not connected");
+           craft.player.sendMessage(ChatColor.RED + " to the ground, or maybe it is too big for this type of craft");
+           craft.player.sendMessage(ChatColor.RED + "The maximum size is " + craft.type.maxBlocks + " blocks");
            return false;
        }
        else
        if(craft.blockCount <  craft.type.minBlocks)
        {
            if(craft.blockCount==0){
-                craft.player.sendMessage("§cThere is no " + craft.name + " here");
-                craft.player.sendMessage("§cBe sure you are standing on a block");
+                craft.player.sendMessage(ChatColor.RED + "There is no " + craft.name + " here");
+                craft.player.sendMessage(ChatColor.RED + "Be sure you are standing on a block");
            }
            else{
-                craft.player.sendMessage("§cThis " + craft.name + " is too small !");
-                craft.player.sendMessage("§cYou need to add " + (craft.type.minBlocks - craft.blockCount) + " blocks");
+                craft.player.sendMessage(ChatColor.RED + "This " + craft.name + " is too small !");
+                craft.player.sendMessage(ChatColor.RED + "You need to add " + (craft.type.minBlocks - craft.blockCount) + " blocks");
            }
 
            return false;
@@ -582,7 +597,7 @@ public class CraftBuilder {
                    if( !((craft.minX < craft.minX && craft.maxX < craft.minX) || (craft.minX < craft.minX && craft.maxX < craft.minX )))
                        if( !((craft.minY < craft.minY && craft.maxY < craft.minY) || (craft.minY < craft.minY && craft.maxY < craft.minY )))
                            if( !((craft.minZ < craft.minZ && craft.maxZ < craft.minZ) || (craft.minZ < craft.minZ && craft.maxZ < craft.minZ ))){
-                               craft.player.sendMessage("§c" + craft.player.getName() + " is already controling this " + craft.name);
+                               craft.player.sendMessage(ChatColor.RED + "" + craft.player.getName() + " is already controling this " + craft.name);
                                return false;
                            }
                }
@@ -592,8 +607,8 @@ public class CraftBuilder {
            craft.sizeX = (craft.maxX - craft.minX) + 1;
            craft.sizeY = (craft.maxY - craft.minY) + 1;
 
-           //System.out.println(" maxZ : " + maxZ);
-           //System.out.println(" minZ : " + minZ);
+           //plugin.DebugMessage(" maxZ : " + maxZ);
+           //plugin.DebugMessage(" minZ : " + minZ);
 
            craft.sizeZ = (craft.maxZ - craft.minZ) + 1;
 
@@ -620,18 +635,18 @@ public class CraftBuilder {
            //the ship is not on water
            //if(craft.type.canNavigate && !craft.type.canFly && craft.waterType == 0){
            if(craft.type.canNavigate && !craft.type.canFly && craft.waterType == 0 && !craft.type.canDig){
-               craft.player.sendMessage("§cThis " + craft.name + " is not on water...");
+               craft.player.sendMessage(ChatColor.RED + "This " + craft.name + " is not on water...");
                return false;
            } else
            //the submarine is not into water
            //if(craft.type.canDive && !craft.type.canFly && craft.waterType == 0){
            if(craft.type.canDive && !craft.type.canFly && craft.waterType == 0 && !craft.type.canDig){
-               craft.player.sendMessage("§cThis " + craft.name + " is not into water...");
+               craft.player.sendMessage(ChatColor.RED + "This " + craft.name + " is not into water...");
                return false;
            } else
            //the airplane / airship is into water
            if(craft.type.canFly && !craft.type.canNavigate && !craft.type.canDive && craft.waterLevel > -1){
-               craft.player.sendMessage("§cThis " + craft.name + " is into water...");
+               craft.player.sendMessage(ChatColor.RED + "This " + craft.name + " is into water...");
                return false;
            }
 
@@ -647,31 +662,31 @@ public class CraftBuilder {
                    flyBlocksNeeded = 1;
 
                if(craft.flyBlockCount < flyBlocksNeeded){
-                   craft.player.sendMessage("§cNot enough " + craft.type.flyBlockName + " to make this " + craft.name + " move");
-                   craft.player.sendMessage("§cYou need to add " + (flyBlocksNeeded - craft.flyBlockCount) + " more" );
+                   craft.player.sendMessage(ChatColor.RED + "Not enough " + craft.type.flyBlockName + " to make this " + craft.name + " move");
+                   craft.player.sendMessage(ChatColor.RED + "You need to add " + (flyBlocksNeeded - craft.flyBlockCount) + " more" );
                    return false;
                }
            }
            
            //drill needs to have a diamond block
-           if(craft.type.canDig && craft.type.flyBlockType != 0){
-        	   System.out.println("Drill flyblock is " + Integer.toString(craft.type.flyBlockType));
+           if(craft.type.canDig && craft.type.digBlockId != 0){
+        	   //plugin.DebugMessage("Drill flyblock is " + Integer.toString(craft.type.flyBlockType));
 
                int flyBlocksNeeded = (int)Math.floor((craft.blockCount - craft.flyBlockCount) * ((float)craft.type.flyBlockPercent * 0.01) / (1 - ((float)craft.type.flyBlockPercent * 0.01)));
                if(flyBlocksNeeded < 1)
                    flyBlocksNeeded = 1;
 
                if(craft.flyBlockCount < flyBlocksNeeded){
-                   craft.player.sendMessage("§cNot enough " + craft.type.flyBlockName + " to make this " + craft.name + " move");
-                   craft.player.sendMessage("§cYou need to add " + (flyBlocksNeeded - craft.flyBlockCount) + " more" );
+                   craft.player.sendMessage(ChatColor.RED + "Not enough " + craft.type.flyBlockName + " to make this " + craft.name + " move");
+                   craft.player.sendMessage(ChatColor.RED + "You need to add " + (flyBlocksNeeded - craft.flyBlockCount) + " more" );
                    return false;
                }
            }
 
            if(craft.customName == null)
-                craft.player.sendMessage("§e" + craft.type.sayOnControl);
+                craft.player.sendMessage(ChatColor.YELLOW +  craft.type.sayOnControl);
            else
-                craft.player.sendMessage("§eWelcome on the §a" + craft.customName + "§e !");
+                craft.player.sendMessage(ChatColor.YELLOW + "Welcome on the " + ChatColor.WHITE + craft.customName + ChatColor.YELLOW + " !");
        }
 
        return true;

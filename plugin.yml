@@ -1,3 +1,4 @@
 name: MoveCraft
 main: com.bukkit.yogoda.movecraft.MoveCraft
-version: .5
+version: 0.6.4
+authors: [Yogoda, SycoPrime]

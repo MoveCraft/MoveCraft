@@ -15,6 +15,10 @@ public class MoveCraft_Timer {
 		timer = new Timer();
 		timer.schedule(new ReleaseTask(), seconds * 1000);
 	}
+	
+	public void Destroy() {
+		timer.cancel();
+	}
 
 	class ReleaseTask extends TimerTask {
 		public void run() {
