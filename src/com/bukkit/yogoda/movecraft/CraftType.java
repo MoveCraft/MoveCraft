@@ -44,6 +44,7 @@ public class CraftType {
 	boolean iceBreaker = false;
 	boolean bomber = false;
 	boolean canDig = false;
+	boolean obeysGravity = false;
 
 	String sayOnControl = "You control the craft";
 	String sayOnRelease = "You release the craft";
@@ -254,6 +255,8 @@ public class CraftType {
 			craftType.canDive = Boolean.parseBoolean(value);
 		else if (attribute.equalsIgnoreCase("canDig"))
 			craftType.canDig = Boolean.parseBoolean(value);
+		else if (attribute.equalsIgnoreCase("obeysGravity"))
+			craftType.obeysGravity = Boolean.parseBoolean(value);
 		// else if(attribute.equalsIgnoreCase("iceBreaker"))
 		// craftType.iceBreaker = Boolean.parseBoolean(value);
 		else if (attribute.equalsIgnoreCase("bomber"))
@@ -322,6 +325,7 @@ public class CraftType {
 			writeAttribute(writer, "canFly", craftType.canFly, force);
 			writeAttribute(writer, "canDive", craftType.canDive, force);
 			writeAttribute(writer, "canDig", craftType.canDig, force);
+			writeAttribute(writer, "obeysGravity", craftType.obeysGravity, force);
 			// writeAttribute(writer, "iceBreaker", craftType.iceBreaker);
 			writeAttribute(writer, "bomber", craftType.bomber, force);
 			writeAttribute(writer, "sayOnControl", craftType.sayOnControl,

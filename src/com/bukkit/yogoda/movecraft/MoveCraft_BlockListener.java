@@ -118,64 +118,66 @@ public class MoveCraft_BlockListener extends BlockListener {
 
 
 		if (block.getState() instanceof Sign) {
-			if(playerCraft == null){
-				Sign sign = (Sign) block.getState();
+			Sign sign = (Sign) block.getState();
 
-				if(sign.getLine(0).trim().equals("")) return;
+			if(sign.getLine(0).trim().equals("")) return;
 
-				String craftTypeName = sign.getLine(0).trim().toLowerCase();;
+			String craftTypeName = sign.getLine(0).trim().toLowerCase();;
 
-				//remove colors
-				craftTypeName = craftTypeName.replaceAll("§.", "");
+			//remove colors
+			craftTypeName = craftTypeName.replaceAll("§.", "");
 
-				//remove brackets
-				if(craftTypeName.startsWith("["))
-					craftTypeName = craftTypeName.substring(1, craftTypeName.length() - 1);
+			//remove brackets
+			if(craftTypeName.startsWith("["))
+				craftTypeName = craftTypeName.substring(1, craftTypeName.length() - 1);
 
-				//if the first line of the sign is a craft type, get the matching craft type.
-				CraftType craftType = CraftType.getCraftType(craftTypeName);
+			//if the first line of the sign is a craft type, get the matching craft type.
+			CraftType craftType = CraftType.getCraftType(craftTypeName);
 
-				//it is a registred craft type !
-				if(craftType != null){
+			//it is a registred craft type !
+			if(craftType != null){
 
-                       if(!craftType.canUse(player)){
-                            player.sendMessage(ChatColor.RED + "You are not allowed to use this type of craft");
-                            return;
-                       }
+				if(playerCraft != null) {
+					if(playerCraft.type == craftType) {
+						plugin.releaseCraft(player, playerCraft);
+						return;
+					}
+				}
 
-					String name = sign.getLine(1).replaceAll("§.", "");
+				if(!craftType.canUse(player)){
+					player.sendMessage(ChatColor.RED + "You are not allowed to use this type of craft");
+					return;
+				}
 
-					if(name.trim().equals(""))
-						name = null;
+				String name = sign.getLine(1).replaceAll("§.", "");
 
-					/*
+				if(name.trim().equals(""))
+					name = null;
+
+				/*
                         String[] groups = (sign.getLine(2) + " " + sign.getLine(3)).replace(",", "").replace(";", "").split("[ ]");
 
                         if(!craftType.canUse(player) && !checkPermission(player, groups)){                        
                             player.sendMessage(ChatColor.RED + "You are not allowed to take control of that " + craftType.name + " !");
                             return true;
                         }
-					 */
+				 */
 
-					int x = block.getX();
-					int y = block.getY();
-					int z = block.getZ();
+				int x = block.getX();
+				int y = block.getY();
+				int z = block.getZ();
 
-					int direction = block.getData();
+				int direction = block.getData();
 
-					//get the block the sign is attached to (not rly needed lol)
-					x = x + (direction == 4 ? 1 : (direction == 5 ? -1 : 0));
-					z = z + (direction == 2 ? 1 : (direction == 3 ? -1 : 0));
+				//get the block the sign is attached to (not rly needed lol)
+				x = x + (direction == 4 ? 1 : (direction == 5 ? -1 : 0));
+				z = z + (direction == 2 ? 1 : (direction == 3 ? -1 : 0));
 
-					plugin.createCraft(player, craftType, x, y, z, name);
+				plugin.createCraft(player, craftType, x, y, z, name);
 
-					return;                        
-				} else {                    
-					return;
-				}
-			} else {
-
-				plugin.releaseCraft(player, playerCraft);
+				return;                        
+			} else {                    
+				return;
 			}
 		}
 	}

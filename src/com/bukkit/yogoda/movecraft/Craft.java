@@ -1,15 +1,13 @@
 package com.bukkit.yogoda.movecraft;
 
 import java.util.ArrayList;
-//import java.util.HashMap;
-//import java.util.Stack;
 import java.util.logging.Level;
 
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.event.block.BlockFromToEvent;
-import org.bukkit.event.block.BlockListener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
 import org.bukkit.block.*;
@@ -98,7 +96,7 @@ public class Craft {
 	boolean isPublic = false;
 
 	// Added engine block to test having blocks that propel the craft
-	//ArrayList<Block> engineBlocks;
+	ArrayList<DataBlock> engineBlocks = new ArrayList<DataBlock>();
 
 	Craft(MoveCraft instance, CraftType type, Player player, String customName) {
 
@@ -107,6 +105,8 @@ public class Craft {
 		this.customName = customName;
 		this.player = player;
 		this.plugin = instance;
+		
+		this.timer = new MoveCraft_Timer(0, this, "engineCheck");
 	}
 
 	public static Craft getCraft(Player player) {
@@ -198,6 +198,7 @@ public class Craft {
 	}
 
 	static void removeCraft(Craft craft) {
+		craft.timer.Destroy();
 		craftList.remove(craft);
 	}
 
@@ -415,6 +416,9 @@ public class Craft {
 
 		dx = speed * dx;
 		dz = speed * dz;
+		
+		if(type.obeysGravity && canMove(world, dx, dy - 1, dz))
+			dy -= 1;
 
 		if (Math.abs(speed * dy) > 1) {
 			dy = speed * dy / 2;
@@ -710,15 +714,6 @@ public class Craft {
 
 		lastMove = System.currentTimeMillis();
 
-		/*
-		for (Block engineBlock : engineBlocks) {
-			if(engineBlock.getTypeId() == 62)
-				plugin.DebugMessage("This is a lit engine block.");
-			else
-				plugin.DebugMessage("This is an engine block.");
-		}
-		 */
-
 	}
 
 	public void setSpeed(int speed) {
@@ -733,6 +728,85 @@ public class Craft {
 
 	public int getSpeed() {
 		return speed;
+	}
+	
+	public void doAMovementThingy(World world, int dx, int dy, int dz) {
+		// speed decrease with time
+		setSpeed(speed
+				- (int) ((System.currentTimeMillis() - lastMove) / 500));
+
+		if (speed <= 0)
+			speed = 1;
+
+		// prevent submarines from getting out of water
+		if (type.canDive && !type.canFly
+				&& waterLevel <= 0 && dy > 0)
+			dy = 0;
+
+		// check the craft can move there. If not, reduce the speed and try
+		// again until speed = 1
+		while (!canMove(world, dx, dy, dz)) {
+
+			// player.sendMessage("can't move !");
+
+			if (speed == 1) {
+
+				// try to remove horizontal displacement, and just go up
+				if (type.canFly && dy >= 0) {
+					dx = 0;
+					dz = 0;
+					dy = 1;
+					if (canMove(world, dx, dy, dz))
+						break;
+				}
+
+				player.sendMessage(ChatColor.RED + "the " + name + " won't go any further");
+				return;
+			}
+
+			setSpeed(speed - 1);
+
+		}
+
+		move(world, dx, dy, dz);
+
+		// the craft goes faster every click
+		setSpeed(speed + 1);
+	}
+	
+	public void engineTick() {
+		World world = player.getWorld();
+		int dx = 0;
+		int dy = 0;
+		int dz = 0;
+		for (DataBlock edb : engineBlocks) {
+			Block engineBlock = world.getBlockAt(this.posX + edb.x, this.posY + edb.y, this.posZ + edb.z);
+			Block underBlock = world.getBlockAt(engineBlock.getX(), engineBlock.getY() - 1, engineBlock.getZ());
+			if(underBlock.getType() == Material.REDSTONE_WIRE && underBlock.getData() != 0) {
+				
+				switch(engineBlock.getData()) {
+				case 4:
+					System.out.println("NORTH FACING ENGINE");
+					dx += 1;
+					break;
+				case 5:
+					System.out.println("SOUTH FACING ENGINE");
+					dx -= 1;
+					break;
+				case 2:
+					System.out.println("EAST FACING ENGINE");
+					dz += 1;
+					break;
+				case 3:
+					System.out.println("WEST FACING ENGINE");
+					dz -= 1;
+					break;
+				}
+			}
+		}
+		if(dx != 0 || dy != 0 || dz != 0) {
+			doAMovementThingy(world, dx, dy, dz);
+		}
 	}
 
 	public static class DataBlock {

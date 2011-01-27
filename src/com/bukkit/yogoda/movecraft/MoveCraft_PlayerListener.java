@@ -1,11 +1,8 @@
 package com.bukkit.yogoda.movecraft;
 
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-//import org.bukkit.ItemStack;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.World;
 
 import org.bukkit.event.player.PlayerChatEvent;
@@ -44,11 +41,11 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				player.sendMessage(ChatColor.YELLOW + "You get off the " + craft.name);
 				player.sendMessage(ChatColor.GRAY + "Type /" + craft.name
 						+ " remote for remote control");
-				player.sendMessage(ChatColor.YELLOW + "If you don't, you'll lose control in 30 seconds.");
+				player.sendMessage(ChatColor.YELLOW + "If you don't, you'll lose control in 15 seconds.");
 				craft.isOnBoard = false;
 				craft.haveControl = false;
 				
-				craft.timer = new MoveCraft_Timer(30, craft);
+				craft.timer = new MoveCraft_Timer(15, craft, "abandonCheck");
 			} else if (!craft.isOnBoard && craft.isOnCraft(player, false)) {
 				player.sendMessage(ChatColor.YELLOW + "Welcome on board");
 				craft.isOnBoard = true;
@@ -360,7 +357,8 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 
 				if (plugin.DebugMode)
 					player.sendMessage(ChatColor.YELLOW + Integer.toString(craft.dataBlocks.size()) + " data Blocks, " + 
-							craft.complexBlocks.size() + " complex Blocks.");
+							craft.complexBlocks.size() + " complex Blocks, " + 
+							craft.engineBlocks.size() + " engine Blocks.");
 				
 				String canDo = ChatColor.YELLOW + craftType.name + "s can ";
 

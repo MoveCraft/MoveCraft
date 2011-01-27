@@ -1,6 +1,5 @@
 package com.bukkit.yogoda.movecraft;
 
-import java.io.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -14,7 +13,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -40,7 +38,7 @@ public class MoveCraft extends JavaPlugin {
 	Properties properties;
 
 	static final String pluginName = "MoveCraft";
-	static final String version = "0.6.4";
+	static final String version = "0.6.5";
 
 	static final DateFormat dateFormat = new SimpleDateFormat(
 			"yyyy-MM-dd HH:mm:ss");
@@ -156,7 +154,7 @@ public class MoveCraft extends JavaPlugin {
 
 		Craft.addCraft(craft);
 
-		player.sendMessage("§7Right-click in the direction you want to go.");
+		player.sendMessage(ChatColor.GRAY + "Right-click in the direction you want to go.");
 	}
 
 	public static String getDateTime() {

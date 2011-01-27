@@ -343,9 +343,8 @@ public class CraftBuilder {
 	   craft.complexBlocks.add(world.getBlockAt(x - craft.posX, y - craft.posY, z - craft.posZ));
    }
    
-   private static void addEngineBlock(Block block)
-   {
-	   //craft.engineBlocks.add(block);
+   private static void addEngineBlock(World world, int x, int y, int z){
+	   craft.engineBlocks.add(new Craft.DataBlock(x - craft.posX,y - craft.posY,z - craft.posZ, world.getBlockAt(x, y, z).getData()));
    }
 
     //put all data in a standard matrix to be more efficient
@@ -391,8 +390,7 @@ public class CraftBuilder {
                 		   Sign sign = (Sign) block.getState();
                 		   
                 		   if(sign.getLine(0).trim().equalsIgnoreCase("engine")) {
-                        	   System.out.println("AND ITS AN ENGINE");
-                			   addEngineBlock(world.getBlockAt(x,y,z));
+                			   addEngineBlock(world, x, y, z);
                 		   }
                 	   }
                    }
@@ -546,6 +544,9 @@ public class CraftBuilder {
     public static boolean detect(World world, Craft craft, int X, int Y, int Z){
 
        CraftBuilder.craft = craft;
+       
+       if(craft.type.canDig)
+    	   craft.waterType = 1;
         
        dmatrix = new HashMap<Integer,HashMap<Integer,HashMap<Integer,Short>>>();
 
@@ -672,13 +673,13 @@ public class CraftBuilder {
            if(craft.type.canDig && craft.type.digBlockId != 0){
         	   //plugin.DebugMessage("Drill flyblock is " + Integer.toString(craft.type.flyBlockType));
 
-               int flyBlocksNeeded = (int)Math.floor((craft.blockCount - craft.flyBlockCount) * ((float)craft.type.flyBlockPercent * 0.01) / (1 - ((float)craft.type.flyBlockPercent * 0.01)));
-               if(flyBlocksNeeded < 1)
-                   flyBlocksNeeded = 1;
+               int digBlocksNeeded = (int)Math.floor((craft.blockCount - craft.digBlockCount) * ((float)craft.type.digBlockPercent * 0.01) / (1 - ((float)craft.type.digBlockPercent * 0.01)));
+               if(digBlocksNeeded < 1)
+                   digBlocksNeeded = 1;
 
-               if(craft.flyBlockCount < flyBlocksNeeded){
-                   craft.player.sendMessage(ChatColor.RED + "Not enough " + craft.type.flyBlockName + " to make this " + craft.name + " move");
-                   craft.player.sendMessage(ChatColor.RED + "You need to add " + (flyBlocksNeeded - craft.flyBlockCount) + " more" );
+               if(craft.digBlockCount < digBlocksNeeded){
+                   craft.player.sendMessage(ChatColor.RED + "Not enough " + craft.type.digBlockName + " to make this " + craft.name + " move");
+                   craft.player.sendMessage(ChatColor.RED + "You need to add " + (digBlocksNeeded - craft.digBlockCount) + " more" );
                    return false;
                }
            }
