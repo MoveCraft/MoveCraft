@@ -141,6 +141,7 @@ public class BlocksInfo {
         }
 
 	private static class BlockInfo {
+		@SuppressWarnings("unused")
 		int id;
 		String name;
 		boolean isDataBlock;

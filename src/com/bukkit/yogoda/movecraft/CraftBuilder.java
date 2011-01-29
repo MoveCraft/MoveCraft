@@ -340,7 +340,8 @@ public class CraftBuilder {
    }
 
    private static void addComplexBlock(World world, int x, int y, int z){
-	   craft.complexBlocks.add(world.getBlockAt(x - craft.posX, y - craft.posY, z - craft.posZ));
+	   craft.complexBlocks.add(new Craft.DataBlock(x - craft.posX,y - craft.posY,z - craft.posZ, world.getBlockAt(x, y, z).getData()));
+	   //craft.complexBlocks.add(world.getBlockAt(x - craft.posX, y - craft.posY, z - craft.posZ));
    }
    
    private static void addEngineBlock(World world, int x, int y, int z){
@@ -598,7 +599,7 @@ public class CraftBuilder {
                    if( !((craft.minX < craft.minX && craft.maxX < craft.minX) || (craft.minX < craft.minX && craft.maxX < craft.minX )))
                        if( !((craft.minY < craft.minY && craft.maxY < craft.minY) || (craft.minY < craft.minY && craft.maxY < craft.minY )))
                            if( !((craft.minZ < craft.minZ && craft.maxZ < craft.minZ) || (craft.minZ < craft.minZ && craft.maxZ < craft.minZ ))){
-                               craft.player.sendMessage(ChatColor.RED + "" + craft.player.getName() + " is already controling this " + craft.name);
+                               craft.player.sendMessage(ChatColor.RED + "" + c.player.getName() + " is already controling this " + craft.name);
                                return false;
                            }
                }
@@ -617,6 +618,7 @@ public class CraftBuilder {
            craft.posX = craft.minX;
            craft.posY = craft.minY;
            craft.posZ = craft.minZ;
+           
 
            if(craft.waterLevel != -1)
                craft.waterLevel = craft.waterLevel - craft.posY;
@@ -635,7 +637,7 @@ public class CraftBuilder {
 
            //the ship is not on water
            //if(craft.type.canNavigate && !craft.type.canFly && craft.waterType == 0){
-           if(craft.type.canNavigate && !craft.type.canFly && craft.waterType == 0 && !craft.type.canDig){
+           if(craft.type.canNavigate && !craft.type.canFly && craft.waterType == 0 && !craft.type.canDig && !craft.type.isTerrestrial){
                craft.player.sendMessage(ChatColor.RED + "This " + craft.name + " is not on water...");
                return false;
            } else
@@ -689,7 +691,6 @@ public class CraftBuilder {
            else
                 craft.player.sendMessage(ChatColor.YELLOW + "Welcome on the " + ChatColor.WHITE + craft.customName + ChatColor.YELLOW + " !");
        }
-
        return true;
 
     }

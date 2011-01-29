@@ -44,7 +44,7 @@ public class Craft {
 	short matrix[][][];
 	ArrayList<DataBlock> dataBlocks;
 	//convert to LinkedList for preformance boost?
-	ArrayList<Block> complexBlocks = new ArrayList<Block>();
+	ArrayList<DataBlock> complexBlocks = new ArrayList<DataBlock>();
 	ArrayList<ArrayList<String>> signLines = new ArrayList<ArrayList<String>>();
 
 	// size of the craft
@@ -94,6 +94,8 @@ public class Craft {
 
 	public MoveCraft_Timer timer = null;
 	boolean isPublic = false;
+	public boolean inHyperSpace = false;
+	public int HyperSpaceMoves[] = new int[3];
 
 	// Added engine block to test having blocks that propel the craft
 	ArrayList<DataBlock> engineBlocks = new ArrayList<DataBlock>();
@@ -206,7 +208,7 @@ public class Craft {
 	private boolean canGoThrough(int craftBlockId, int blockId, int data) {
 
 		// all craft types can move through air and flowing water/lava
-		if (blockId == 0 ||
+		if ( blockId == 0 ||
 				(blockId >= 8 && blockId <= 11 && data != 0) ||
 				blockId == 78 || 
 				BlocksInfo.needsSupport(blockId)) //snow cover
@@ -229,7 +231,7 @@ public class Craft {
 		}
 
 		// drill can move through all block types...for now.
-		if (type.canDig && craftBlockId == type.digBlockId)
+		if (type.canDig && craftBlockId == type.digBlockId && blockId != 0)
 			return true;
 
 		// ship on water
@@ -241,12 +243,36 @@ public class Craft {
 		if (blockId == 10 || blockId == 11)
 			if (waterType == 10)
 				return true;
+		
+		if(blockId == waterType)
+			return true;
 
 		// iceBreaker can go through ice :)
 		if (blockId == 79 && type.iceBreaker)
 			if (waterType == 8)
 				return true;
 
+		return false;
+	}
+	
+	private boolean canGoOver(World world, DataBlock craftBlock, Block targetBlock) {
+		
+		if(!type.obeysGravity || !type.isTerrestrial)
+			return false; //more like return why are you bothering!
+		
+		//cannot go over water or lava
+		if(!type.canDive && !type.canFly &&
+				(targetBlock.getTypeId() >= 8 && targetBlock.getTypeId() <= 1) )
+			return false;
+
+		Block blockAbove = world.getBlockAt(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ());
+		int blockId = blockAbove.getTypeId();
+
+		if ( blockId == 0 ||
+				blockId == 78 || 
+				BlocksInfo.needsSupport(blockId)) //snow cover
+				return true;
+		
 		return false;
 	}
 
@@ -346,7 +372,8 @@ public class Craft {
 					&& !canGoThrough(0, targetBlock1.getTypeId(), 0)
 					|| !isCraftBlock(X - posX, Y + 1 - posY, Z - posZ)
 					&& !canGoThrough(0, targetBlock2.getTypeId(), 0)) {
-				// player.sendMessage("Head check !");
+				
+				//added for terrestrial vehicles climbin' up/over stuff
 				return false;
 			}
 		}
@@ -412,28 +439,14 @@ public class Craft {
 	public void move(World world, int dx, int dy, int dz) {
 		Server server = plugin.getServer();
 
-		// System.out.println("move " + System.currentTimeMillis());
-
 		dx = speed * dx;
 		dz = speed * dz;
-		
-		if(type.obeysGravity && canMove(world, dx, dy - 1, dz))
-			dy -= 1;
 
 		if (Math.abs(speed * dy) > 1) {
 			dy = speed * dy / 2;
 			if (Math.abs(dy) == 0)
 				dy = (int) Math.signum(dy);
 		}
-
-		// player.sendMessage("move " + dx + " " + dy + " " + dz);
-		// player.sendMessage("" + posY + "" + sizeY);
-
-		/*
-		 * plugin.DebugMessage("move dx : " + dx + " dy : " + dy + " dZ : " + dz);
-		 * plugin.DebugMessage("move speed : " + speed);
-		 * plugin.DebugMessage("move sizeX : " + sizeX + " sizeY : " + sizeY + " sizeZ : " + sizeZ);
-		 */
 
 		// scan to know if any of the craft blocks are now missing (blocks
 		// removed, TNT damage, creeper ?)
@@ -473,12 +486,12 @@ public class Craft {
 		}
 
 		// store the data of all complex blocks, or die trying
-		for (Block complexBlock : complexBlocks) {
+		for (DataBlock complexBlock : complexBlocks) {
 			// complexBlock.data = world.getBlockAt(posX + complexBlock.getX(),
 			// posY + complexBlock.getY(), posZ +
 			// complexBlock.getZ()).getData();
-			Block currentBlock = world.getBlockAt(posX + complexBlock.getX(),
-					posY + complexBlock.getY(), posZ + complexBlock.getZ());
+			Block currentBlock = world.getBlockAt(posX + complexBlock.x,
+					posY + complexBlock.y, posZ + complexBlock.z);
 			ArrayList<String> myLines = new ArrayList<String>();
 			if (currentBlock.getState() instanceof Sign) {
 				Sign sign = (Sign) currentBlock.getState();
@@ -489,8 +502,18 @@ public class Craft {
 				myLines.add(sign.getLine(3));
 				signLines.add(myLines);
 			} else if (currentBlock.getTypeId() == 54) {				
-				//ContainerBlock chest = (ContainerBlock) currentBlock.getState();
-				//ItemStack[] chest_contents = chest.getInventory().getContents();
+				try
+				{
+					ContainerBlock chest = (ContainerBlock) currentBlock.getState();
+					ItemStack[] chest_contents = chest.getInventory().getContents();
+					complexBlock.items = chest_contents;
+					
+				}
+				catch (Exception ex)
+				{
+					System.out.println("There was an error copying chests. This is a bukkit issue. " +
+							"It will likely resolve itself after some updates.");
+				}
 			}
 		}
 
@@ -650,10 +673,10 @@ public class Craft {
 		}
 
 		// restore complex blocks
-		for (Block complexBlock : complexBlocks) {
-			Block theBlock = world.getBlockAt(posX + dx + complexBlock.getX(),
-					posY + dy + complexBlock.getY(),
-					posZ + dz + complexBlock.getZ());
+		for (DataBlock complexBlock : complexBlocks) {
+			Block theBlock = world.getBlockAt(posX + dx + complexBlock.x,
+					posY + dy + complexBlock.y,
+					posZ + dz + complexBlock.z);
 			ArrayList<String> myLines = new ArrayList<String>();
 
 			if (theBlock.getTypeId() == 63 || theBlock.getTypeId() == 68) {
@@ -668,6 +691,17 @@ public class Craft {
 				sign.setLine(3, myLines.get(3));
 
 				sign.update();
+			} else if (theBlock.getTypeId() == 54) {				
+				try
+				{
+					ContainerBlock chest = (ContainerBlock) theBlock.getState();
+					chest.getInventory().setContents(complexBlock.items);					
+				}
+				catch (Exception ex)
+				{
+					System.out.println("There was an error copying chests. This is a bukkit issue. " +
+							"It will likely resolve itself after some updates.");
+				}
 			}
 		}
 
@@ -730,17 +764,20 @@ public class Craft {
 		return speed;
 	}
 	
-	public void doAMovementThingy(World world, int dx, int dy, int dz) {
+	public void calculatedMove(World world, int dx, int dy, int dz) {
+		//instead of forcing the craft to move, check some things beforehand
+
+		if(type.obeysGravity && canMove(world, dx, dy - 1, dz))
+			dy -= 1;
+		
 		// speed decrease with time
-		setSpeed(speed
-				- (int) ((System.currentTimeMillis() - lastMove) / 500));
+		setSpeed(speed - (int) ((System.currentTimeMillis() - lastMove) / 500));
 
 		if (speed <= 0)
 			speed = 1;
 
 		// prevent submarines from getting out of water
-		if (type.canDive && !type.canFly
-				&& waterLevel <= 0 && dy > 0)
+		if ( (type.canDive || type.canDig) && !type.canFly && waterLevel <= 0 && dy > 0)
 			dy = 0;
 
 		// check the craft can move there. If not, reduce the speed and try
@@ -805,7 +842,7 @@ public class Craft {
 			}
 		}
 		if(dx != 0 || dy != 0 || dz != 0) {
-			doAMovementThingy(world, dx, dy, dz);
+			calculatedMove(world, dx, dy, dz);
 		}
 	}
 
@@ -815,6 +852,7 @@ public class Craft {
 		int y;
 		int z;
 		int data;
+		ItemStack[] items = new ItemStack[27];
 
 		DataBlock(int x, int y, int z, int data) {
 			this.x = x;

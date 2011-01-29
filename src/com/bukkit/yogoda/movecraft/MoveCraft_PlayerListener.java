@@ -215,7 +215,6 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 								+ " : " + craft.blockCount + " blocks");
 					}
 				} else if (split[1].equalsIgnoreCase("reload")) {
-
 					plugin.loadProperties();
 					player.sendMessage(ChatColor.YELLOW + "configuration reloaded");
 				} else if (split[1].equalsIgnoreCase("debug")) {

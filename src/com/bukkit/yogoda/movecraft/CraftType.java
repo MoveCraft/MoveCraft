@@ -45,6 +45,7 @@ public class CraftType {
 	boolean bomber = false;
 	boolean canDig = false;
 	boolean obeysGravity = false;
+	boolean isTerrestrial = false;
 
 	String sayOnControl = "You control the craft";
 	String sayOnRelease = "You release the craft";
@@ -101,6 +102,8 @@ public class CraftType {
 			craftTypes.add(CraftType.getDefaultCraftType("submarine"));
 		if (CraftType.getCraftType("drill") == null)
 			craftTypes.add(CraftType.getDefaultCraftType("drill"));
+		if (CraftType.getCraftType("car") == null)
+			craftTypes.add(CraftType.getDefaultCraftType("car"));
 	}
 
 	private static CraftType getDefaultCraftType(String name) {
@@ -220,7 +223,17 @@ public class CraftType {
 			craftType.maxSpeed = 3;
 			craftType.sayOnControl = "You're into a submarine !";
 			craftType.sayOnRelease = "You release the helm";
-		}
+		} else if (name.equalsIgnoreCase("car")) {
+
+		craftType.driveCommand = "drive";
+		craftType.canNavigate = true;
+		craftType.isTerrestrial = true;
+		craftType.minBlocks = 10;
+		craftType.maxBlocks = 1000;
+		craftType.maxSpeed = 3;
+		craftType.sayOnControl = "You blew a .07! You're good to go!";
+		craftType.sayOnRelease = "Remember where you parked!";
+	}
 
 		return craftType;
 	}
@@ -249,6 +262,8 @@ public class CraftType {
 			craftType.digBlockName = value;
 		else if (attribute.equalsIgnoreCase("canNavigate"))
 			craftType.canNavigate = Boolean.parseBoolean(value);
+		else if (attribute.equalsIgnoreCase("isTerrestrial"))
+			craftType.isTerrestrial = Boolean.parseBoolean(value);
 		else if (attribute.equalsIgnoreCase("canFly"))
 			craftType.canFly = Boolean.parseBoolean(value);
 		else if (attribute.equalsIgnoreCase("canDive"))
@@ -322,6 +337,7 @@ public class CraftType {
 			writeAttribute(writer, "digBlockName", craftType.digBlockName,
 					force);
 			writeAttribute(writer, "canNavigate", craftType.canNavigate, force);
+			writeAttribute(writer, "isTerrestrial", craftType.isTerrestrial, force);
 			writeAttribute(writer, "canFly", craftType.canFly, force);
 			writeAttribute(writer, "canDive", craftType.canDive, force);
 			writeAttribute(writer, "canDig", craftType.canDig, force);
@@ -376,7 +392,6 @@ public class CraftType {
 
 	public static void loadTypes(File dir) {
 		File[] craftTypesList = dir.listFiles();
-		System.out.println("Type count: " + craftTypesList.length);
 		craftTypes.clear();
 
 		for (File craftFile : craftTypesList) {

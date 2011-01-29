@@ -2,17 +2,14 @@ package com.bukkit.yogoda.movecraft;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.block.*;
 import org.bukkit.entity.Player;
 
 import org.bukkit.block.Sign;
 import org.bukkit.event.block.BlockFromToEvent;
-import org.bukkit.event.block.BlockInteractEvent;
 import org.bukkit.event.block.BlockListener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRightClickEvent;
-import org.bukkit.plugin.Plugin;
 
 public class MoveCraft_BlockListener extends BlockListener {
 	private final MoveCraft plugin;
