@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
 import org.bukkit.block.*;
@@ -107,7 +108,7 @@ public class Craft {
 		this.customName = customName;
 		this.player = player;
 		this.plugin = instance;
-		
+
 		this.timer = new MoveCraft_Timer(0, this, "engineCheck");
 	}
 
@@ -210,9 +211,9 @@ public class Craft {
 		// all craft types can move through air and flowing water/lava
 		if ( blockId == 0 ||
 				(blockId >= 8 && blockId <= 11 && data != 0) ||
-				blockId == 78 || 
-				BlocksInfo.needsSupport(blockId)) //snow cover
-				return true;
+				//blockId == 78 || 
+				BlocksInfo.coversGrass(blockId)) //snow cover
+			return true;
 
 		// we can't go through adminium
 		if(blockId == 7)
@@ -221,7 +222,7 @@ public class Craft {
 		if (!type.canNavigate && !type.canDive){
 			return false;
 		}
-		
+
 		if(craftBlockId == 0) {
 			if( (blockId >= 8 && blockId <= 11) // air can go through liquid,
 					|| blockId == 0) //or other air
@@ -243,7 +244,7 @@ public class Craft {
 		if (blockId == 10 || blockId == 11)
 			if (waterType == 10)
 				return true;
-		
+
 		if(blockId == waterType)
 			return true;
 
@@ -254,26 +255,18 @@ public class Craft {
 
 		return false;
 	}
-	
-	private boolean canGoOver(World world, DataBlock craftBlock, Block targetBlock) {
-		
-		if(!type.obeysGravity || !type.isTerrestrial)
-			return false; //more like return why are you bothering!
-		
-		//cannot go over water or lava
-		if(!type.canDive && !type.canFly &&
-				(targetBlock.getTypeId() >= 8 && targetBlock.getTypeId() <= 1) )
-			return false;
 
-		Block blockAbove = world.getBlockAt(targetBlock.getX(), targetBlock.getY(), targetBlock.getZ());
-		int blockId = blockAbove.getTypeId();
-
-		if ( blockId == 0 ||
-				blockId == 78 || 
-				BlocksInfo.needsSupport(blockId)) //snow cover
-				return true;
+	// if the craft can go through this block id
+	private boolean canGoThrough(World world, int craftBlockId, Block targetBlock, int data, boolean isCraftBottom) {
+		int blockId = targetBlock.getTypeId();
 		
-		return false;
+		if(isCraftBottom) {
+			Block lowerBlock = world.getBlockAt(targetBlock.getX(), targetBlock.getY() - 1, targetBlock.getZ());
+			if(lowerBlock.getTypeId() != 66)
+				return false;
+		}
+		
+		return canGoThrough(craftBlockId, blockId, data);
 	}
 
 	private static boolean isFree(int blockId) {
@@ -372,8 +365,6 @@ public class Craft {
 					&& !canGoThrough(0, targetBlock1.getTypeId(), 0)
 					|| !isCraftBlock(X - posX, Y + 1 - posY, Z - posZ)
 					&& !canGoThrough(0, targetBlock2.getTypeId(), 0)) {
-				
-				//added for terrestrial vehicles climbin' up/over stuff
 				return false;
 			}
 		}
@@ -411,9 +402,16 @@ public class Craft {
 								if (y - 1 < newWaterLevel)
 									newWaterLevel = y - 1;
 							}
-
-						if (!canGoThrough(matrix[x][y][z], blockId, blockData))
-							return false;
+						
+						if(type.requiresRails) {
+							if (!canGoThrough(world, matrix[x][y][z], theBlock, blockData, (y==0)))
+								return false;
+						} else {
+							if (!canGoThrough(matrix[x][y][z], blockId, blockData) )
+								return false;
+						}
+						
+						//if (y == 0 && type.requiresRails)
 					}
 				}
 			}
@@ -487,33 +485,32 @@ public class Craft {
 
 		// store the data of all complex blocks, or die trying
 		for (DataBlock complexBlock : complexBlocks) {
-			// complexBlock.data = world.getBlockAt(posX + complexBlock.getX(),
-			// posY + complexBlock.getY(), posZ +
-			// complexBlock.getZ()).getData();
+			// complexBlock.data = world.getBlockAt(posX + complexBlock.getX(), posY + complexBlock.getY(), posZ + complexBlock.getZ()).getData();
 			Block currentBlock = world.getBlockAt(posX + complexBlock.x,
 					posY + complexBlock.y, posZ + complexBlock.z);
-			ArrayList<String> myLines = new ArrayList<String>();
+			
 			if (currentBlock.getState() instanceof Sign) {
 				Sign sign = (Sign) currentBlock.getState();
+				ArrayList<String> myLines = new ArrayList<String>();
 
 				myLines.add(sign.getLine(0));
 				myLines.add(sign.getLine(1));
 				myLines.add(sign.getLine(2));
 				myLines.add(sign.getLine(3));
 				signLines.add(myLines);
-			} else if (currentBlock.getTypeId() == 54) {				
-				try
-				{
-					ContainerBlock chest = (ContainerBlock) currentBlock.getState();
-					ItemStack[] chest_contents = chest.getInventory().getContents();
-					complexBlock.items = chest_contents;
-					
-				}
-				catch (Exception ex)
-				{
-					System.out.println("There was an error copying chests. This is a bukkit issue. " +
-							"It will likely resolve itself after some updates.");
-				}
+				
+			} else if (currentBlock.getTypeId() == 54) {			
+				//ContainerBlock chest = (ContainerBlock) currentBlock.getState();
+				Chest chest = ((Chest)currentBlock.getState());
+				Inventory inventory = chest.getInventory();
+				//ItemStack[] chest_contents = chest.getInventory().getContents();
+				for(int slot=0; slot < 27; slot++){
+					complexBlock.items[slot] = inventory.getItem(slot);
+					}
+				//complexBlock.items = new ItemStack[27];
+				for(int slot=0; slot < 27; slot++){
+					//complexBlock.items[slot] = chest.getInventory().getItem(slot);
+				}	
 			}
 		}
 
@@ -601,6 +598,20 @@ public class Craft {
 							//drop the item corresponding to the block if it is not a craft block
 							if(!isCraftBlock(dx + x,dy + y, dz + z)){
 								dropItem(innerBlock);
+							}
+							
+							//A BREAKA THE DRILL BLOCKA
+							if(type.canDig) {
+								//1 in 4 chance for iron
+								if(blockId == 42) {
+									if((int)(Math.random() * 4) == 4)
+										continue;
+								}
+								//1 in 16 for diamond
+								if(blockId == 57) {
+									if((int)(Math.random() * 16) == 16)
+										continue;
+								}
 							}
 
 							// inside the craft, the block is different
@@ -694,13 +705,20 @@ public class Craft {
 			} else if (theBlock.getTypeId() == 54) {				
 				try
 				{
+					//Chest chest = ((Chest)theBlock.getState());
 					ContainerBlock chest = (ContainerBlock) theBlock.getState();
-					chest.getInventory().setContents(complexBlock.items);					
+					Inventory inventory = chest.getInventory();
+					for(int slot=0; slot < 27; slot++){
+						if(complexBlock.items[slot] != null && complexBlock.items[slot].getTypeId() != 0)
+							plugin.DebugMessage("Moving a chest item " + complexBlock.items[slot].getTypeId());
+							inventory.setItem(slot, complexBlock.items[slot]);
+						}
+					//chest.update();
 				}
 				catch (Exception ex)
 				{
 					System.out.println("There was an error copying chests. This is a bukkit issue. " +
-							"It will likely resolve itself after some updates.");
+					"It will likely resolve itself after some updates.");
 				}
 			}
 		}
@@ -763,13 +781,32 @@ public class Craft {
 	public int getSpeed() {
 		return speed;
 	}
-	
+
 	public void calculatedMove(World world, int dx, int dy, int dz) {
 		//instead of forcing the craft to move, check some things beforehand
 
-		if(type.obeysGravity && canMove(world, dx, dy - 1, dz))
+		if(this.inHyperSpace) {
+			if(dx > 0)
+				dx = 1;
+			else if (dx < 0)
+				dx = -1;
+			if(dy > 0)
+				dy = 1;
+			else if (dy < 0)
+				dy = -1;
+			if(dz > 0)
+				dz = 1;
+			else if (dz < 0)
+				dz = -1;
+			
+			Craft_Hyperspace.hyperSpaceMove(this, dx, dy, dz);
+			return;
+		}			
+
+		if(type.obeysGravity && canMove(world, dx, dy - 1, dz)) {
 			dy -= 1;
-		
+		}
+
 		// speed decrease with time
 		setSpeed(speed - (int) ((System.currentTimeMillis() - lastMove) / 500));
 
@@ -785,6 +822,12 @@ public class Craft {
 		while (!canMove(world, dx, dy, dz)) {
 
 			// player.sendMessage("can't move !");
+			if (speed == 1 && type.obeysGravity) {	//vehicles which obey gravity can go over certain terrain
+				if(canMove(world, dx, dy + 1, dz)) {
+					dy += 1;
+					break;
+				}
+			}
 
 			if (speed == 1) {
 
@@ -804,13 +847,12 @@ public class Craft {
 			setSpeed(speed - 1);
 
 		}
-
 		move(world, dx, dy, dz);
 
 		// the craft goes faster every click
 		setSpeed(speed + 1);
 	}
-	
+
 	public void engineTick() {
 		World world = player.getWorld();
 		int dx = 0;
@@ -820,7 +862,7 @@ public class Craft {
 			Block engineBlock = world.getBlockAt(this.posX + edb.x, this.posY + edb.y, this.posZ + edb.z);
 			Block underBlock = world.getBlockAt(engineBlock.getX(), engineBlock.getY() - 1, engineBlock.getZ());
 			if(underBlock.getType() == Material.REDSTONE_WIRE && underBlock.getData() != 0) {
-				
+
 				switch(engineBlock.getData()) {
 				case 4:
 					System.out.println("NORTH FACING ENGINE");

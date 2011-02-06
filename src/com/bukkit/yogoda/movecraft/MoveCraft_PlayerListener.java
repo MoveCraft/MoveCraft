@@ -1,5 +1,9 @@
 package com.bukkit.yogoda.movecraft;
 
+import net.minecraft.server.EntityLiving;
+import net.minecraft.server.EntitySheep;
+import net.minecraft.server.WorldServer;
+
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.ChatColor;
@@ -103,13 +107,6 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			if (System.currentTimeMillis() - craft.lastMove < 0.2 * 1000)
 				return;
 
-			// speed decrease with time
-			craft.setSpeed(craft.speed
-					- (int) ((System.currentTimeMillis() - craft.lastMove) / 500));
-
-			if (craft.speed <= 0)
-				craft.speed = 1;
-
 			float rotation = (float) Math.PI * player.getLocation().getYaw()
 					/ 180f;
 
@@ -137,65 +134,48 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				}
 			}
 
-			/*
-			 * //check the craft can move there. If not, reduce the speed and
-			 * try again until speed = 1 if(!craft.canMove(dx, dy, dz)){
-			 * player.sendMessage(ChatColor.YELLOW + "the " + craft.name +
-			 * " won't go any further"); return; }
-			 */
-
-			// plugin.DebugMessage("waterLevel " + craft.waterLevel);
-
-			// prevent submarines from getting out of water
-			if (craft.type.canDive && !craft.type.canFly
-					&& craft.waterLevel <= 0 && dy > 0)
-				dy = 0;
-
-			// check the craft can move there. If not, reduce the speed and try
-			// again until speed = 1
-			while (!craft.canMove(world, dx, dy, dz)) {
-
-				// player.sendMessage("can't move !");
-
-				if (craft.speed == 1) {
-
-					// try to remove horizontal displacement, and just go up
-					if (craft.type.canFly && dy >= 0) {
-						dx = 0;
-						dz = 0;
-						dy = 1;
-						if (craft.canMove(world, dx, dy, dz))
-							break;
-					}
-
-					player.sendMessage(ChatColor.YELLOW + "the " + craft.name
-							+ " won't go any further");
-					return;
-				}
-
-				craft.setSpeed(craft.speed - 1);
-
-			}
-
-			craft.move(world, dx, dy, dz);
-
-			// the craft goes faster every clic
-			craft.setSpeed(craft.speed + 1);
+			craft.calculatedMove(world, dx, dy, dz);
 		}
 	}
+	
+	public static EntityLiving MiddyBiddy;
 
 	@Override
 	public void onPlayerCommand(PlayerChatEvent event) {
 		Player player = event.getPlayer();
 		String[] split = event.getMessage().split(" ");
 		
+		if (split[0].equalsIgnoreCase("/hyperspace")) {
+			Craft craft = Craft.getCraft(player);
+			
+			if(craft == null)
+				player.kickPlayer("You tried to go into hyperspace while not controlling a craft while I'm in a bad mood.");
+			
+			if(!craft.inHyperSpace)
+				Craft_Hyperspace.enterHyperSpace(craft);
+			else
+				Craft_Hyperspace.exitHyperSpace(player.getWorld(), craft);
+		} else			
+			if (split[0].equalsIgnoreCase("/mobbyspawny")) {
+				if(MiddyBiddy == null) {
+					WorldServer world = ((org.bukkit.craftbukkit.CraftWorld) player.getWorld()).getHandle();
+					MiddyBiddy = new EntitySheep(world);
+					world.a(MiddyBiddy);
+					MiddyBiddy.getBukkitEntity().teleportTo(player);
+					player.sendMessage("Created a sheep.");
+				} else {
+					MiddyBiddy.getBukkitEntity().teleportTo(player);
+					player.sendMessage("Teleported a sheep to you.");
+				}
+			} else
 		if (split[0].equalsIgnoreCase("/movecraft")) {
 			if (split.length >= 2) {
 				if (split[1].equalsIgnoreCase("types")) {
 
 					for (CraftType craftType : CraftType.craftTypes) {
-
-						player.sendMessage(ChatColor.GREEN + craftType.name + ChatColor.YELLOW
+						
+						if(craftType.canUse(player))
+							player.sendMessage(ChatColor.GREEN + craftType.name + ChatColor.YELLOW
 								+ craftType.minBlocks + "-"
 								+ craftType.maxBlocks + " blocks" + " speed : "
 								+ craftType.maxSpeed);
@@ -264,6 +244,11 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		if (split.length >= 2) {
 
 			if (split[1].equalsIgnoreCase(craftType.driveCommand)) {
+				
+				if(!craftType.canUse(player)){
+					player.sendMessage(ChatColor.RED + "You are not allowed to use this type of craft");
+					return false;
+				}
 
 				// try to detect and create the craft
 				// use the block the player is standing on

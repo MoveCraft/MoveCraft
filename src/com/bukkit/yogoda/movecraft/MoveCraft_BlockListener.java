@@ -1,12 +1,10 @@
 package com.bukkit.yogoda.movecraft;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.block.*;
 import org.bukkit.entity.Player;
 
 import org.bukkit.block.Sign;
-import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockListener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRightClickEvent;
@@ -100,13 +98,6 @@ public class MoveCraft_BlockListener extends BlockListener {
 		}
 	}
 
-	/*
-	 * @Override public void onBlockInteract (BlockInteractEvent event) { Player
-	 * player = null; if(event.isPlayer()) player = (Player) event.getEntity();
-	 * 
-	 * if(player != null) player.sendMessage("Interact event."); }
-	 */
-
 	//@Override
 	public void onBlockRightClick(BlockRightClickEvent event) {
 		Player player = event.getPlayer();
@@ -151,15 +142,6 @@ public class MoveCraft_BlockListener extends BlockListener {
 				if(name.trim().equals(""))
 					name = null;
 
-				/*
-                        String[] groups = (sign.getLine(2) + " " + sign.getLine(3)).replace(",", "").replace(";", "").split("[ ]");
-
-                        if(!craftType.canUse(player) && !checkPermission(player, groups)){                        
-                            player.sendMessage(ChatColor.RED + "You are not allowed to take control of that " + craftType.name + " !");
-                            return true;
-                        }
-				 */
-
 				int x = block.getX();
 				int y = block.getY();
 				int z = block.getZ();
@@ -173,52 +155,23 @@ public class MoveCraft_BlockListener extends BlockListener {
 				plugin.createCraft(player, craftType, x, y, z, name);
 
 				return;                        
-			} else {                    
-				return;
-			}
+			} else
+				if(craftTypeName == "engage" && sign.getLine(1).equalsIgnoreCase("hyperdrive")) {
+					if(playerCraft == null) {
+						player.kickPlayer("I am TIRED of these MOTHERFUCKING noobs on this MOTHERFUCKING server.");
+						return;
+					}
+					Craft_Hyperspace.enterHyperSpace(playerCraft);
+					sign.setLine(0, "Disengage Hyperdrive");
+				} else
+					if(craftTypeName == "disengage" && sign.getLine(1).equalsIgnoreCase("hyperdrive")) {
+						if(playerCraft == null) {
+							player.kickPlayer("I am TIRED of these MOTHERFUCKING noobs on this MOTHERFUCKING server.");
+							return;
+						}
+						Craft_Hyperspace.exitHyperSpace(player.getWorld(), playerCraft);
+						sign.setLine(0, "Engage Hyperdrive");
+					}
 		}
-	}
-
-	//@Override
-	public void onBlockRedstoneChange(BlockFromToEvent event) {
-		Block toBlock = event.getToBlock();
-		Craft craft = Craft.getCraft(toBlock.getX(), toBlock.getY(),
-				toBlock.getZ());
-		
-		if(toBlock.getType() == Material.REDSTONE_WIRE)
-		{
-			//plugin.DebugMessage(toBlock.getData());
-			Block block = event.getBlock().getWorld().getBlockAt(toBlock.getX(), toBlock.getY() + 1, toBlock.getZ());
-			
-			if(block.getType() == Material.FURNACE && toBlock.getData() != (byte) 0 ){
-				int dx = 0;
-				int dy = 0;
-				
-				plugin.DebugMessage("You are lighting up a furnace with data " + block.getData());
-				
-				if(block.getData() == 2)
-					dy = -1;			
-				if(block.getData() == 3)
-					dx = -1;
-				if(block.getData() == 4)
-					dy = 1;	
-				if(block.getData() == 5)
-					dx = 1;
-				
-				//new ReminderBeep(10);
-			}
-		}
-
-		/*
-		craft.setSpeed(1);
-		int dx = 0;
-		int dy = 0;
-		craft.move(event.getBlock().getWorld(), dx, dy, 0);
-		*/
-
-		// the craft goes faster every clic
-		//craft.setSpeed(craft.speed
-		//		- (int) ((System.currentTimeMillis() - craft.lastMove) / 500));
-		//craft.setSpeed(craft.speed + 1);
 	}
 }

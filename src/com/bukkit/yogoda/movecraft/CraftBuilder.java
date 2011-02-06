@@ -352,7 +352,7 @@ public class CraftBuilder {
     private static void createMatrix(World world){
 
       craft.matrix = new short[craft.sizeX][craft.sizeY][craft.sizeZ];
-      craft.dataBlocks = new ArrayList();
+      craft.dataBlocks = new ArrayList<Craft.DataBlock>();
       //craft.complexBlocks = new ArrayList();
 
       for(int x=0;x<craft.sizeX;x++){
@@ -593,12 +593,12 @@ public class CraftBuilder {
        else{
 
            //check the craft is not already in controlled by someone
-           for(Craft c:Craft.craftList){
+           for(Craft c: Craft.craftList){
                if(c != craft && c.isOnBoard){
                    //check for intersection between 2 cubes
-                   if( !((craft.minX < craft.minX && craft.maxX < craft.minX) || (craft.minX < craft.minX && craft.maxX < craft.minX )))
-                       if( !((craft.minY < craft.minY && craft.maxY < craft.minY) || (craft.minY < craft.minY && craft.maxY < craft.minY )))
-                           if( !((craft.minZ < craft.minZ && craft.maxZ < craft.minZ) || (craft.minZ < craft.minZ && craft.maxZ < craft.minZ ))){
+                   if( !((c.minX < craft.minX && c.maxX < craft.minX) || (craft.minX < c.minX && craft.maxX < c.minX )))
+                       if( !((c.minY < craft.minY && c.maxY < craft.minY) || (craft.minY < c.minY && craft.maxY < c.minY )))
+                           if( !((c.minZ < craft.minZ && c.maxZ < craft.minZ) || (craft.minZ < c.minZ && craft.maxZ < c.minZ ))){
                                craft.player.sendMessage(ChatColor.RED + "" + c.player.getName() + " is already controling this " + craft.name);
                                return false;
                            }

@@ -3,8 +3,14 @@ package com.bukkit.yogoda.movecraft;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.logging.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 //import java.util.HashMap;
 import java.util.Properties;
 
@@ -38,12 +44,14 @@ public class MoveCraft extends JavaPlugin {
 	Properties properties;
 
 	static final String pluginName = "MoveCraft";
-	static final String version = "0.6.5";
+	static final String version = "0.6.6";
 
 	static final DateFormat dateFormat = new SimpleDateFormat(
-			"yyyy-MM-dd HH:mm:ss");
+	"yyyy-MM-dd HH:mm:ss");
 	public static Logger logger = Logger.getLogger("Minecraft");
 	boolean DebugMode = false;
+
+	public HashMap<String, String> ConfigSettings = new HashMap<String, String>();
 
 	// private Server myServer = this.getServer();
 	// private World myWorld = myServer.getWorlds()[0];
@@ -55,27 +63,66 @@ public class MoveCraft extends JavaPlugin {
 		System.out.println(getDateTime() + " [INFO] " + pluginName + " " + msg);
 	}
 
-	public void loadProperties() {
+	public void loadProperties() { // throws NumberFormatException, IOException {
 		// directory where the craft types are stored		
 		File dir = new File("plugins/movecraft");
 		if (!dir.exists())
 			dir.mkdir();
 
-		// properties = new PropertiesFile("movecraft" + File.separator +
-		// pluginName.toLowerCase() + ".properties");
+		File MCConfig = new File(dir, "movecraft.config");
+		if(MCConfig.exists()) {
+			try {
+				BufferedReader in = new BufferedReader(new FileReader(MCConfig));
+
+				String line;
+				while( (line=in.readLine() ) != null ) {
+					String lineTrim = line.trim();
+
+					if( lineTrim.startsWith( "#" ) )
+						continue;
+
+					String[] split = lineTrim.split("=");
+
+					ConfigSettings.put(split[0], split[1]);
+				}
+				in.close();
+			}
+			catch (IOException e) {
+
+			}
+		}
+		else {
+			try {
+				MCConfig.createNewFile();
+				ConfigSettings.put("CraftReleaseDelay", "15");
+				ConfigSettings.put("UniversalRemoteId", "294");
+				ConfigSettings.put("WriteDefaultCraft", "true");
+				ConfigSettings.put("RequireOp", "true");
+
+				BufferedWriter bw = new BufferedWriter(new FileWriter(MCConfig));
+
+				for(Object configLine : ConfigSettings.keySet().toArray()) {
+					String configKey = (String) configLine;
+					bw.write(configKey + "=" + ConfigSettings.get(configKey) + System.getProperty("line.separator"));
+				}
+				bw.close();
+			}
+			catch (IOException ex) {
+
+			}
+		}
 
 		// load craft types and properties
 		CraftType.loadTypes(dir);
-		CraftType.saveTypes(dir);
+		if(ConfigSettings.get("WriteDefaultCraft") == "true")
+			CraftType.saveTypes(dir);
 
 		// properties.save();
 	}
 
 	public void onEnable() {
-		// TODO: Place any custom enable code here including the registration of
-		// any events
-
-		// Register our events
+		CraftType.plugin = this;
+		
 		PluginManager pm = getServer().getPluginManager();
 		pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_COMMAND, playerListener, Priority.Normal, this);
@@ -85,7 +132,7 @@ public class MoveCraft extends JavaPlugin {
 		pm.registerEvent(Event.Type.BLOCK_PLACED, blockListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.BLOCK_RIGHTCLICKED, blockListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.BLOCK_INTERACT, blockListener, Priority.Normal, this);
-		pm.registerEvent(Event.Type.REDSTONE_CHANGE, blockListener, Priority.Normal, this);
+		//pm.registerEvent(Event.Type.REDSTONE_CHANGE, blockListener, Priority.Normal, this);
 		//pm.registerEvent(Event.Type.BLOCK_CANBUILD, blockListener, Priority.Normal, this);
 
 		loadProperties();
@@ -121,7 +168,7 @@ public class MoveCraft extends JavaPlugin {
 		this.DebugMode = !this.DebugMode;
 		System.out.println("Debug mode set to " + this.DebugMode);
 	}
-	
+
 	public boolean DebugMessage(String message) {
 		if(this.DebugMode == true)
 			System.out.println(message);
@@ -166,24 +213,24 @@ public class MoveCraft extends JavaPlugin {
 		Plugin gu = this.getServer().getPluginManager().getPlugin("GroupUsers");
 		if (gu != null) {
 			GroupUsers groupUsers = (GroupUsers) gu;
-			*/
-			for (String right : rights) {
-				if (right.trim().equalsIgnoreCase("")) {
-					continue;
-				}
-				if (right.equalsIgnoreCase("public")) {
-					return true;
-				}
+		 */
+		for (String right : rights) {
+			if (right.trim().equalsIgnoreCase("")) {
+				continue;
+			}
+			if (right.equalsIgnoreCase("public")) {
+				return true;
+			}
 
-				if (player.equals(this.getServer().matchPlayer(right))) {
-					return true;
-				}
+			if (player.equals(this.getServer().matchPlayer(right))) {
+				return true;
+			}
 
-				if (!right.startsWith("g:"))
-					continue;
-				//if (groupUsers.isInGroup(player, right.substring(2))) {
-				//	return true;
-				//}
+			if (!right.startsWith("g:"))
+				continue;
+			//if (groupUsers.isInGroup(player, right.substring(2))) {
+			//	return true;
+			//}
 			//}
 		}
 		return false;

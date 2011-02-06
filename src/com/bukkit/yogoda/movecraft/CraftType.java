@@ -17,6 +17,8 @@ import org.bukkit.entity.Player;
  * If you do cool modifications, please tell me so I can integrate it :)
  */
 public class CraftType {
+	
+	public static MoveCraft plugin;
 
 	String name = "";
 	String driveCommand = "pilot";
@@ -37,6 +39,8 @@ public class CraftType {
 	// percent of flystone needed to make it fly
 	int flyBlockPercent = 0;
 	int digBlockPercent = 0;
+	
+	int remoteControllerItem = 0;
 
 	boolean canFly = false;
 	boolean canNavigate = false;
@@ -46,6 +50,7 @@ public class CraftType {
 	boolean canDig = false;
 	boolean obeysGravity = false;
 	boolean isTerrestrial = false;
+	boolean requiresRails = false;
 
 	String sayOnControl = "You control the craft";
 	String sayOnRelease = "You release the craft";
@@ -74,8 +79,12 @@ public class CraftType {
 	}
 
 	public Boolean canUse(Player player){
+		if(plugin.ConfigSettings.get("RequireOp") == "true")
+			return player.isOp();
+		else
+			return true;
 	 //if(player.canUseCommand(getCommand()))
-		 return true;
+		 //return true;
 	 //return false;
 	}
 
@@ -104,6 +113,8 @@ public class CraftType {
 			craftTypes.add(CraftType.getDefaultCraftType("drill"));
 		if (CraftType.getCraftType("car") == null)
 			craftTypes.add(CraftType.getDefaultCraftType("car"));
+		if (CraftType.getCraftType("train") == null)
+			craftTypes.add(CraftType.getDefaultCraftType("train"));
 	}
 
 	private static CraftType getDefaultCraftType(String name) {
@@ -228,11 +239,24 @@ public class CraftType {
 		craftType.driveCommand = "drive";
 		craftType.canNavigate = true;
 		craftType.isTerrestrial = true;
+		craftType.obeysGravity = true;
 		craftType.minBlocks = 10;
 		craftType.maxBlocks = 1000;
 		craftType.maxSpeed = 3;
 		craftType.sayOnControl = "You blew a .07! You're good to go!";
 		craftType.sayOnRelease = "Remember where you parked!";
+	} else if (name.equalsIgnoreCase("train")) {
+
+		craftType.driveCommand = "conduct";
+		craftType.canNavigate = true;
+		craftType.isTerrestrial = true;
+		craftType.requiresRails = true;
+		craftType.obeysGravity = true;
+		craftType.minBlocks = 10;
+		craftType.maxBlocks = 1000;
+		craftType.maxSpeed = 3;
+		craftType.sayOnControl = "All aboard! Ha ha ha ha ha ha haaaa!";
+		craftType.sayOnRelease = "Last stop.";
 	}
 
 		return craftType;
@@ -264,6 +288,8 @@ public class CraftType {
 			craftType.canNavigate = Boolean.parseBoolean(value);
 		else if (attribute.equalsIgnoreCase("isTerrestrial"))
 			craftType.isTerrestrial = Boolean.parseBoolean(value);
+		else if (attribute.equalsIgnoreCase("requiresRails"))
+			craftType.requiresRails = Boolean.parseBoolean(value);
 		else if (attribute.equalsIgnoreCase("canFly"))
 			craftType.canFly = Boolean.parseBoolean(value);
 		else if (attribute.equalsIgnoreCase("canDive"))
@@ -280,6 +306,8 @@ public class CraftType {
 			craftType.sayOnControl = value;
 		else if (attribute.equalsIgnoreCase("sayOnRelease"))
 			craftType.sayOnRelease = value;
+		else if (attribute.equalsIgnoreCase("remoteControllerItem"))
+			craftType.remoteControllerItem = Integer.parseInt(value);
 		else if (attribute.equalsIgnoreCase("structureBlocks")) {
 			String[] split = value.split(",");
 			craftType.structureBlocks = new short[split.length];
@@ -338,6 +366,7 @@ public class CraftType {
 					force);
 			writeAttribute(writer, "canNavigate", craftType.canNavigate, force);
 			writeAttribute(writer, "isTerrestrial", craftType.isTerrestrial, force);
+			writeAttribute(writer, "requiresRails", craftType.requiresRails, force);
 			writeAttribute(writer, "canFly", craftType.canFly, force);
 			writeAttribute(writer, "canDive", craftType.canDive, force);
 			writeAttribute(writer, "canDig", craftType.canDig, force);
