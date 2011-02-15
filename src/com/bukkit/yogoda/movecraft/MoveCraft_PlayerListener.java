@@ -102,7 +102,9 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			 */
 			item == 336 // the brick, compatibility with PushBlocks
 			) {
-				if(item == craft.type.remoteControllerItem && !craft.isOnCraft(player, true)) {
+				if( (item == craft.type.remoteControllerItem || 
+						item == Integer.parseInt(plugin.configFile.ConfigSettings.get("UniversalRemoteId")))
+					&& !craft.isOnCraft(player, true)) {
 						if (craft.haveControl) {
 							player.sendMessage(ChatColor.YELLOW + "You switch off the remote controller");
 						} else {

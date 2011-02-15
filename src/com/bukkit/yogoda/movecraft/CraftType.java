@@ -63,6 +63,13 @@ public class CraftType {
 
 	public CraftType(String name) {
 		this.name = name;
+		
+		String[] bob = plugin.configFile.ConfigSettings.get("StructureBlocks").split(",");
+		short[] juan = new short[bob.length + 1];
+		for(int i = 0; i < bob.length; i++)
+			juan[i] = Short.parseShort(bob[i]);
+		structureBlocks = juan;
+		//structureBlocks = plugin.configFile.ConfigSettings.get("");
 	}
 
 	public static CraftType getCraftType(String name) {
@@ -128,8 +135,8 @@ public class CraftType {
 					craftType,
 					"structureBlocks",
 					"4,5,17,19,20,35,41,42,43,44,45,46,47,48,49,50,53,57,65,67,68,69,75,76,77,85,87,88,89");
+			
 		} else if (name.equalsIgnoreCase("boat")) {
-
 			craftType.driveCommand = "sail";
 			craftType.canNavigate = true;
 			craftType.minBlocks = 9;
@@ -137,8 +144,8 @@ public class CraftType {
 			craftType.maxSpeed = 4;
 			craftType.sayOnControl = "You're on a boat !";
 			craftType.sayOnRelease = "You release the helm";
+			
 		} else if (name.equalsIgnoreCase("ship")) {
-
 			craftType.driveCommand = "sail";
 			craftType.canNavigate = true;
 			craftType.minBlocks = 50;
@@ -146,8 +153,8 @@ public class CraftType {
 			craftType.maxSpeed = 6;
 			craftType.sayOnControl = "You're on a ship !";
 			craftType.sayOnRelease = "You release the helm";
+			
 		} else if (name.equalsIgnoreCase("icebreaker")) {
-
 			craftType.driveCommand = "sail";
 			craftType.canNavigate = true;
 			craftType.minBlocks = 50;
@@ -156,8 +163,8 @@ public class CraftType {
 			craftType.iceBreaker = true;
 			craftType.sayOnControl = "Let's break some ice !";
 			craftType.sayOnRelease = "You release the helm";
+			
 		} else if (name.equalsIgnoreCase("drill")) {
-
 			craftType.driveCommand = "drive";
 			craftType.canNavigate = true;
 			craftType.minBlocks = 20;
@@ -170,8 +177,8 @@ public class CraftType {
 			// craftType.flyBlockPercent = 1;
 			craftType.sayOnControl = "Armageddon, but down.";
 			craftType.sayOnRelease = name + " controls released.";
+			
 		} else if (name.equalsIgnoreCase("aircraft")) {
-
 			craftType.driveCommand = "pilot";
 			craftType.canFly = true;
 			craftType.minBlocks = 9;
@@ -179,8 +186,8 @@ public class CraftType {
 			craftType.maxSpeed = 6;
 			craftType.sayOnControl = "You're on an aircraft !";
 			craftType.sayOnRelease = "You release the joystick";
+			
 		} else if (name.equalsIgnoreCase("bomber")) {
-
 			craftType.driveCommand = "pilot";
 			craftType.canFly = true;
 			craftType.minBlocks = 20;
@@ -189,8 +196,8 @@ public class CraftType {
 			craftType.bomber = true;
 			craftType.sayOnControl = "You're on a bomber !";
 			craftType.sayOnRelease = "You release the joystick";
+			
 		} else if (name.equalsIgnoreCase("airship")) {
-
 			craftType.driveCommand = "pilot";
 			craftType.canFly = true;
 			craftType.minBlocks = 9;
@@ -201,8 +208,8 @@ public class CraftType {
 			craftType.flyBlockPercent = 60;
 			craftType.sayOnControl = "You're on an airship !";
 			craftType.sayOnRelease = "You release the control panel";
+			
 		} else if (name.equalsIgnoreCase("UFO")) {
-
 			craftType.driveCommand = "pilot";
 			craftType.canFly = true;
 			craftType.minBlocks = 9;
@@ -213,8 +220,8 @@ public class CraftType {
 			craftType.flyBlockPercent = 4;
 			craftType.sayOnControl = "You're on a UFO !";
 			craftType.sayOnRelease = "You release the control panel";
+			
 		} else if (name.equalsIgnoreCase("USO")) {
-
 			craftType.driveCommand = "pilot";
 			craftType.canFly = true;
 			craftType.canDive = true;
@@ -226,8 +233,8 @@ public class CraftType {
 			craftType.flyBlockPercent = 4;
 			craftType.sayOnControl = "You're on a USO !";
 			craftType.sayOnRelease = "You release the control panel";
+			
 		} else if (name.equalsIgnoreCase("submarine")) {
-
 			craftType.driveCommand = "dive";
 			craftType.canDive = true;
 			craftType.minBlocks = 10;
@@ -235,8 +242,8 @@ public class CraftType {
 			craftType.maxSpeed = 3;
 			craftType.sayOnControl = "You're into a submarine !";
 			craftType.sayOnRelease = "You release the helm";
+			
 		} else if (name.equalsIgnoreCase("car")) {
-
 		craftType.driveCommand = "drive";
 		craftType.canNavigate = true;
 		craftType.isTerrestrial = true;
@@ -246,8 +253,8 @@ public class CraftType {
 		craftType.maxSpeed = 3;
 		craftType.sayOnControl = "You blew a .07! You're good to go!";
 		craftType.sayOnRelease = "Remember where you parked!";
+		
 	} else if (name.equalsIgnoreCase("train")) {
-
 		craftType.driveCommand = "conduct";
 		craftType.canNavigate = true;
 		craftType.isTerrestrial = true;
@@ -355,16 +362,13 @@ public class CraftType {
 				writer.write(line.substring(0, line.length() - 1));
 				writer.newLine();
 			}
+			
 			writeAttribute(writer, "maxSpeed", craftType.maxSpeed, force);
-			writeAttribute(writer, "flyBlockName", craftType.flyBlockName,
-					force);
-			writeAttribute(writer, "flyBlockType", craftType.flyBlockType,
-					force);
-			writeAttribute(writer, "flyBlockPercent",
-					craftType.flyBlockPercent, force);
+			writeAttribute(writer, "flyBlockName", craftType.flyBlockName, force);
+			writeAttribute(writer, "flyBlockType", craftType.flyBlockType, force);
+			writeAttribute(writer, "flyBlockPercent", craftType.flyBlockPercent, force);
 			writeAttribute(writer, "digBlockId", craftType.digBlockId, force);
-			writeAttribute(writer, "digBlockName", craftType.digBlockName,
-					force);
+			writeAttribute(writer, "digBlockName", craftType.digBlockName, force);
 			writeAttribute(writer, "canNavigate", craftType.canNavigate, force);
 			writeAttribute(writer, "isTerrestrial", craftType.isTerrestrial, force);
 			writeAttribute(writer, "requiresRails", craftType.requiresRails, force);
@@ -374,10 +378,8 @@ public class CraftType {
 			writeAttribute(writer, "obeysGravity", craftType.obeysGravity, force);
 			// writeAttribute(writer, "iceBreaker", craftType.iceBreaker);
 			writeAttribute(writer, "bomber", craftType.bomber, force);
-			writeAttribute(writer, "sayOnControl", craftType.sayOnControl,
-					force);
-			writeAttribute(writer, "sayOnRelease", craftType.sayOnRelease,
-					force);
+			writeAttribute(writer, "sayOnControl", craftType.sayOnControl, force);
+			writeAttribute(writer, "sayOnRelease", craftType.sayOnRelease, force);
 
 			writer.close();
 

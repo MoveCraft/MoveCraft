@@ -54,6 +54,7 @@ public class MoveCraft extends JavaPlugin {
 	boolean DebugMode = false;
 
 	public HashMap<String, String> ConfigSettings = new HashMap<String, String>();
+	public ConfigFile configFile;
 
 	// private Server myServer = this.getServer();
 	// private World myWorld = myServer.getWorlds()[0];
@@ -154,6 +155,7 @@ public class MoveCraft extends JavaPlugin {
 		super(pluginLoader, instance, desc, folder, plugin, cLoader);
 
 		BlocksInfo.loadBlocksInfo();
+		configFile = new ConfigFile("", "");
 	}
 
 	public void releaseCraft(Player player, Craft craft) {
