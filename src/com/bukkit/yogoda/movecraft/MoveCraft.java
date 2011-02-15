@@ -14,11 +14,13 @@ import java.io.IOException;
 //import java.util.HashMap;
 import java.util.Properties;
 
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -44,7 +46,7 @@ public class MoveCraft extends JavaPlugin {
 	Properties properties;
 
 	static final String pluginName = "MoveCraft";
-	static final String version = "0.6.6";
+	static final String version = "0.6.7";
 
 	static final DateFormat dateFormat = new SimpleDateFormat(
 	"yyyy-MM-dd HH:mm:ss");
@@ -137,11 +139,9 @@ public class MoveCraft extends JavaPlugin {
 
 		loadProperties();
 
-		consoleSay(version + " plugin enabled");
 
-		// PluginDescriptionFile pdfFile = this.getDescription();
-		// System.out.println( pdfFile.getName() + " version " +
-		// pdfFile.getVersion() + " is enabled!" );
+		PluginDescriptionFile pdfFile = this.getDescription();
+		consoleSay(pdfFile.getVersion() + " plugin enabled");
 	}
 
 	public void onDisable() {
@@ -200,6 +200,14 @@ public class MoveCraft extends JavaPlugin {
 		}
 
 		Craft.addCraft(craft);
+		
+		if(craft.engineBlocks.size() > 0)
+			craft.timer = new MoveCraft_Timer(0, craft, "engineCheck", false);
+		else {
+			if(craft.type.requiresRails) {
+				craft.railMove();
+			}
+		}
 
 		player.sendMessage(ChatColor.GRAY + "Right-click in the direction you want to go.");
 	}
@@ -234,5 +242,18 @@ public class MoveCraft extends JavaPlugin {
 			//}
 		}
 		return false;
+	}
+
+	public void dropItem(Block block){
+
+		int itemToDrop = BlocksInfo.getDropItem(block.getTypeId());
+		int quantity = BlocksInfo.getDropQuantity(block.getTypeId());
+
+		if(itemToDrop != -1 && quantity != 0){
+
+			for(int i=0; i<quantity; i++){
+				block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(itemToDrop, 1));
+			}
+		}
 	}
 }

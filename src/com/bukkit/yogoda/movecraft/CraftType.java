@@ -39,6 +39,8 @@ public class CraftType {
 	// percent of flystone needed to make it fly
 	int flyBlockPercent = 0;
 	int digBlockPercent = 0;
+	int fuelItemId = 0;
+	int fuelConsumptionMultiplier = 1;
 	
 	int remoteControllerItem = 0;
 
@@ -55,8 +57,7 @@ public class CraftType {
 	String sayOnControl = "You control the craft";
 	String sayOnRelease = "You release the craft";
 
-	short[] structureBlocks = null; // blocks that can make the structure of the
-									// craft
+	short[] structureBlocks = null; // blocks that can make the structure of the craft
 
 	public static ArrayList<CraftType> craftTypes = new ArrayList<CraftType>();
 

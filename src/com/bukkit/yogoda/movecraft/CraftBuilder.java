@@ -1,21 +1,16 @@
 package com.bukkit.yogoda.movecraft;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Stack;
-//import java.util.logging.Level;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.*;
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /**
- *
- * @author Joel
+ * @author Joel (Yogoda)
  */
 public class CraftBuilder {
 
@@ -393,6 +388,9 @@ public class CraftBuilder {
                 		   if(sign.getLine(0).trim().equalsIgnoreCase("engine")) {
                 			   addEngineBlock(world, x, y, z);
                 		   }
+                		   else if(sign.getLine(1).trim().equals("OOOOOO")) {
+                			   addEngineBlock(world, x, y, z);                			   
+                		   }
                 	   }
                    }
                }
@@ -447,6 +445,7 @@ public class CraftBuilder {
        //return when the block type is not part of the craft structure
        //default block list
        if(craft.type.structureBlocks == null){
+    	   System.out.println("I really hope I don't see this.");
 
            //only block types supported to make the base of the craft
            if(!(blockType == 4 ||
@@ -691,6 +690,29 @@ public class CraftBuilder {
            else
                 craft.player.sendMessage(ChatColor.YELLOW + "Welcome on the " + ChatColor.WHITE + craft.customName + ChatColor.YELLOW + " !");
        }
+       
+       if(craft.type.requiresRails) {
+    	   int xMid = craft.matrix.length / 2;
+    	   int zMid = craft.matrix[0][0].length / 2;
+    	   //int yMax = craft.matrix[0].length;
+    	   int yMax = 0;
+    	   Block centerbottom = world.getBlockAt(craft.posX + xMid, craft.posY + yMax, craft.posZ + zMid);
+    	   
+    	   centerbottom.setTypeId(57);
+    	   
+    	   Block belowBlock = world.getBlockAt(craft.posX + xMid, craft.posY - 1, craft.posZ + zMid);
+    	   craft.railBlock = belowBlock;
+    	   
+    	   if(belowBlock.getType() == Material.RAILS) {
+    		   craft.player.sendMessage("WOO RAILS! " + belowBlock.getData());
+    		   Byte deets = belowBlock.getData();
+    		   
+    		   if(deets == 1 || deets == 2 || deets == 3) {
+    			   craft.player.sendMessage("HEADIN NORTH! Or south. Depends on what da orders say.");
+    		   }
+    	   }
+       }
+       
        return true;
 
     }

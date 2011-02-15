@@ -1,15 +1,18 @@
 package com.bukkit.yogoda.movecraft;
 
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.logging.Level;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 import org.bukkit.Location;
 import org.bukkit.block.*;
 
@@ -32,13 +35,6 @@ public class Craft {
 
 	private final MoveCraft plugin;
 
-	// used for the detection of blocks
-	// public static Stack<BlockLoc> blocksStack;
-
-	// private HashMap<BlockLoc, BlockLoc> blocksList = null;
-
-	// HashMap<Integer,HashMap<Integer,HashMap<Integer,Short>>> dmatrix;
-
 	CraftType type;
 	String name; // name, a different name can be set
 
@@ -57,11 +53,6 @@ public class Craft {
 	int posX;
 	int posY;
 	int posZ;
-
-	/*
-	 * //offset between the craft origin and the player float offX; float offY;
-	 * float offZ;
-	 */
 
 	int blockCount = 0;
 	int flyBlockCount = 0;
@@ -97,6 +88,10 @@ public class Craft {
 	boolean isPublic = false;
 	public boolean inHyperSpace = false;
 	public int HyperSpaceMoves[] = new int[3];
+	public ArrayList<Location> WayPoints = new ArrayList<Location>();
+	public int currentWayPoint = 0;
+	public boolean StopRequested = false;
+	public Block railBlock;
 
 	// Added engine block to test having blocks that propel the craft
 	ArrayList<DataBlock> engineBlocks = new ArrayList<DataBlock>();
@@ -108,8 +103,6 @@ public class Craft {
 		this.customName = customName;
 		this.player = player;
 		this.plugin = instance;
-
-		this.timer = new MoveCraft_Timer(0, this, "engineCheck");
 	}
 
 	public static Craft getCraft(Player player) {
@@ -338,6 +331,7 @@ public class Craft {
 		 * plugin.DebugMessage("move speed : " + speed);
 		 * plugin.DebugMessage("move sizeX : " + sizeX + " sizeY : " + sizeY + " sizeZ : " + sizeZ);
 		 */
+		ArrayList<Chunk> checkChunks = new ArrayList<Chunk>();
 		dx = speed * dx;
 		dz = speed * dz;
 
@@ -387,6 +381,9 @@ public class Craft {
 						// int blockId = world.getBlockAt(posX + x + dx, posY +
 						// y + dy, posZ + z + dz);
 						int blockData = theBlock.getData();
+						
+						if(!checkChunks.contains(theBlock.getChunk()))
+							checkChunks.add(theBlock.getChunk());
 
 						// go into water
 						if (dy < 0 && blockId >= 8 && blockId <= 11) {
@@ -416,21 +413,12 @@ public class Craft {
 				}
 			}
 		}
-
-		return true;
-	}
-
-	private static void dropItem(Block block){
-
-		int itemToDrop = BlocksInfo.getDropItem(block.getTypeId());
-		int quantity = BlocksInfo.getDropQuantity(block.getTypeId());
-
-		if(itemToDrop != -1 && quantity != 0){
-
-			for(int i=0; i<quantity; i++){
-				block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(itemToDrop, 1));
-			}
+		
+		for (Chunk checkChunk : checkChunks) {
+			if(!world.isChunkLoaded(checkChunk))
+				return false;
 		}
+		return true;
 	}
 
 	// move the craft according to a vector d
@@ -506,6 +494,7 @@ public class Craft {
 				//ItemStack[] chest_contents = chest.getInventory().getContents();
 				for(int slot=0; slot < 27; slot++){
 					complexBlock.items[slot] = inventory.getItem(slot);
+					complexBlock.items[slot].setAmount(inventory.getItem(slot).getAmount());
 					}
 				//complexBlock.items = new ItemStack[27];
 				for(int slot=0; slot < 27; slot++){
@@ -597,21 +586,20 @@ public class Craft {
 
 							//drop the item corresponding to the block if it is not a craft block
 							if(!isCraftBlock(dx + x,dy + y, dz + z)){
-								dropItem(innerBlock);
+								plugin.dropItem(innerBlock);
 							}
 							
 							//A BREAKA THE DRILL BLOCKA
 							if(type.canDig) {
-								//1 in 4 chance for iron
-								if(blockId == 42) {
-									if((int)(Math.random() * 4) == 4)
-										continue;
+								int blockDurability = block.getType().getMaxDurability();
+								int num = ( (new Random()).nextInt( Math.abs( blockDurability - 0 ) + 1 ) ) + 0;
+								
+								if(num == 1) {
+									plugin.DebugMessage("Random = 1");
+									continue;
 								}
-								//1 in 16 for diamond
-								if(blockId == 57) {
-									if((int)(Math.random() * 16) == 16)
-										continue;
-								}
+								else
+									plugin.DebugMessage("Random number = " + Integer.toString(num));
 							}
 
 							// inside the craft, the block is different
@@ -702,20 +690,23 @@ public class Craft {
 				sign.setLine(3, myLines.get(3));
 
 				sign.update();
-			} else if (theBlock.getTypeId() == 54) {				
+			}  else if (theBlock.getTypeId() == 54) {				
 				try
 				{
 					//Chest chest = ((Chest)theBlock.getState());
 					ContainerBlock chest = (ContainerBlock) theBlock.getState();
 					Inventory inventory = chest.getInventory();
 					for(int slot=0; slot < 27; slot++){
-						if(complexBlock.items[slot] != null && complexBlock.items[slot].getTypeId() != 0)
-							plugin.DebugMessage("Moving a chest item " + complexBlock.items[slot].getTypeId());
+						if(complexBlock.items[slot] != null && complexBlock.items[slot].getTypeId() != 0) {
 							inventory.setItem(slot, complexBlock.items[slot]);
+							plugin.DebugMessage("Moving " + complexBlock.items[slot].getAmount() + 
+									" chest item of type " + complexBlock.items[slot].getTypeId() + 
+									" in slot " + slot);
 						}
+					}
 					//chest.update();
 				}
-				catch (Exception ex)
+				catch (ArrayIndexOutOfBoundsException ex)
 				{
 					System.out.println("There was an error copying chests. This is a bukkit issue. " +
 					"It will likely resolve itself after some updates.");
@@ -803,7 +794,7 @@ public class Craft {
 			return;
 		}			
 
-		if(type.obeysGravity && canMove(world, dx, dy - 1, dz)) {
+		if(type.obeysGravity && canMove(world, dx, dy - 1, dz) && (engineBlocks.size() == 0)) {
 			dy -= 1;
 		}
 
@@ -847,7 +838,8 @@ public class Craft {
 			setSpeed(speed - 1);
 
 		}
-		move(world, dx, dy, dz);
+		if(!(dx == 0 && dy == 0 && dz == 0))
+				move(world, dx, dy, dz);
 
 		// the craft goes faster every click
 		setSpeed(speed + 1);
@@ -858,10 +850,17 @@ public class Craft {
 		int dx = 0;
 		int dy = 0;
 		int dz = 0;
+		
+		if (type.obeysGravity)
+			dy -= 1;
+		
 		for (DataBlock edb : engineBlocks) {
 			Block engineBlock = world.getBlockAt(this.posX + edb.x, this.posY + edb.y, this.posZ + edb.z);
-			Block underBlock = world.getBlockAt(engineBlock.getX(), engineBlock.getY() - 1, engineBlock.getZ());
+			Block underBlock = world.getBlockAt(engineBlock.getX(), engineBlock.getY() - 1, engineBlock.getZ());			
+			Sign sign = (Sign) engineBlock.getState();
+			
 			if(underBlock.getType() == Material.REDSTONE_WIRE && underBlock.getData() != 0) {
+			//if(engineBlock.isBlockPowered()) {
 
 				switch(engineBlock.getData()) {
 				case 4:
@@ -881,11 +880,87 @@ public class Craft {
 					dz -= 1;
 					break;
 				}
+				sign.setLine(0, ChatColor.YELLOW + "OOOO");
+				sign.setLine(1, ChatColor.YELLOW + "OO" + ChatColor.RED + "OO" + ChatColor.YELLOW + "OO");
+				sign.setLine(2, ChatColor.YELLOW + "OO" + ChatColor.RED + "OO" + ChatColor.YELLOW + "OO");
+				sign.setLine(3, ChatColor.YELLOW + "OOOO");
+			}
+			else
+			{
+				sign.setLine(0, "OOOO");
+				sign.setLine(1, "OOOOOO");
+				sign.setLine(2, "OOOOOO");
+				sign.setLine(3, "OOOO");
 			}
 		}
-		if(dx != 0 || dy != 0 || dz != 0) {
+		if(dx != 0 || dy != 0 || dz != 0) {			
 			calculatedMove(world, dx, dy, dz);
 		}
+	}
+	
+	public void railMove() {
+		Byte deets = railBlock.getData();
+
+		if(deets == 1 || deets == 2 || deets == 3) {
+			//player.sendMessage("HEADIN NORTH! Or south. Depends on what da orders say.");
+			//norf is X
+			calculatedMove(player.getWorld(), 1, 0, 0);
+		} else
+		if(deets == 0 || deets == 4 || deets == 5) {
+			calculatedMove(player.getWorld(), 0, 0, 1);			
+		}
+		//6-9 are turns
+
+		//get the next block
+		//check if its material is rails
+		//if so, prep another move?
+	}
+	
+	public boolean addWayPoint(Location loc) {
+			if(WayPoints.size() != 0) {
+				Location lastWP = WayPoints.get(WayPoints.size() - 1);
+				int matches = 0;
+				
+				if(lastWP.getX() == loc.getX())
+					matches += 1;
+				if(lastWP.getY() == loc.getY())
+					matches += 1;
+				if(lastWP.getZ() == loc.getZ())
+					matches += 1;
+				
+				if(matches != 2)
+					return false;
+			}
+			WayPoints.add(loc);
+		return true;
+	}
+	
+	public void removeWayPoint(Location loc) {
+		WayPoints.remove(loc);		
+	}
+	
+	public void WayPointTravel(boolean forward) {
+		Location nextWaypoint;
+		if(forward == true)
+			nextWaypoint = WayPoints.get(currentWayPoint + 1);
+		else
+			nextWaypoint = WayPoints.get(currentWayPoint - 1);
+		
+		currentWayPoint++;
+		if (forward == true && WayPoints.size() >= currentWayPoint)
+			forward = false;
+		if (forward == false && currentWayPoint == 0)
+			forward = true;
+		
+		Vector deviation = new Vector();
+		deviation.add(getLocation().toVector());
+		deviation.add(nextWaypoint.toVector());
+		
+		player.sendMessage(deviation.toString());
+	}
+	
+	public Location getLocation() {
+		return new Location(this.player.getWorld(), this.posX, this.posY, this.posZ);
 	}
 
 	public static class DataBlock {

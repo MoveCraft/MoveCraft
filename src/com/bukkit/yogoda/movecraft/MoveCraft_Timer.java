@@ -12,12 +12,14 @@ public class MoveCraft_Timer {
 	Craft craft;
 	//public String state = "";
 
-	public MoveCraft_Timer(int seconds, Craft vehicle, String state) {
+	public MoveCraft_Timer(int seconds, Craft vehicle, String state, boolean forward) {
 		//toolkit = Toolkit.getDefaultToolkit();
 		this.craft = vehicle;
 		timer = new Timer();
 		if(state.equals("engineCheck"))
-			timer.scheduleAtFixedRate(new EngineTask(), 5000, 5000);
+			timer.scheduleAtFixedRate(new EngineTask(), 1000, 1000);
+		else if(state.equals("engineCheck"))
+			timer.schedule(new AutoMoveTask(forward), 1000);
 		else
 			timer.schedule(new ReleaseTask(), seconds * 1000);
 	}
@@ -38,6 +40,19 @@ public class MoveCraft_Timer {
 			else
 				craft.engineTick();
 			return;
+		}
+	}
+	
+	class AutoMoveTask extends TimerTask {
+		boolean MovingForward = false;
+		
+		public void run() {
+			craft.WayPointTravel(MovingForward);
+			timer.schedule(new AutoMoveTask(MovingForward), 1000);
+		}
+		
+		public AutoMoveTask(boolean Forward) {
+			MovingForward = Forward;
 		}
 	}
 

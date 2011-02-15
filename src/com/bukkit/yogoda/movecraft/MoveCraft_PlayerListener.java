@@ -1,12 +1,11 @@
 package com.bukkit.yogoda.movecraft;
 
-import net.minecraft.server.EntityLiving;
-import net.minecraft.server.EntitySheep;
-import net.minecraft.server.WorldServer;
+import java.util.List;
 
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.World;
 
 import org.bukkit.event.player.PlayerChatEvent;
@@ -49,7 +48,9 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				craft.isOnBoard = false;
 				craft.haveControl = false;
 				
-				craft.timer = new MoveCraft_Timer(15, craft, "abandonCheck");
+				int CraftReleaseDelay = Integer.parseInt(plugin.ConfigSettings.get("CraftReleaseDelay"));
+				if(CraftReleaseDelay != 0)
+					craft.timer = new MoveCraft_Timer(CraftReleaseDelay, craft, "abandonCheck", false);
 			} else if (!craft.isOnBoard && craft.isOnCraft(player, false)) {
 				player.sendMessage(ChatColor.YELLOW + "Welcome on board");
 				craft.isOnBoard = true;
@@ -60,7 +61,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		}
 	}
 
-	@Override
+	//@Override
 	public void onPlayerItem(PlayerItemEvent event) {
 		Player player = event.getPlayer();
 		World world = player.getWorld();
@@ -100,15 +101,25 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			 * <= 294) ||
 			 */
 			item == 336 // the brick, compatibility with PushBlocks
-			)
-				return;
+			) {
+				if(item == craft.type.remoteControllerItem && !craft.isOnCraft(player, true)) {
+						if (craft.haveControl) {
+							player.sendMessage(ChatColor.YELLOW + "You switch off the remote controller");
+						} else {
+							if(craft.timer != null)
+								craft.timer.Destroy();
+							player.sendMessage(ChatColor.YELLOW + "You switch on the remote controller");
+						}
+						craft.haveControl = !craft.haveControl;
+				}					
+				else return;
+			}
 
 			// minimum time between 2 swings
 			if (System.currentTimeMillis() - craft.lastMove < 0.2 * 1000)
 				return;
 
-			float rotation = (float) Math.PI * player.getLocation().getYaw()
-					/ 180f;
+			float rotation = (float) Math.PI * player.getLocation().getYaw() / 180f;
 
 			// Not really sure what the N stands for...
 			float nx = -(float) Math.sin(rotation);
@@ -137,8 +148,6 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			craft.calculatedMove(world, dx, dy, dz);
 		}
 	}
-	
-	public static EntityLiving MiddyBiddy;
 
 	@Override
 	public void onPlayerCommand(PlayerChatEvent event) {
@@ -155,18 +164,13 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				Craft_Hyperspace.enterHyperSpace(craft);
 			else
 				Craft_Hyperspace.exitHyperSpace(player.getWorld(), craft);
-		} else			
-			if (split[0].equalsIgnoreCase("/mobbyspawny")) {
-				if(MiddyBiddy == null) {
-					WorldServer world = ((org.bukkit.craftbukkit.CraftWorld) player.getWorld()).getHandle();
-					MiddyBiddy = new EntitySheep(world);
-					world.a(MiddyBiddy);
-					MiddyBiddy.getBukkitEntity().teleportTo(player);
-					player.sendMessage("Created a sheep.");
-				} else {
-					MiddyBiddy.getBukkitEntity().teleportTo(player);
-					player.sendMessage("Teleported a sheep to you.");
-				}
+		} else
+			if (split[0].equalsIgnoreCase("/warpdrive")) {
+				//World[] worlds = player.getWorld().get
+				List<World> worlds = plugin.getServer().getWorlds();
+				for(World world : worlds)
+					player.sendMessage(world.getName() + " : " + world.getId());
+				//plugin.getServer().createWorld("WORLD-NAME", Environment.NETHER);
 			} else
 		if (split[0].equalsIgnoreCase("/movecraft")) {
 			if (split.length >= 2) {
@@ -213,18 +217,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		} else if (split[0].equalsIgnoreCase("/release")) {
 			plugin.releaseCraft(player, Craft.getCraft(player));
 		} else {
-			// try to detect a craft command
-
 			String craftName = split[0].substring(1);
-
-			/*
-			 * Plugin gu =
-			 * plugin.getServer().getPluginManager().getPlugin("GroupUsers"); if
-			 * (gu != null) { GroupUsers groupUsers = (GroupUsers) gu; if
-			 * (!groupUsers.playerCanUseCommand(player, split[0])) return; }
-			 */
-
-			// player.sendMessage(craftName);
 
 			CraftType craftType = CraftType.getCraftType(craftName);
 
@@ -368,6 +361,27 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 
 				return true;
 
+			} else if (split[1].equalsIgnoreCase("addwaypoint")) {
+				//if(split[2].equalsIgnoreCase("absolute"))
+				if(split[2].equalsIgnoreCase("relative")) {
+					Location newLoc = craft.WayPoints.get(craft.WayPoints.size() - 1);
+					if(split[3] != "0")
+						newLoc.setX(newLoc.getX() + Integer.parseInt(split[3]));
+					else if(split[4] != "0")
+						newLoc.setY(newLoc.getY() + Integer.parseInt(split[4]));
+					else if(split[5] != "0")
+						newLoc.setZ(newLoc.getZ() + Integer.parseInt(split[5]));
+					
+					craft.addWayPoint(newLoc);
+				} else
+					craft.addWayPoint(player.getLocation());
+				
+				player.sendMessage("Added waypoint...");
+			} else if (split[1].equalsIgnoreCase("autotravel")) {
+				if(split[2] == "true")
+					new MoveCraft_Timer(0, craft, "automove", true);
+				else
+					new MoveCraft_Timer(0, craft, "automove", false);
 			}
 		}
 
