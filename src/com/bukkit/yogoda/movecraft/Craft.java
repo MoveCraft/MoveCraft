@@ -50,9 +50,27 @@ public class Craft {
 	int sizeY = 0;
 
 	// position of the craft on the map
+	World world;
 	int posX;
 	int posY;
 	int posZ;
+
+	/* Rotation code */
+    int rotation = 0; //current rotation 0, 90, 180, 270
+
+    //offset between the craft origin and the pivot for rotation
+    int offX = 0;
+    //int offY;
+    int offZ = 0;
+
+    //current direction of the craft
+    int dirX = 0;
+    int dirZ = 0;
+
+    int wdx = 0;
+    int wdy = 0;
+    int wdz = 0;
+    /* End Rotation Code */
 
 	int blockCount = 0;
 	int flyBlockCount = 0;
@@ -103,6 +121,7 @@ public class Craft {
 		this.customName = customName;
 		this.player = player;
 		this.plugin = instance;
+		this.world = player.getWorld();
 	}
 
 	public static Craft getCraft(Player player) {
@@ -194,7 +213,8 @@ public class Craft {
 	}
 
 	static void removeCraft(Craft craft) {
-		craft.timer.Destroy();
+		if(craft.timer != null)
+			craft.timer.Destroy();
 		craftList.remove(craft);
 	}
 
@@ -247,19 +267,6 @@ public class Craft {
 				return true;
 
 		return false;
-	}
-
-	// if the craft can go through this block id
-	private boolean canGoThrough(World world, int craftBlockId, Block targetBlock, int data, boolean isCraftBottom) {
-		int blockId = targetBlock.getTypeId();
-		
-		if(isCraftBottom) {
-			Block lowerBlock = world.getBlockAt(targetBlock.getX(), targetBlock.getY() - 1, targetBlock.getZ());
-			if(lowerBlock.getTypeId() != 66)
-				return false;
-		}
-		
-		return canGoThrough(craftBlockId, blockId, data);
 	}
 
 	private static boolean isFree(int blockId) {
@@ -324,7 +331,7 @@ public class Craft {
 	}
 
 	// check there is no blocks in the way
-	public boolean canMove(World world, int dx, int dy, int dz) {
+	public boolean canMove(int dx, int dy, int dz) {
 
 		/*
 		 * plugin.DebugMessage("move dx : " + dx + " dy : " + dy + " dZ : " + dz);
@@ -343,6 +350,7 @@ public class Craft {
 
 		// vertical limit
 		if (posY + dy < 0 || posY + sizeY + dy > 128) {
+			plugin.DebugMessage("Craft prevented from moving due to vertical limit.");
 			return false;
 		}
 
@@ -359,6 +367,7 @@ public class Craft {
 					&& !canGoThrough(0, targetBlock1.getTypeId(), 0)
 					|| !isCraftBlock(X - posX, Y + 1 - posY, Z - posZ)
 					&& !canGoThrough(0, targetBlock2.getTypeId(), 0)) {
+				plugin.DebugMessage("Craft prevented from because...can't go through?");
 				return false;
 			}
 		}
@@ -400,29 +409,36 @@ public class Craft {
 									newWaterLevel = y - 1;
 							}
 						
+						if (!canGoThrough(matrix[x][y][z], blockId, blockData) ) {
+							plugin.DebugMessage("Craft prevented from moving because can't go through.");
+							return false;
+						}
+						
+						/*
 						if(type.requiresRails) {
-							if (!canGoThrough(world, matrix[x][y][z], theBlock, blockData, (y==0)))
+							if (!canGoThrough(matrix[x][y][z], theBlock, blockData, (y==0)))
 								return false;
 						} else {
 							if (!canGoThrough(matrix[x][y][z], blockId, blockData) )
 								return false;
 						}
-						
-						//if (y == 0 && type.requiresRails)
+						*/
 					}
 				}
 			}
 		}
 		
 		for (Chunk checkChunk : checkChunks) {
-			if(!world.isChunkLoaded(checkChunk))
+			if(!world.isChunkLoaded(checkChunk)) {
+				plugin.DebugMessage("Craft prevented from moving because destination chunk is not loaded.");
 				return false;
+			}
 		}
 		return true;
 	}
 
 	// move the craft according to a vector d
-	public void move(World world, int dx, int dy, int dz) {
+	public void move(int dx, int dy, int dz) {
 		Server server = plugin.getServer();
 
 		dx = speed * dx;
@@ -487,19 +503,18 @@ public class Craft {
 				myLines.add(sign.getLine(3));
 				signLines.add(myLines);
 				
-			} else if (currentBlock.getTypeId() == 54) {			
-				//ContainerBlock chest = (ContainerBlock) currentBlock.getState();
+			} else if (currentBlock.getTypeId() == 54) {
 				Chest chest = ((Chest)currentBlock.getState());
 				Inventory inventory = chest.getInventory();
-				//ItemStack[] chest_contents = chest.getInventory().getContents();
-				for(int slot=0; slot < 27; slot++){
-					complexBlock.items[slot] = inventory.getItem(slot);
-					complexBlock.items[slot].setAmount(inventory.getItem(slot).getAmount());
+				for(int slot = 0; slot < inventory.getSize(); slot++) {
+					if(inventory.getItem(slot).getTypeId() != 0) {
+						complexBlock.setItem(slot, inventory.getItem(slot).getTypeId(), inventory.getItem(slot).getAmount());
+					//complexBlock.items[slot] = inventory.getItem(slot);
+					//complexBlock.items[slot].setAmount(inventory.getItem(slot).getAmount());
+					//plugin.DebugMessage("Amount is " + inventory.getItem(slot).getAmount());
+					//plugin.DebugMessage("Amount is " + complexBlock.items[slot].getAmount());
 					}
-				//complexBlock.items = new ItemStack[27];
-				for(int slot=0; slot < 27; slot++){
-					//complexBlock.items[slot] = chest.getInventory().getItem(slot);
-				}	
+				}
 			}
 		}
 
@@ -693,10 +708,9 @@ public class Craft {
 			}  else if (theBlock.getTypeId() == 54) {				
 				try
 				{
-					//Chest chest = ((Chest)theBlock.getState());
-					ContainerBlock chest = (ContainerBlock) theBlock.getState();
+					Chest chest = ((Chest)theBlock.getState());
 					Inventory inventory = chest.getInventory();
-					for(int slot=0; slot < 27; slot++){
+					for(int slot = 0; slot < inventory.getSize(); slot++){
 						if(complexBlock.items[slot] != null && complexBlock.items[slot].getTypeId() != 0) {
 							inventory.setItem(slot, complexBlock.items[slot]);
 							plugin.DebugMessage("Moving " + complexBlock.items[slot].getAmount() + 
@@ -704,7 +718,6 @@ public class Craft {
 									" in slot " + slot);
 						}
 					}
-					//chest.update();
 				}
 				catch (ArrayIndexOutOfBoundsException ex)
 				{
@@ -757,10 +770,21 @@ public class Craft {
 
 		lastMove = System.currentTimeMillis();
 
+		if(type.requiresRails) {
+			int xMid = matrix.length / 2;
+			int zMid = matrix[0][0].length / 2;
+
+			Block belowBlock = world.getBlockAt(posX + xMid, posY - 1, posZ + zMid);
+			railBlock = belowBlock;
+
+			if(belowBlock.getType() == Material.RAILS) {
+				railMove();
+			}
+		}
+
 	}
 
 	public void setSpeed(int speed) {
-
 		if (speed < 1)
 			this.speed = speed;
 		else if (speed > type.maxSpeed)
@@ -773,7 +797,7 @@ public class Craft {
 		return speed;
 	}
 
-	public void calculatedMove(World world, int dx, int dy, int dz) {
+	public void calculatedMove(int dx, int dy, int dz) {
 		//instead of forcing the craft to move, check some things beforehand
 
 		if(this.inHyperSpace) {
@@ -794,7 +818,7 @@ public class Craft {
 			return;
 		}			
 
-		if(type.obeysGravity && canMove(world, dx, dy - 1, dz) && (engineBlocks.size() == 0)) {
+		if(type.obeysGravity && canMove(dx, dy - 1, dz) && (engineBlocks.size() == 0)) {
 			dy -= 1;
 		}
 
@@ -810,11 +834,12 @@ public class Craft {
 
 		// check the craft can move there. If not, reduce the speed and try
 		// again until speed = 1
-		while (!canMove(world, dx, dy, dz)) {
+		while (!canMove(dx, dy, dz)) {
 
 			// player.sendMessage("can't move !");
-			if (speed == 1 && type.obeysGravity) {	//vehicles which obey gravity can go over certain terrain
-				if(canMove(world, dx, dy + 1, dz)) {
+			//if (speed == 1 && type.obeysGravity) {	//vehicles which obey gravity can go over certain terrain
+			if (speed == 1 && type.isTerrestrial) {	//vehicles which are terrestrial (ground-dwelling) can go over certain terrain
+				if(canMove(dx, dy + 1, dz)) {
 					dy += 1;
 					break;
 				}
@@ -827,7 +852,7 @@ public class Craft {
 					dx = 0;
 					dz = 0;
 					dy = 1;
-					if (canMove(world, dx, dy, dz))
+					if (canMove(dx, dy, dz))
 						break;
 				}
 
@@ -839,14 +864,13 @@ public class Craft {
 
 		}
 		if(!(dx == 0 && dy == 0 && dz == 0))
-				move(world, dx, dy, dz);
+				move(dx, dy, dz);
 
 		// the craft goes faster every click
 		setSpeed(speed + 1);
 	}
 
 	public void engineTick() {
-		World world = player.getWorld();
 		int dx = 0;
 		int dy = 0;
 		int dz = 0;
@@ -894,7 +918,7 @@ public class Craft {
 			}
 		}
 		if(dx != 0 || dy != 0 || dz != 0) {			
-			calculatedMove(world, dx, dy, dz);
+			calculatedMove(dx, dy, dz);
 		}
 	}
 	
@@ -904,10 +928,10 @@ public class Craft {
 		if(deets == 1 || deets == 2 || deets == 3) {
 			//player.sendMessage("HEADIN NORTH! Or south. Depends on what da orders say.");
 			//norf is X
-			calculatedMove(player.getWorld(), 1, 0, 0);
+			calculatedMove(1, 0, 0);
 		} else
 		if(deets == 0 || deets == 4 || deets == 5) {
-			calculatedMove(player.getWorld(), 0, 0, 1);			
+			calculatedMove(0, 0, 1);			
 		}
 		//6-9 are turns
 
@@ -959,8 +983,17 @@ public class Craft {
 		player.sendMessage(deviation.toString());
 	}
 	
+	public void WarpToWorld(World targetWorld) {
+		
+	}
+	
 	public Location getLocation() {
-		return new Location(this.player.getWorld(), this.posX, this.posY, this.posZ);
+		return new Location(this.world, this.posX, this.posY, this.posZ);
+	}
+	
+	public void Destroy() {
+		matrix = null;;
+		player = null;
 	}
 
 	public static class DataBlock {
@@ -969,13 +1002,19 @@ public class Craft {
 		int y;
 		int z;
 		int data;
-		ItemStack[] items = new ItemStack[27];
+		private ItemStack[] items = new ItemStack[27];
 
 		DataBlock(int x, int y, int z, int data) {
 			this.x = x;
 			this.y = y;
 			this.z = z;
 			this.data = data;
+		}
+		
+		public void setItem(int slot, int itemType, int amount){
+			System.out.println("DEBUG MESSAGE: ITEM " + slot + "IS GETTIN CHANGED TO " + amount + " of type " + itemType);
+			items[slot].setTypeId(itemType);
+			items[slot].setAmount(amount);
 		}
 
 	}

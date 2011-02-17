@@ -8,14 +8,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 
+import org.bukkit.entity.Player;
+
 public class ConfigFile {
 	public HashMap<String, String> ConfigSettings = new HashMap<String, String>();
 
-	public ConfigFile(String directory, String filename) {
-		if(directory == "")
-			directory = "plugins/movecraft";
-		if(filename == "")
-			filename = "movecraft.config";
+	public ConfigFile(MoveCraft plugin) {
+		String filename = "movecraft.config";
 
 		ConfigSettings.put("CraftReleaseDelay", "15");
 		ConfigSettings.put("UniversalRemoteId", "294");
@@ -24,13 +23,12 @@ public class ConfigFile {
 		ConfigSettings.put("StructureBlocks",
 				"4,5,17,19,20,35,41,42,43,44,45,46,47,48,49,50,53,57,65,67,68,69,75,76,77,85,87,88,89");
 		
-		File dir = new File(directory);
+		File dir = plugin.getDataFolder();
 		if (!dir.exists())
 			dir.mkdir();
 
 		File MCConfig = new File(dir, filename);
 		if(MCConfig.exists()) {
-			//overwrite the default settings with the settings in the file
 			LoadFile(MCConfig);
 		} else {
 			try {
@@ -84,9 +82,9 @@ public class ConfigFile {
 		}
 		*/
 
-		CraftType.loadTypes(dir);
-		if(ConfigSettings.get("WriteDefaultCraft") == "true")
-			CraftType.saveTypes(dir);
+		//CraftType.loadTypes(dir);
+		//if(ConfigSettings.get("WriteDefaultCraft") == "true")
+			//CraftType.saveTypes(dir);
 	}
 	
 	public void LoadFile(File MCConfig) {
@@ -124,12 +122,33 @@ public class ConfigFile {
 		}		
 	}
 	
-	public void SaveSetting(String settingName) {
-		//save the setting currently in the hashmap to the file
+	public void ListSettings(Player player) {
+		if (player != null) {
+			player.sendMessage("Movecraft config settings:");
+			for(Object configLine : ConfigSettings.keySet().toArray()) {
+				String configKey = (String) configLine;
+				player.sendMessage(configKey + "=" + ConfigSettings.get(configKey));
+			}
+		}
+		else {
+			System.out.println("Movecraft config settings:");
+			for(Object configLine : ConfigSettings.keySet().toArray()) {
+				String configKey = (String) configLine;
+				System.out.println(configKey + "=" + ConfigSettings.get(configKey));
+			}			
+		}
 	}
 	
-	public void ChangeSetting(String settingName) {
+	public String GetSetting(String setting) {
+		return ConfigSettings.get(setting);
+	}
+	
+	public void ChangeSetting(String settingName, String settingValue) {
 		//Change the value, and update that which is dependant on it
+	}
+	
+	public void SaveSetting(String settingName) {
+		//save the setting currently in the hashmap to the file
 	}
 	
 	public void CheckSetting(String settingName, String defaultValue) {

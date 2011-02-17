@@ -3,15 +3,8 @@ package com.bukkit.yogoda.movecraft;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.logging.*;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-//import java.util.HashMap;
 import java.util.Properties;
 
 import org.bukkit.block.Block;
@@ -25,8 +18,6 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.PluginManager;
-
-//import com.bukkit.authorblues.GroupUsers.GroupUsers;
 
 /*
  * MoveCraft plugin for Hey0 mod (hMod) by Yogoda
@@ -46,14 +37,14 @@ public class MoveCraft extends JavaPlugin {
 	Properties properties;
 
 	static final String pluginName = "MoveCraft";
-	static final String version = "0.6.7";
+	static String version = "";
 
 	static final DateFormat dateFormat = new SimpleDateFormat(
 	"yyyy-MM-dd HH:mm:ss");
 	public static Logger logger = Logger.getLogger("Minecraft");
 	boolean DebugMode = false;
 
-	public HashMap<String, String> ConfigSettings = new HashMap<String, String>();
+	//public HashMap<String, String> ConfigSettings = new HashMap<String, String>();
 	public ConfigFile configFile;
 
 	// private Server myServer = this.getServer();
@@ -66,66 +57,21 @@ public class MoveCraft extends JavaPlugin {
 		System.out.println(getDateTime() + " [INFO] " + pluginName + " " + msg);
 	}
 
-	public void loadProperties() { // throws NumberFormatException, IOException {
-		// directory where the craft types are stored		
-		File dir = new File("plugins/movecraft");
+	public void loadProperties() {
+		configFile = new ConfigFile(this);
+
+		File dir = getDataFolder();
 		if (!dir.exists())
 			dir.mkdir();
 
-		File MCConfig = new File(dir, "movecraft.config");
-		if(MCConfig.exists()) {
-			try {
-				BufferedReader in = new BufferedReader(new FileReader(MCConfig));
-
-				String line;
-				while( (line=in.readLine() ) != null ) {
-					String lineTrim = line.trim();
-
-					if( lineTrim.startsWith( "#" ) )
-						continue;
-
-					String[] split = lineTrim.split("=");
-
-					ConfigSettings.put(split[0], split[1]);
-				}
-				in.close();
-			}
-			catch (IOException e) {
-
-			}
-		}
-		else {
-			try {
-				MCConfig.createNewFile();
-				ConfigSettings.put("CraftReleaseDelay", "15");
-				ConfigSettings.put("UniversalRemoteId", "294");
-				ConfigSettings.put("WriteDefaultCraft", "true");
-				ConfigSettings.put("RequireOp", "true");
-
-				BufferedWriter bw = new BufferedWriter(new FileWriter(MCConfig));
-
-				for(Object configLine : ConfigSettings.keySet().toArray()) {
-					String configKey = (String) configLine;
-					bw.write(configKey + "=" + ConfigSettings.get(configKey) + System.getProperty("line.separator"));
-				}
-				bw.close();
-			}
-			catch (IOException ex) {
-
-			}
-		}
-
-		// load craft types and properties
 		CraftType.loadTypes(dir);
-		if(ConfigSettings.get("WriteDefaultCraft") == "true")
-			CraftType.saveTypes(dir);
-
-		// properties.save();
+		if(configFile.ConfigSettings.get("WriteDefaultCraft") == "true")
+			CraftType.saveTypes(dir);		
 	}
 
 	public void onEnable() {
 		CraftType.plugin = this;
-		
+
 		PluginManager pm = getServer().getPluginManager();
 		pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_COMMAND, playerListener, Priority.Normal, this);
@@ -139,10 +85,11 @@ public class MoveCraft extends JavaPlugin {
 		//pm.registerEvent(Event.Type.BLOCK_CANBUILD, blockListener, Priority.Normal, this);
 
 		loadProperties();
-
+		PermissionInterface.setupPermissions(this);
 
 		PluginDescriptionFile pdfFile = this.getDescription();
 		consoleSay(pdfFile.getVersion() + " plugin enabled");
+		version = pdfFile.getVersion();
 	}
 
 	public void onDisable() {
@@ -155,13 +102,14 @@ public class MoveCraft extends JavaPlugin {
 		super(pluginLoader, instance, desc, folder, plugin, cLoader);
 
 		BlocksInfo.loadBlocksInfo();
-		configFile = new ConfigFile("", "");
 	}
 
 	public void releaseCraft(Player player, Craft craft) {
 		if (craft != null) {
 			player.sendMessage(ChatColor.YELLOW + craft.type.sayOnRelease);
 			Craft.removeCraft(craft);
+			if(DebugMode)
+				craft.Destroy();
 		} else
 			player.sendMessage(ChatColor.YELLOW + "You don't have anything to release");
 	}
@@ -177,8 +125,7 @@ public class MoveCraft extends JavaPlugin {
 		return this.DebugMode;
 	}
 
-	public void createCraft(Player player, CraftType craftType, int x, int y,
-			int z, String name) {
+	public void createCraft(Player player, CraftType craftType, int x, int y, int z, String name) {
 		if (DebugMode == true)
 			player.sendMessage("Attempting to create " + craftType.name
 					+ "at coordinates " + Integer.toString(x) + ", "
@@ -193,16 +140,35 @@ public class MoveCraft extends JavaPlugin {
 
 		craft = new Craft(this, craftType, player, name);
 
-		if (DebugMode == true)
-			player.sendMessage("Craft created.");
+		/* Rotation code */
+		float sin45 = (float)Math.sin((float)Math.PI * 45.0 / 180f);
+		//get player current orientation
+		float rotation = (float)Math.PI * player.getLocation().getPitch() / 180f;
+
+		float nx = - (float)Math.sin(rotation);
+		float nz = (float)Math.cos(rotation);
+
+		//current direction of the craft
+		int dirX = (Math.abs(nx) > sin45 ? 1 : 0) * (int)Math.signum(nx);
+		int dirZ = (Math.abs(nz) >= sin45 ? 1 : 0) * (int)Math.signum(nz);
+		
+		craft.dirX = dirX;
+		craft.dirZ = dirZ;
+
+		//auto-detect and create the craft
+		//if(!craft.createCraft(x, y, z, dirX, dirZ, name)){
+		//   craft = null;
+		//   return;
+		// }
+		/* End Rotation Code */
 
 		// auto-detect and create the craft
-		if (!CraftBuilder.detect(player.getWorld(), craft, x, y, z)) {
+		if (!CraftBuilder.detect(craft, x, y, z)) {
 			return;
 		}
 
 		Craft.addCraft(craft);
-		
+
 		if(craft.engineBlocks.size() > 0)
 			craft.timer = new MoveCraft_Timer(0, craft, "engineCheck", false);
 		else {

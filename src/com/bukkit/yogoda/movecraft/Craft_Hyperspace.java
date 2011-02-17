@@ -1,7 +1,5 @@
 package com.bukkit.yogoda.movecraft;
 
-import org.bukkit.World;
-
 public class Craft_Hyperspace {	
 	//Craft-based functions relating specifically to hyperspace
 	
@@ -14,8 +12,8 @@ public class Craft_Hyperspace {
 		craft.player.sendMessage("You enter hyperspace.");
 	}
 	
-	public static void exitHyperSpace(World world, Craft craft) {
-		craft.move(world, craft.HyperSpaceMoves[0] * 16, craft.HyperSpaceMoves[1] * 16, craft.HyperSpaceMoves[2] * 16);
+	public static void exitHyperSpace(Craft craft) {
+		craft.move(craft.HyperSpaceMoves[0] * 16, craft.HyperSpaceMoves[1] * 16, craft.HyperSpaceMoves[2] * 16);
 		craft.HyperSpaceMoves[0] = 0;
 		craft.HyperSpaceMoves[1] = 0;
 		craft.HyperSpaceMoves[2] = 0;

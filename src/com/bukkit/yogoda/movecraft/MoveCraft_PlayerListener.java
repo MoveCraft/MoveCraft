@@ -7,6 +7,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.World.Environment;
 
 import org.bukkit.event.player.PlayerChatEvent;
 
@@ -33,7 +34,6 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 	@Override
 	public void onPlayerMove(PlayerMoveEvent event) {
 		Player player = event.getPlayer();
-		// World world = player.getWorld();
 
 		Craft craft = Craft.getCraft(player);
 
@@ -48,7 +48,13 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				craft.isOnBoard = false;
 				craft.haveControl = false;
 				
-				int CraftReleaseDelay = Integer.parseInt(plugin.ConfigSettings.get("CraftReleaseDelay"));
+				int CraftReleaseDelay = 15;
+				try {
+				CraftReleaseDelay = Integer.parseInt(plugin.configFile.ConfigSettings.get("CraftReleaseDelay"));
+				}
+				catch (NumberFormatException ex) {
+					System.out.println("ERROR with playermove. Could not parse " + plugin.configFile.ConfigSettings.get("CraftReleaseDelay"));
+				}
 				if(CraftReleaseDelay != 0)
 					craft.timer = new MoveCraft_Timer(CraftReleaseDelay, craft, "abandonCheck", false);
 			} else if (!craft.isOnBoard && craft.isOnCraft(player, false)) {
@@ -61,10 +67,8 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		}
 	}
 
-	//@Override
 	public void onPlayerItem(PlayerItemEvent event) {
 		Player player = event.getPlayer();
-		World world = player.getWorld();
 
 		Craft craft = Craft.getCraft(player);
 
@@ -104,7 +108,8 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			) {
 				if( (item == craft.type.remoteControllerItem || 
 						item == Integer.parseInt(plugin.configFile.ConfigSettings.get("UniversalRemoteId")))
-					&& !craft.isOnCraft(player, true)) {
+					&& !craft.isOnCraft(player, true)
+					&& PermissionInterface.CheckPermission(player, "remote")) {
 						if (craft.haveControl) {
 							player.sendMessage(ChatColor.YELLOW + "You switch off the remote controller");
 						} else {
@@ -131,6 +136,12 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			int dz = (Math.abs(nz) > 0.5 ? 1 : 0) * (int) Math.signum(nz);
 
 			int dy = 0;
+			
+			/* Rotation code */
+			//double angle = 180f * (Math.atan2(dz, dx) - Math.atan2(craft.dirZ, craft.dirX)) / (float)Math.PI;
+			//int r = ((int)Math.round(angle) + 360) % 360;
+            //if(r == 180)
+                //r = 0;
 
 			// we are on a flying object, handle height change
 			if (craft.type.canFly || craft.type.canDive || craft.type.canDig) {
@@ -147,34 +158,72 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				}
 			}
 
-			craft.calculatedMove(world, dx, dy, dz);
+			craft.calculatedMove(dx, dy, dz);
 		}
 	}
 
-	@Override
 	public void onPlayerCommand(PlayerChatEvent event) {
 		Player player = event.getPlayer();
 		String[] split = event.getMessage().split(" ");
+		split[0] = split[0].substring(1);
 		
-		if (split[0].equalsIgnoreCase("/hyperspace")) {
+		String command = "";
+		for(int i = 0; i < split.length; i++) {
+			command += "." + split[i];
+		}
+		if (PermissionInterface.CheckPermission(player, command.substring(1)) == false) {
+			return;
+		}
+		
+		if (split[0].equalsIgnoreCase("hyperspace")) {
 			Craft craft = Craft.getCraft(player);
 			
-			if(craft == null)
+			if(craft == null) {
 				player.kickPlayer("You tried to go into hyperspace while not controlling a craft while I'm in a bad mood.");
+				return;
+			}
 			
 			if(!craft.inHyperSpace)
 				Craft_Hyperspace.enterHyperSpace(craft);
 			else
-				Craft_Hyperspace.exitHyperSpace(player.getWorld(), craft);
-		} else
-			if (split[0].equalsIgnoreCase("/warpdrive")) {
-				//World[] worlds = player.getWorld().get
-				List<World> worlds = plugin.getServer().getWorlds();
-				for(World world : worlds)
-					player.sendMessage(world.getName() + " : " + world.getId());
-				//plugin.getServer().createWorld("WORLD-NAME", Environment.NETHER);
+				Craft_Hyperspace.exitHyperSpace(craft);
+		} else if (split[0].equalsIgnoreCase("turn")) {
+			Craft craft = Craft.getCraft(player);
+			CraftRotator cr = new CraftRotator(craft, plugin);
+			
+			if(split[1].equalsIgnoreCase("right"))
+				cr.move(0, 0, 0, 90);
+			else
+				cr.move(0, 0, 0, -90);
+		} else if (split[0].equalsIgnoreCase("warpdrive")) {
+				if(split.length == 1) {
+					List<World> worlds = plugin.getServer().getWorlds();
+					for(World world : worlds)
+						player.sendMessage(world.getName() + " : " + world.getId());
+				} else {
+					Craft craft = Craft.getCraft(player);
+					try
+					{
+						int WorldNum = Integer.parseInt(split[1]);
+						World targetWorld = plugin.getServer().getWorlds().get(WorldNum);
+						craft.WarpToWorld(targetWorld);						
+					}
+					catch (NumberFormatException ex)
+					{
+						World targetWorld = plugin.getServer().getWorld(split[1]); 
+						if(targetWorld != null) {
+							craft.WarpToWorld(targetWorld);
+						}
+						else {
+							if(split[2].equalsIgnoreCase("nether"))
+								plugin.getServer().createWorld(split[1], Environment.NETHER);
+							else
+								plugin.getServer().createWorld(split[1], Environment.NORMAL);
+						}
+					}
+				}
 			} else
-		if (split[0].equalsIgnoreCase("/movecraft")) {
+		if (split[0].equalsIgnoreCase("movecraft")) {
 			if (split.length >= 2) {
 				if (split[1].equalsIgnoreCase("types")) {
 
@@ -201,10 +250,14 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 								+ " : " + craft.blockCount + " blocks");
 					}
 				} else if (split[1].equalsIgnoreCase("reload")) {
+					//plugin.loadProperties();
 					plugin.loadProperties();
 					player.sendMessage(ChatColor.YELLOW + "configuration reloaded");
 				} else if (split[1].equalsIgnoreCase("debug")) {
 					plugin.ToggleDebug();
+				}
+				else if (split[1].equalsIgnoreCase("config")) {
+					plugin.configFile.ListSettings(player);
 				}
 			}
 			else {
@@ -216,10 +269,10 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				player.sendMessage(ChatColor.YELLOW + "/[craft type] "
 						+ " : " + ChatColor.WHITE + "commands specific to the craft type");
 			}
-		} else if (split[0].equalsIgnoreCase("/release")) {
+		} else if (split[0].equalsIgnoreCase("release")) {
 			plugin.releaseCraft(player, Craft.getCraft(player));
 		} else {
-			String craftName = split[0].substring(1);
+			String craftName = split[0];
 
 			CraftType craftType = CraftType.getCraftType(craftName);
 
@@ -231,8 +284,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		return;
 	}
 
-	public boolean processCommand(CraftType craftType, Player player,
-			String[] split) {
+	public boolean processCommand(CraftType craftType, Player player, String[] split) {
 
 		Craft craft = Craft.getCraft(player);
 
@@ -330,14 +382,20 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			} else if (split[1].equalsIgnoreCase("info")) {
 
 				player.sendMessage(ChatColor.WHITE + craftType.name);
-				player.sendMessage(ChatColor.YELLOW + 
-						Integer.toString(craftType.minBlocks) + "/" + craftType.maxBlocks + " blocks.");
+				if(craft != null)
+					player.sendMessage(ChatColor.YELLOW +
+							Integer.toString(craftType.minBlocks) + "-" + craftType.maxBlocks + " blocks." + 
+							" (Using " + craft.blockCount + ".)");
+				else
+					player.sendMessage(ChatColor.YELLOW + 
+							Integer.toString(craftType.minBlocks) + "-" + craftType.maxBlocks + " blocks.");
 				player.sendMessage(ChatColor.YELLOW +"Max speed: " + craftType.maxSpeed);
 
 				if (plugin.DebugMode)
 					player.sendMessage(ChatColor.YELLOW + Integer.toString(craft.dataBlocks.size()) + " data Blocks, " + 
 							craft.complexBlocks.size() + " complex Blocks, " + 
-							craft.engineBlocks.size() + " engine Blocks.");
+							craft.engineBlocks.size() + " engine Blocks," + 
+							craft.digBlockCount + " drill bits.");
 				
 				String canDo = ChatColor.YELLOW + craftType.name + "s can ";
 
@@ -356,9 +414,15 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				player.sendMessage(canDo);
 
 				if (craftType.flyBlockType != 0) {
+					int flyBlocksNeeded = (int)Math.floor((craft.blockCount - craft.flyBlockCount) * ((float)craft.type.flyBlockPercent * 0.01) / (1 - ((float)craft.type.flyBlockPercent * 0.01)));
+
+					if(flyBlocksNeeded < 1)
+						flyBlocksNeeded = 1;
+
 					player.sendMessage(ChatColor.YELLOW + "Flight requirement: "
 							+ craftType.flyBlockPercent + "%" + " of "
-							+ craftType.flyBlockName);
+							+ BlocksInfo.getName(craft.type.flyBlockType)
+							+ "(" + flyBlocksNeeded + ")");
 				}
 
 				return true;

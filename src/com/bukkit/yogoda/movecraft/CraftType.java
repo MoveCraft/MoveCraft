@@ -32,13 +32,10 @@ public class CraftType {
 	// the type of block needed to make the vehicle able to drill through
 	// terrain
 	int digBlockId = 0;
-	// and its name
-	String digBlockName = null;
-	// name of the blocks needed to fly
-	String flyBlockName = null;
 	// percent of flystone needed to make it fly
-	int flyBlockPercent = 0;
-	int digBlockPercent = 0;
+	double flyBlockPercent = 0;
+	double digBlockPercent = 0;
+	int engineBlockId = 0;
 	int fuelItemId = 0;
 	int fuelConsumptionMultiplier = 1;
 	
@@ -87,13 +84,10 @@ public class CraftType {
 	}
 
 	public Boolean canUse(Player player){
-		if(plugin.ConfigSettings.get("RequireOp") == "true")
-			return player.isOp();
-		else
+		if(PermissionInterface.CheckPermission(player, name.toLowerCase()))
 			return true;
-	 //if(player.canUseCommand(getCommand()))
-		 //return true;
-	 //return false;
+		else
+			return false;
 	}
 
 	private static void loadDefaultCraftTypes() {
@@ -172,7 +166,6 @@ public class CraftType {
 			craftType.maxSpeed = 1;
 			craftType.canDig = true;
 			craftType.canDive = true;
-			craftType.digBlockName = "diamond";
 			craftType.digBlockId = 57;
 			// craftType.flyBlockPercent = 1;
 			craftType.sayOnControl = "Armageddon, but down.";
@@ -203,7 +196,6 @@ public class CraftType {
 			craftType.minBlocks = 9;
 			craftType.maxBlocks = 1000;
 			craftType.maxSpeed = 6;
-			craftType.flyBlockName = "wool";
 			craftType.flyBlockType = 35;
 			craftType.flyBlockPercent = 60;
 			craftType.sayOnControl = "You're on an airship !";
@@ -215,7 +207,6 @@ public class CraftType {
 			craftType.minBlocks = 9;
 			craftType.maxBlocks = 1000;
 			craftType.maxSpeed = 9;
-			craftType.flyBlockName = "lightstone";
 			craftType.flyBlockType = 89;
 			craftType.flyBlockPercent = 4;
 			craftType.sayOnControl = "You're on a UFO !";
@@ -228,7 +219,6 @@ public class CraftType {
 			craftType.minBlocks = 9;
 			craftType.maxBlocks = 1000;
 			craftType.maxSpeed = 9;
-			craftType.flyBlockName = "lightstone";
 			craftType.flyBlockType = 89;
 			craftType.flyBlockPercent = 4;
 			craftType.sayOnControl = "You're on a USO !";
@@ -282,16 +272,12 @@ public class CraftType {
 			craftType.maxBlocks = Integer.parseInt(value);
 		else if (attribute.equalsIgnoreCase("maxSpeed"))
 			craftType.maxSpeed = Integer.parseInt(value);
-		else if (attribute.equalsIgnoreCase("flyBlockName"))
-			craftType.flyBlockName = value;
 		else if (attribute.equalsIgnoreCase("flyBlockType"))
 			craftType.flyBlockType = Integer.parseInt(value);
 		else if (attribute.equalsIgnoreCase("flyBlockPercent"))
 			craftType.flyBlockPercent = Integer.parseInt(value);
 		else if (attribute.equalsIgnoreCase("digBlockId"))
 			craftType.digBlockId = Integer.parseInt(value);
-		else if (attribute.equalsIgnoreCase("digBlockName"))
-			craftType.digBlockName = value;
 		else if (attribute.equalsIgnoreCase("canNavigate"))
 			craftType.canNavigate = Boolean.parseBoolean(value);
 		else if (attribute.equalsIgnoreCase("isTerrestrial"))
@@ -364,11 +350,9 @@ public class CraftType {
 			}
 			
 			writeAttribute(writer, "maxSpeed", craftType.maxSpeed, force);
-			writeAttribute(writer, "flyBlockName", craftType.flyBlockName, force);
 			writeAttribute(writer, "flyBlockType", craftType.flyBlockType, force);
 			writeAttribute(writer, "flyBlockPercent", craftType.flyBlockPercent, force);
 			writeAttribute(writer, "digBlockId", craftType.digBlockId, force);
-			writeAttribute(writer, "digBlockName", craftType.digBlockName, force);
 			writeAttribute(writer, "canNavigate", craftType.canNavigate, force);
 			writeAttribute(writer, "isTerrestrial", craftType.isTerrestrial, force);
 			writeAttribute(writer, "requiresRails", craftType.requiresRails, force);
@@ -412,6 +396,14 @@ public class CraftType {
 			return;
 		writer.write(attribute + "=" + value);
 		writer.newLine();
+	}
+
+	private static void writeAttribute(BufferedWriter writer, String attribute,
+			double value, boolean force) throws IOException {
+		if (value == 0 && !force)
+			return;
+		writer.write(attribute + "=" + value);
+		writer.newLine();		
 	}
 
 	private static void writeAttribute(BufferedWriter writer, String attribute,

@@ -19,7 +19,6 @@ public class MoveCraft_BlockListener extends BlockListener {
 	//@Override
 	public void onBlockPlace(BlockPlaceEvent event) {
 		Player player = event.getPlayer();
-		// World world = player.getWorld();
 		Block blockPlaced = event.getBlockPlaced();
 
 		plugin.DebugMessage(player.getName() + " placed a block.");
@@ -169,7 +168,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 							player.kickPlayer("I am TIRED of these MOTHERFUCKING noobs on this MOTHERFUCKING server.");
 							return;
 						}
-						Craft_Hyperspace.exitHyperSpace(player.getWorld(), playerCraft);
+						Craft_Hyperspace.exitHyperSpace(playerCraft);
 						sign.setLine(0, "Engage Hyperdrive");
 					}
 		}
