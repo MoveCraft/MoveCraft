@@ -24,17 +24,18 @@ public class PermissionInterface {
 		}
 	}
     
-	public static boolean CheckPermission(Player player, String command) {		
+	public static boolean CheckPermission(Player player, String command) {
+		if(command.split(".")[0] != "movecraft")
+			command = "movecraft." + command;
 		if (Permissions != null) {
-			plugin.DebugMessage("Permissions is not null.");
-		    if(Permissions.has(player, "movecraft." + command))
+		    if(Permissions.has(player, command))
 		    	return true;
 		}
 		
 		if(player.isOp())
 			return true;
 	    
-		player.sendMessage("You do not have permission to preform movecraft." + command);
+		player.sendMessage("You do not have permission to preform " + command);
 	    return false;
 	}
     
