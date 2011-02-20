@@ -17,7 +17,7 @@ public class CraftBuilder {
 
     //used for the detection of blocks
     private static Stack<BlockLoc> blocksStack;
-    private static HashMap<BlockLoc, BlockLoc> blocksList = null;
+    //private static HashMap<BlockLoc, BlockLoc> blocksList = null;
 
     private static HashMap<Integer,HashMap<Integer,HashMap<Integer,Short>>> dmatrix;
 
@@ -94,14 +94,14 @@ public class CraftBuilder {
        int blockId = theBlock.getTypeId();
 
        //found water, record water level and water type
-       if(blockId == 8 || blockId == 9){ //water
+       if((blockId == 8 || blockId == 9) && theBlock.getData() == 0){ //water
            if(y > craft.waterLevel) craft.waterLevel = y;
            craft.waterType = 8;
            return;
        }
 
        //found lava, record lava level and water type
-       if(blockId == 10 || blockId == 11){ //lava
+       if((blockId == 10 || blockId == 11) && theBlock.getData() == 0){ //lava
            if(y > craft.waterLevel) craft.waterLevel = y;
            craft.waterType = 10;
            return;
@@ -121,7 +121,7 @@ public class CraftBuilder {
              for(int z=0;z<craft.sizeZ;z++){
                  for(int y=0;y<craft.sizeY;y++){
 
-                     if(craft.matrix[x][y][z] >= 8 && craft.matrix[x][y][z] <= 11){
+                     if(craft.matrix[x][y][z] >= 8 && craft.matrix[x][y][z] <= 11 && y <= craft.waterLevel){
 
                            if(isFree(x + 1, y, z) ||
                            isFree(x - 1, y, z) ||
@@ -141,44 +141,57 @@ public class CraftBuilder {
        }while(updated);
    }
 
+   private static void removeAir(){
+
+       BlockLoc block = blocksStack.pop();
+
+       //this block is out of the craft, return
+        if(block.x < 0 || block.x > craft.maxX - craft.posX ||
+          block.y < 0 || block.y > craft.maxY - craft.posY ||
+          block.z < 0 || block.z > craft.maxZ - craft.posZ){
+          return;
+        }
+
+      //no air, what are we doing here ?
+      if(craft.matrix[block.x][block.y][block.z] != 0)
+          return;
+
+      craft.matrix[block.x][block.y][block.z] = -1;
+
+      //explore all 6 directions
+      blocksStack.push(new BlockLoc(block.x + 1, block.y, block.z));
+      blocksStack.push(new BlockLoc(block.x - 1, block.y, block.z));
+      blocksStack.push(new BlockLoc(block.x, block.y + 1, block.z));
+      blocksStack.push(new BlockLoc(block.x, block.y - 1, block.z));
+      blocksStack.push(new BlockLoc(block.x, block.y, block.z + 1));
+      blocksStack.push(new BlockLoc(block.x, block.y, block.z - 1));
+
+      return;
+   }
+
     //detect and create an air bubble surrounding the player
    private static boolean createAirBubble(){
 
        BlockLoc block = blocksStack.pop();
 
-      //location have already been visited
-      if(blocksList.get(block) != null)
-           return true;
-
-      //mark the block as visited
-      blocksList.put(block, block);
-
-      //plugin.DebugMessage("" + block.x + "" + block.y + "" + block.z);
-
+       //out of the craft, there is a hole
         if(block.x < 0 || block.x > craft.maxX - craft.posX ||
           block.y < 0 || block.y > craft.maxY - craft.posY ||
           block.z < 0 || block.z > craft.maxZ - craft.posZ){
 
           return false;
-
         }
 
+       //already visited
+       if(craft.matrix[block.x][block.y][block.z] == 0)
+              return true;
+
       if(craft.matrix[block.x][block.y][block.z] == -1){
-
-           //empty space touching the bounding box, we have a hole !
-           if(block.x == 0 || block.x == craft.maxX - craft.posX ||
-              block.y == 0 || block.y == craft.maxY - craft.posY ||
-              block.z == 0 || block.z == craft.maxZ - craft.posZ){
-
-              return false;
-
-           }
 
           //add air
           craft.matrix[block.x][block.y][block.z] = 0;
 
       } else {
-
            return true;
       }
 
@@ -269,39 +282,24 @@ public class CraftBuilder {
            }
 
           //remove water blocks that can flow out of the craft
-          removeWater();
+          if(craft.waterLevel != -1)
+            removeWater();
        }
-
-      //there is water detected
-     if(craft.waterLevel != -1){
-
-         //remove air above the water level (so the part under water have still air)
-         for(int x=0;x<craft.sizeX;x++){
-             for(int z=0;z<craft.sizeZ;z++){
-                  for(int y=craft.waterLevel + 1;y<craft.sizeY;y++){
-                      if(craft.matrix[x][y][z]==0)
-                          craft.matrix[x][y][z] = -1;
-                  }
-             }
-         }
-      //no water, remove ALL air
-      } else {
-         for(int x=0;x<craft.sizeX;x++){
-             for(int z=0;z<craft.sizeZ;z++){
-                  for(int y=0;y<craft.sizeY;y++){
-                      if(craft.matrix[x][y][z]==0)
-                          craft.matrix[x][y][z] = -1;
-                  }
-             }
-         }
-      }
 
       //if the craft can dive, we need to create an air bubble surrounding the player
       //if it touch the bounding box walls, then the submarine has a hole !
       if(craft.type.canDive){
 
-         //to store explored blocks
-         blocksList = new HashMap<BlockLoc, BlockLoc>();
+         //remove air
+         for(int x=0;x<craft.sizeX;x++){
+             for(int z=0;z<craft.sizeZ;z++){
+                  for(int y=0;y<craft.sizeY;y++){
+                      if(craft.matrix[x][y][z]== 0)
+                          craft.matrix[x][y][z] = -1;
+                  }
+             }
+         }
+
          blocksStack = new Stack<BlockLoc>();
 
          //start with the player's head
@@ -320,8 +318,70 @@ public class CraftBuilder {
            while(!blocksStack.isEmpty());
 
            blocksStack = null;
-           blocksList = null;
 
+         //fill with air
+         for(int x=0;x<craft.sizeX;x++){
+             for(int z=0;z<craft.sizeZ;z++){
+                  for(int y=0;y<craft.sizeY;y++){
+                      if(craft.matrix[x][y][z]== -1)
+                          craft.matrix[x][y][z] = 0;
+                  }
+             }
+         }
+
+         //if there is air touching a border, remove it
+         for(int x=0;x<craft.sizeX;x++){
+             for(int z=0;z<craft.sizeZ;z++){
+                  for(int y=0;y<craft.sizeY;y++){
+                      if(craft.matrix[x][y][z] == 0 &&
+                         (x == 0 ||
+                         y == 0 ||
+                         z == 0 ||
+                         x == craft.sizeX - 1 ||
+                         y == craft.sizeY - 1 ||
+                         z == craft.sizeZ - 1)){
+
+                            blocksStack = new Stack<BlockLoc>();
+                            blocksStack.push(new BlockLoc(x, y, z));
+
+                            do{
+                                removeAir();
+                            }
+                            while(!blocksStack.isEmpty());
+
+                            blocksStack = null;
+                      }
+                  }
+             }
+         }
+         
+           blocksStack = null;
+
+      } else {
+
+          //there is water detected
+         if(craft.waterLevel != -1){
+
+             //remove air above the water level (so the part under water have still air)
+             for(int x=0;x<craft.sizeX;x++){
+                 for(int z=0;z<craft.sizeZ;z++){
+                      for(int y=craft.waterLevel + 1;y<craft.sizeY;y++){
+                          if(craft.matrix[x][y][z]==0)
+                              craft.matrix[x][y][z] = -1;
+                      }
+                 }
+             }
+          //no water, remove ALL air
+          } else {
+             for(int x=0;x<craft.sizeX;x++){
+                 for(int z=0;z<craft.sizeZ;z++){
+                      for(int y=0;y<craft.sizeY;y++){
+                          if(craft.matrix[x][y][z]==0)
+                              craft.matrix[x][y][z] = -1;
+                      }
+                 }
+             }
+          }
       }
 
       return true;
@@ -410,11 +470,13 @@ public class CraftBuilder {
 
        //blockType = new Short((short)etc.getServer().getBlockIdAt(x, y, z));
        //int blockData = etc.getServer().getBlockData(x, y, z);
-       blockType = new Short((short) craft.world.getBlockAt(x, y, z).getTypeId());
+       
+       Block theBlock = craft.world.getBlockAt(x, y, z);
+       blockType = new Short((short) theBlock.getTypeId());
        //int BlockData = world.getBlockAt(x, y, z).getData();
 
        //found water, record water level and water type
-       if(blockType == 8 || blockType == 9){ //water
+       if((blockType == 8 || blockType == 9) && theBlock.getData() == 0){ //water
            if(y > craft.waterLevel) craft.waterLevel = y;
            craft.waterType = 8;
            set(nullBlock, x, y, z);
@@ -422,7 +484,7 @@ public class CraftBuilder {
        }
 
        //found lava, record lava level and water type
-       if(blockType == 10 || blockType == 11){ //lava
+       if((blockType == 10 || blockType == 11) && theBlock.getData() == 0){ //lava
            if(y > craft.waterLevel) craft.waterLevel = y;
            craft.waterType = 10;
            set(nullBlock, x, y, z);
@@ -654,8 +716,8 @@ public class CraftBuilder {
            }
 
            //an airship needs to have x percent of flystone to be able to move
-           if(craft.type.canFly && craft.type.flyBlockType != 0){
-
+           //if(craft.type.canFly && craft.type.flyBlockType != 0){
+           if(craft.type.flyBlockType != 0 && craft.type.flyBlockPercent > 0) {
                //int flyBlocksNeeded = (int)Math.floor((blockCount - flyBlockCount) * ((float)type.flyBlockPercent * 0.01));
 
                //let's hope it is correct :P
