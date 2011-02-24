@@ -30,11 +30,11 @@ public class PermissionInterface {
 		if(Permissions == null) {
 			System.out.println("Movecraft: WARNING! A command attempted to check against a group, " + 
 				"but no group handling plugin was found!");
-			return true;
+			//return true;
 		}
-		if(group.equalsIgnoreCase(player.getName()))
+		else if(group.equalsIgnoreCase(Permissions.getGroup(player.getName())))
 			return true;
-		if(group.equalsIgnoreCase(Permissions.getGroup(player.getName())))
+		if(group.equalsIgnoreCase(player.getName()))
 			return true;
 
 		player.sendMessage("Only users in group " + group + " may use that.");

@@ -50,8 +50,9 @@ public class MoveCraft_BlockListener extends BlockListener {
 				playerCraft.blockPlaced = true;
 		}
 
-		/*
 		if (blockPlaced.getState() instanceof Sign) {
+			player.sendMessage("This is a sign.");
+			/*
 
 			if (playerCraft == null) {
 				Sign sign = (Sign) blockPlaced.getState();
@@ -83,8 +84,8 @@ public class MoveCraft_BlockListener extends BlockListener {
 			} else {
 				plugin.releaseCraft(player, playerCraft);
 			}
+			*/
 		}
-		 */
 	}
 
 	//@Override
@@ -121,10 +122,13 @@ public class MoveCraft_BlockListener extends BlockListener {
 					}
 				}
 
+				//All players can use signs...
+				/*
 				if(!craftType.canUse(player)){
 					player.sendMessage(ChatColor.RED + "You are not allowed to use this type of craft");
 					return;
 				}
+				*/
 
 				String restriction = sign.getLine(1).trim();
 				if(!restriction.equals("") && restriction != null) {
