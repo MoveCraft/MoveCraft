@@ -111,6 +111,7 @@ public class Craft {
 	public boolean StopRequested = false;
 	public Block railBlock;
 	int remainingFuel = 0;
+	int asyncTaskId = 0;
 
 	// Added engine block to test having blocks that propel the craft
 	ArrayList<DataBlock> engineBlocks = new ArrayList<DataBlock>();
@@ -814,6 +815,24 @@ public class Craft {
 	public int getSpeed() {
 		return speed;
 	}
+	
+	public boolean AsyncMove(int dx, int dy, int dz) {
+		if(plugin.getServer().getScheduler().isCurrentlyRunning(asyncTaskId))
+			return false;
+		
+		final int changeX = dx; 
+		final int changeY = dy;
+		final int changeZ = dz;
+		Runnable r = new Runnable() {
+			public void run() {
+				//calculatedMove(changeX, changeY, changeZ);
+				move(changeX, changeY, changeZ);
+			}
+		};
+		
+		asyncTaskId = plugin.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, r);
+		return true;
+	}
 
 	public void calculatedMove(int dx, int dy, int dz) {
 		//instead of forcing the craft to move, check some things beforehand
@@ -881,8 +900,19 @@ public class Craft {
 			setSpeed(speed - 1);
 
 		}
-		if(!(dx == 0 && dy == 0 && dz == 0))
+		
+		if(!(dx == 0 && dy == 0 && dz == 0)) {
+			//if async movement is not configured, or the craft can't asyncmove
+			//if(!MoveCraft.instance.configFile.ConfigSettings.get("EnableAsyncMovement").equalsIgnoreCase("true") ||
+			//		!AsyncMove(dx, dy, dz))
+			
+			//If the plugin is configured for async movement, it will be used
+			//However, using this, if the craft hasn't finished moving before, it won't continue to move...
+			if(!MoveCraft.instance.ConfigSetting("EnableAsyncMovement").equalsIgnoreCase("true"))
 				move(dx, dy, dz);
+			else
+				AsyncMove(dx, dy, dz);
+		}
 
 		// the craft goes faster every click
 		setSpeed(speed + 1);
@@ -1003,6 +1033,20 @@ public class Craft {
 	
 	public void WarpToWorld(World targetWorld) {
 		
+	}
+	
+	public void SelfDestruct(boolean justTheTip) {
+		//figure out what part of the craft is touching the world, or its direction...
+
+		for (int x = 0; x < sizeX; x++) {
+			for (int z = 0; z < sizeZ; z++) {
+				for (int y = 0; y < sizeY; y++) {
+					Block theBlock = world.getBlockAt(posX + x, posY + y, posZ + z);
+					theBlock.setType(Material.TNT);
+					//TNT tnt = (TNT) theBlock.getState();
+				}
+			}
+		}
 	}
 	
 	public Location getLocation() {
