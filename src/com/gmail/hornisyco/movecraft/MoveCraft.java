@@ -5,7 +5,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.*;
 import java.io.File;
-import java.util.Properties;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -31,11 +30,9 @@ import org.bukkit.plugin.PluginManager;
 
 public class MoveCraft extends JavaPlugin {
 
-	// PropertiesFile properties;
-	Properties properties;
-
 	static final String pluginName = "MoveCraft";
 	static String version;
+	public static MoveCraft instance;
 
 	static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	public static Logger logger = Logger.getLogger("Minecraft");
@@ -63,7 +60,7 @@ public class MoveCraft extends JavaPlugin {
 	}
 
 	public void onEnable() {
-		CraftType.plugin = this;
+		instance = this;
 
 		PluginManager pm = getServer().getPluginManager();
 		pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener, Priority.Normal, this);
@@ -78,10 +75,10 @@ public class MoveCraft extends JavaPlugin {
 		//pm.registerEvent(Event.Type.BLOCK_CANBUILD, blockListener, Priority.Normal, this);
 
 		loadProperties();
-		PermissionInterface.setupPermissions(this);
+		PermissionInterface.setupPermissions();
 
 		PluginDescriptionFile pdfFile = this.getDescription();
-		consoleSay(pdfFile.getVersion() + " plugin enabled");
+		System.out.println(pdfFile.getName() + " " + pdfFile.getVersion() + " plugin enabled");
 		version = pdfFile.getVersion();
 	}
 
@@ -166,6 +163,10 @@ public class MoveCraft extends JavaPlugin {
 		}
 
 		player.sendMessage(ChatColor.GRAY + "Right-click in the direction you want to go.");
+	}
+	
+	public String ConfigSetting(String setting) {
+		return configFile.ConfigSettings.get(setting);
 	}
 
 	public static String getDateTime() {

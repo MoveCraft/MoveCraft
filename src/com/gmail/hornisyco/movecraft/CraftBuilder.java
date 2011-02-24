@@ -9,6 +9,8 @@ import org.bukkit.Material;
 import org.bukkit.block.*;
 
 /**
+ * MoveCraft craft builder
+ * Detects and "assembles" a craft from a series of blocks, from a specified origin block
  * @author Joel (Yogoda)
  */
 public class CraftBuilder {
@@ -242,13 +244,6 @@ public class CraftBuilder {
                         	craft.findFuel(block);
                         }
 
-                       /*
-                       //omg there was water or lava on this ship, we need to detect the waterlevel/watertype again
-                       if(blockId >= 8 && blockId <= 11){
-                           needWaterDetection = true;
-                       }
-                        */
-
                        //there is a problem with ice that spawn a source block, we can't have ice
                        if(blockId==79){
                            craft.player.sendMessage(ChatColor.RED + "Sorry, you can't have ice in the " + craft.name);
@@ -307,8 +302,7 @@ public class CraftBuilder {
 
          //detect all connected empty blocks
            do{
-               if(!createAirBubble()){
-
+               if(!createAirBubble() && MoveCraft.instance.ConfigSetting("allowHoles").equalsIgnoreCase("false")){
                    craft.player.sendMessage(ChatColor.YELLOW + "This " + craft.type.name + " have holes, it needs to be waterproof");
                    return false;
                }

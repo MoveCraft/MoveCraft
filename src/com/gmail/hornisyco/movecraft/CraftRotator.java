@@ -364,7 +364,10 @@ public class CraftRotator {
 
 					//craft block
 					if(blockId != 255){
-						setBlock(blockId, x - craft.offX, y, z - craft.offZ, craft.wdx, craft.wdy, craft.wdz, newRotation);
+						//setBlock(blockId, x - craft.offX, y, z - craft.offZ, craft.wdx, craft.wdy, craft.wdz, newRotation);
+						
+						//setBlock(blockId, x - craft.offX, y, - + craft.offZ, 0, 0, 0, newRotation);
+						setBlock(blockId, x - craft.offX, y, - + craft.offZ, 0, 0, 0, newRotation);
 					}
 
 				}

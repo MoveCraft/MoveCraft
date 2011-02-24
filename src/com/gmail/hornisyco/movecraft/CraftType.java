@@ -18,8 +18,6 @@ import org.bukkit.entity.Player;
  */
 public class CraftType {
 	
-	public static MoveCraft plugin;
-
 	String name = "";
 	String driveCommand = "pilot";
 
@@ -62,7 +60,7 @@ public class CraftType {
 	public CraftType(String name) {
 		this.name = name;
 		
-		String[] bob = plugin.configFile.ConfigSettings.get("StructureBlocks").split(",");
+		String[] bob = MoveCraft.instance.ConfigSetting("StructureBlocks").split(",");
 		short[] juan = new short[bob.length + 1];
 		for(int i = 0; i < bob.length; i++)
 			juan[i] = Short.parseShort(bob[i]);

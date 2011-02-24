@@ -17,11 +17,9 @@ import org.bukkit.plugin.Plugin;
 
 public class PermissionInterface {
 	public static PermissionHandler Permissions = null;
-	public static MoveCraft plugin = null;
 
-	public static void setupPermissions(MoveCraft movecraft) {
-		plugin = movecraft;
-		Plugin test = plugin.getServer().getPluginManager().getPlugin("Permissions");
+	public static void setupPermissions() {
+		Plugin test = MoveCraft.instance.getServer().getPluginManager().getPlugin("Permissions");
 
 		if(test != null) {
 			Permissions = ((Permissions)test).getHandler();
@@ -53,7 +51,7 @@ public class PermissionInterface {
 				player.sendMessage("You do not have permission to preform " + command);
 		}
 		else {
-			if(plugin.configFile.ConfigSettings.get("RequireOp").equalsIgnoreCase("true") && !player.isOp())
+			if(MoveCraft.instance.ConfigSetting("RequireOp").equalsIgnoreCase("true") && !player.isOp())
 				return false;
 		}
 		

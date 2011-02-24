@@ -22,6 +22,7 @@ public class ConfigFile {
 		ConfigSettings.put("RequireOp", "true");
 		ConfigSettings.put("StructureBlocks",
 				"4,5,17,19,20,35,41,42,43,44,45,46,47,48,49,50,53,57,65,67,68,69,75,76,77,85,87,88,89");
+		ConfigSettings.put("allowHoles", "false");
 		
 		File dir = plugin.getDataFolder();
 		if (!dir.exists())

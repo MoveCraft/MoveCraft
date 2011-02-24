@@ -3,6 +3,7 @@ package com.gmail.hornisyco.movecraft;
 import java.util.List;
 
 import org.bukkit.block.Block;
+import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.ChatColor;
@@ -15,11 +16,11 @@ import org.bukkit.event.player.PlayerChatEvent;
 
 import org.bukkit.event.player.*;
 
+import com.gmail.hornisyco.movecraft.Craft.DataBlock;
+
 public class MoveCraft_PlayerListener extends PlayerListener {
-	private final MoveCraft plugin;
 
 	public MoveCraft_PlayerListener(MoveCraft instance) {
-		plugin = instance;
 	}
 
 	@Override
@@ -52,10 +53,10 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				
 				int CraftReleaseDelay = 15;
 				try {
-				CraftReleaseDelay = Integer.parseInt(plugin.configFile.ConfigSettings.get("CraftReleaseDelay"));
+				CraftReleaseDelay = Integer.parseInt(MoveCraft.instance.ConfigSetting("CraftReleaseDelay"));
 				}
 				catch (NumberFormatException ex) {
-					System.out.println("ERROR with playermove. Could not parse " + plugin.configFile.ConfigSettings.get("CraftReleaseDelay"));
+					System.out.println("ERROR with playermove. Could not parse " + MoveCraft.instance.ConfigSetting("CraftReleaseDelay"));
 				}
 				if(CraftReleaseDelay != 0)
 					craft.timer = new MoveCraft_Timer(CraftReleaseDelay, craft, "abandonCheck", false);
@@ -83,14 +84,14 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 
 			if (craft.blockCount <= 0) {
 
-				plugin.releaseCraft(player, craft);
+				MoveCraft.instance.releaseCraft(player, craft);
 				return;
 			}
 
 			ItemStack pItem = player.getItemInHand();
 			int item = pItem.getTypeId();
 
-			plugin.DebugMessage(player.getName() + " used item " + Integer.toString(item));
+			MoveCraft.instance.DebugMessage(player.getName() + " used item " + Integer.toString(item));
 
 			// the craft won't budge if you have any tool in the hand
 			if (!craft.haveControl ||
@@ -109,7 +110,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			item == 336 // the brick, compatibility with PushBlocks
 			) {
 				if( (item == craft.type.remoteControllerItem || 
-						item == Integer.parseInt(plugin.configFile.ConfigSettings.get("UniversalRemoteId")))
+						item == Integer.parseInt(MoveCraft.instance.ConfigSetting("UniversalRemoteId")))
 					&& !craft.isOnCraft(player, true)
 					&& PermissionInterface.CheckPermission(player, "remote")) {
 						if (craft.haveControl) {
@@ -169,14 +170,33 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		String[] split = event.getMessage().split(" ");
 		split[0] = split[0].substring(1);
 
-		if (split[0].equalsIgnoreCase("findcenter")) {
+		if (split[0].equalsIgnoreCase("sheep")) {
+			player.getWorld().spawnCreature(player.getLocation(), CreatureType.SHEEP);
+		}
+		else if (split[0].equalsIgnoreCase("findcenter")) {
 			Craft craft = Craft.getCraft(player);
 			Location blockLoc = new Location(player.getWorld(), craft.posX + craft.offX, craft.posY, craft.posZ + craft.offZ);
 			Block mcBlock = player.getWorld().getBlockAt(blockLoc);
 			mcBlock.setType(Material.GOLD_BLOCK);
 		}
+		else if (split[0].equalsIgnoreCase("finddatablocks")) {
+			Craft craft = Craft.getCraft(player);
+			for(DataBlock dataBlock : craft.dataBlocks) {
+				Block theBlock = player.getWorld().getBlockAt(new Location(
+						player.getWorld(), craft.posX + dataBlock.x, craft.posY + dataBlock.y, craft.posZ + dataBlock.z));
+				theBlock.setType(Material.GOLD_BLOCK);
+			}			
+		}
+		else if (split[0].equalsIgnoreCase("findcomplexblocks")) {
+			Craft craft = Craft.getCraft(player);
+			for(DataBlock dataBlock : craft.complexBlocks) {
+				Block theBlock = player.getWorld().getBlockAt(new Location(
+						player.getWorld(), craft.posX + dataBlock.x, craft.posY + dataBlock.y, craft.posZ + dataBlock.z));
+				theBlock.setType(Material.GOLD_BLOCK);
+			}			
+		}
 		else if (split[0].equalsIgnoreCase("diamonds")) {
-			CraftRotator cr = new CraftRotator(Craft.getCraft(player), plugin);
+			CraftRotator cr = new CraftRotator(Craft.getCraft(player), MoveCraft.instance);
 			cr.Diamonds(player.getWorld());
 		} else
 		if (split[0].equalsIgnoreCase("movecraft")) {
@@ -210,14 +230,14 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 								+ " : " + craft.blockCount + " blocks");
 					}
 				} else if (split[1].equalsIgnoreCase("reload")) {
-					//plugin.loadProperties();
-					plugin.loadProperties();
+					//MoveCraft.instance.loadProperties();
+					MoveCraft.instance.loadProperties();
 					player.sendMessage(ChatColor.YELLOW + "configuration reloaded");
 				} else if (split[1].equalsIgnoreCase("debug")) {
-					plugin.ToggleDebug();
+					MoveCraft.instance.ToggleDebug();
 				}
 				else if (split[1].equalsIgnoreCase("config")) {
-					plugin.configFile.ListSettings(player);
+					MoveCraft.instance.configFile.ListSettings(player);
 				}
 			}
 			else {
@@ -230,7 +250,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 						+ " : " + ChatColor.WHITE + "commands specific to the craft type");
 			}
 		} else if (split[0].equalsIgnoreCase("release")) {
-			plugin.releaseCraft(player, Craft.getCraft(player));
+			MoveCraft.instance.releaseCraft(player, Craft.getCraft(player));
 		} else {
 			String craftName = split[0];
 
@@ -265,7 +285,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 
 				// try to detect and create the craft
 				// use the block the player is standing on
-				plugin.createCraft(player, craftType,
+				MoveCraft.instance.createCraft(player, craftType,
 						(int) Math.floor(player.getLocation().getX()),
 						(int) Math.floor(player.getLocation().getY() - 1),
 						(int) Math.floor(player.getLocation().getZ()), null);
@@ -317,7 +337,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				return true;
 				
 			} else if (split[1].equalsIgnoreCase("release")) {
-				plugin.releaseCraft(player, craft);
+				MoveCraft.instance.releaseCraft(player, craft);
 				return true;
 
 			} else if (split[1].equalsIgnoreCase("info")) {
@@ -332,7 +352,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 							Integer.toString(craftType.minBlocks) + "-" + craftType.maxBlocks + " blocks.");
 				player.sendMessage(ChatColor.YELLOW +"Max speed: " + craftType.maxSpeed);
 
-				if (plugin.DebugMode)
+				if (MoveCraft.instance.DebugMode)
 					player.sendMessage(ChatColor.YELLOW + Integer.toString(craft.dataBlocks.size()) + " data Blocks, " + 
 							craft.complexBlocks.size() + " complex Blocks, " + 
 							craft.engineBlocks.size() + " engine Blocks," + 
@@ -403,7 +423,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					new MoveCraft_Timer(0, craft, "automove", false);
 				
 			} else if (split[1].equalsIgnoreCase("turn")) {
-				CraftRotator cr = new CraftRotator(craft, plugin);
+				CraftRotator cr = new CraftRotator(craft, MoveCraft.instance);
 				
 				if(split[2].equalsIgnoreCase("right"))
 					cr.turn(90);
@@ -414,27 +434,27 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				
 			} else if (split[1].equalsIgnoreCase("warpdrive")) {
 					if(split.length == 1) {
-						List<World> worlds = plugin.getServer().getWorlds();
+						List<World> worlds = MoveCraft.instance.getServer().getWorlds();
 						for(World world : worlds)
 							player.sendMessage(world.getName() + " : " + world.getId());
 					} else {
 						try
 						{
 							int WorldNum = Integer.parseInt(split[1]);
-							World targetWorld = plugin.getServer().getWorlds().get(WorldNum);
+							World targetWorld = MoveCraft.instance.getServer().getWorlds().get(WorldNum);
 							craft.WarpToWorld(targetWorld);						
 						}
 						catch (NumberFormatException ex)
 						{
-							World targetWorld = plugin.getServer().getWorld(split[1]); 
+							World targetWorld = MoveCraft.instance.getServer().getWorld(split[1]); 
 							if(targetWorld != null) {
 								craft.WarpToWorld(targetWorld);
 							}
 							else {
 								if(split[2].equalsIgnoreCase("nether"))
-									plugin.getServer().createWorld(split[1], Environment.NETHER);
+									MoveCraft.instance.getServer().createWorld(split[1], Environment.NETHER);
 								else
-									plugin.getServer().createWorld(split[1], Environment.NORMAL);
+									MoveCraft.instance.getServer().createWorld(split[1], Environment.NORMAL);
 							}
 						}
 					}
