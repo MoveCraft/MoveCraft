@@ -76,6 +76,7 @@ public class MoveCraft extends JavaPlugin {
 
 		loadProperties();
 		PermissionInterface.setupPermissions();
+		BlocksInfo.loadBlocksInfo();
 
 		PluginDescriptionFile pdfFile = this.getDescription();
 		System.out.println(pdfFile.getName() + " " + pdfFile.getVersion() + " plugin enabled");
