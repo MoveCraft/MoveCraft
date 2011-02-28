@@ -23,6 +23,7 @@ public class ConfigFile {
 		ConfigSettings.put("StructureBlocks",
 				"4,5,17,19,20,35,41,42,43,44,45,46,47,48,49,50,53,57,65,67,68,69,75,76,77,85,87,88,89");
 		ConfigSettings.put("allowHoles", "false");
+		ConfigSettings.put("EnableAsyncMovement", "false");
 		
 		File dir = plugin.getDataFolder();
 		if (!dir.exists())
@@ -37,55 +38,9 @@ public class ConfigFile {
 			} catch (IOException e) {
 			}
 		}
+		
 		//save the file whether it was just loaded or not, thus injecting out of date config files with new config settings
 		SaveFile(MCConfig);
-		
-			/*
-			try {
-				HashMap<String, String> FileSettings = new HashMap<String, String>();
-				BufferedReader in = new BufferedReader(new FileReader(MCConfig));
-
-				String line;
-				while( (line=in.readLine() ) != null ) {
-					line = line.trim();
-
-					if( line.startsWith( "#" ) )
-						continue;
-
-					String[] split = line.split("=");
-
-					FileSettings.put(split[0], split[1]);
-				}
-				in.close();
-				
-				for(String configSetting: ConfigSettings.keySet()) {
-					if(!FileSettings.containsKey(configSetting)) {
-						//add the setting and write to file...
-					}
-				}
-			}
-			catch (IOException e) {
-			}
-		}
-		else {
-			try {
-				MCConfig.createNewFile();
-				BufferedWriter bw = new BufferedWriter(new FileWriter(MCConfig));
-
-				for(Object configLine : ConfigSettings.keySet().toArray()) {
-					String configKey = (String) configLine;
-					bw.write(configKey + "=" + ConfigSettings.get(configKey) + System.getProperty("line.separator"));
-				}
-				bw.close();
-			}
-			catch (IOException ex) {
-			}
-		}
-		*/
-
-		//CraftType.loadTypes(dir);
-		//if(ConfigSettings.get("WriteDefaultCraft") == "true")
-			//CraftType.saveTypes(dir);
 	}
 	
 	public void LoadFile(File MCConfig) {

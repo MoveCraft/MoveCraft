@@ -64,13 +64,14 @@ public class MoveCraft extends JavaPlugin {
 
 		PluginManager pm = getServer().getPluginManager();
 		pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener, Priority.Normal, this);
-		pm.registerEvent(Event.Type.PLAYER_COMMAND, playerListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.PLAYER_COMMAND_PREPROCESS, playerListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_ITEM, playerListener, Priority.Normal, this);
 
 		pm.registerEvent(Event.Type.BLOCK_PLACED, blockListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.BLOCK_RIGHTCLICKED, blockListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.BLOCK_INTERACT, blockListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.SIGN_CHANGE, blockListener, Priority.Normal, this);
 		//pm.registerEvent(Event.Type.REDSTONE_CHANGE, blockListener, Priority.Normal, this);
 		//pm.registerEvent(Event.Type.BLOCK_CANBUILD, blockListener, Priority.Normal, this);
 
@@ -121,7 +122,7 @@ public class MoveCraft extends JavaPlugin {
 			releaseCraft(player, craft);
 		}
 
-		craft = new Craft(this, craftType, player, name);
+		craft = new Craft(craftType, player, name);
 
 		// auto-detect and create the craft
 		if (!CraftBuilder.detect(craft, x, y, z)) {

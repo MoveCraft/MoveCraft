@@ -2,11 +2,6 @@ package com.gmail.hornisyco.movecraft;
 
 import org.bukkit.Material;
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /**
  * BlocksInfo file
  * Defines information on all known blocks that MoveCraft uses for various purposes.
@@ -40,7 +35,8 @@ public class BlocksInfo {
 		blocks[18] = new BlockInfo(18,"foliage", false, false, false, -1, 0, false);
 		blocks[19] = new BlockInfo(19,"sponge", false, false, false, false);
 		blocks[20] = new BlockInfo(20,"glass", false, false, false, -1, 0, false);
-		blocks[22] = new BlockInfo(22,"dispenser", true, false, true, new short[] {4, 2, 3, 5});
+		blocks[23] = new BlockInfo(23,"dispenser", true, false, true, new short[] {4, 2, 3, 5});
+		blocks[26] = new BlockInfo(26,"bed", true, true, false, 355, 1, false);
 		blocks[35] = new BlockInfo(35,"wool", true, false, false, 35, 1, false);
 		blocks[37] = new BlockInfo(37,"yellow flower", false, true, false, true);
 		blocks[38] = new BlockInfo(38,"red flower", false, true, false, true);
@@ -66,8 +62,8 @@ public class BlocksInfo {
 		blocks[58] = new BlockInfo(58,"workbench", false, false, false, false);
 		blocks[59] = new BlockInfo(59,"seed", true, true, false, 295, 1, false);
 		blocks[60] = new BlockInfo(60,"field", true, false, false, 3, 1, false);
-		blocks[61] = new BlockInfo(61,"furnace", true, false, true, 4, 8, false);
-		blocks[62] = new BlockInfo(62,"furnace", true, false, true, 4, 8, false); /* Needs cardinals */
+		blocks[61] = new BlockInfo(61,"furnace", true, false, 4, 8, new short[] {4, 2, 3, 5}); /* Might need support...*/
+		blocks[62] = new BlockInfo(62,"furnace", true, false, 4, 8, new short[] {4, 2, 3, 5});
 		blocks[63] = new BlockInfo(63,"sign", true, true, true, 323, 1, false);
 		blocks[64] = new BlockInfo(64,"wooden door", true, true, false, 5, 3, false);
 		blocks[65] = new BlockInfo(65,"ladder", true, true, false, false);
@@ -91,7 +87,7 @@ public class BlocksInfo {
 		blocks[83] = new BlockInfo(83,"reed", true, true, false, 338, 1, false);
 		blocks[84] = new BlockInfo(84,"jukebox", true, false, false, false);
 		blocks[85] = new BlockInfo(85,"fence", true, false, false, false);
-		blocks[86] = new BlockInfo(86,"pumpkin", true, false, false, false); /* ?!?!?! */
+		blocks[86] = new BlockInfo(86,"pumpkin", true, false, false, new short[] {3, 0, 2, 1});
 		blocks[87] = new BlockInfo(87,"hellstone", false, false, false, false);
 		blocks[88] = new BlockInfo(88,"mud", false, false, false, false);
 		blocks[89] = new BlockInfo(89,"lightstone", false, false, false, false);
@@ -104,8 +100,10 @@ public class BlocksInfo {
 	}
 
 	public static boolean isDataBlock(int blockId) {
-		if(blockId != -1 && blocks[blockId] == null)
+		if(blockId != -1 && blocks[blockId] == null) {
+			MoveCraft.instance.DebugMessage("blocks(" + blockId + " is null!");
 			return false;
+		}
 
 		return blockId != -1 && blocks[blockId].isDataBlock;
 	}
@@ -118,11 +116,14 @@ public class BlocksInfo {
 		return blockId != -1 && blocks[blockId].isComplexBlock;
 	}
 
-	public static boolean needsSupport(int blockId) {
-		if(blockId != -1 && blocks[blockId] == null)
+	public static boolean needsSupport(int blockId) {		
+		if(blockId == -1)
+			return false;
+		
+		if(blocks[blockId] == null)
 			return false;
 
-		return blockId != -1 && blocks[blockId].needSupport;
+		return blocks[blockId].needSupport;
 	}
 
 	public static boolean coversGrass(int blockId) {
@@ -181,15 +182,24 @@ public class BlocksInfo {
 		boolean isGrassCover; 
 		short[] cardinalDirections;
 
+		/* Given grasscover */
 		public BlockInfo(int id, String name, boolean isDataBlock, boolean needSupport, boolean isComplexBlock, boolean isGrassCover) {
 			this(id, name, isDataBlock, needSupport, isComplexBlock, id, 1, isGrassCover);
 		}
 
+		/* Given cardinals */
 		public BlockInfo(int id, String name, boolean isDataBlock, boolean needSupport, boolean isComplexBlock, short[] cardinals) {
-			BlockInfo bob = new BlockInfo(id, name, isDataBlock, needSupport, isComplexBlock, id, 1, false);
-			bob.cardinalDirections = cardinals;
+			this(id, name, isDataBlock, needSupport, isComplexBlock, id, 1, false);
+			this.cardinalDirections = cardinals;
 		}
 
+		/* Given cardinals and dropItems */
+		public BlockInfo(int id, String name, boolean isDataBlock, boolean isComplexBlock, int dropItem, int dropQuantity, short[] cardinals) {
+			this(id, name, isDataBlock, false, isComplexBlock, id, 1, false);
+			this.cardinalDirections = cardinals;
+		}
+
+		/* Given dropitems */
 		public BlockInfo(int id, String name, boolean isDataBlock, boolean needSupport,
 				boolean isComplexBlock, int dropItem, int dropQuantity, boolean isGrassCover) {
 

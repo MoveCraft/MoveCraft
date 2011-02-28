@@ -19,10 +19,10 @@ import org.bukkit.block.*;
 //import org.bukkit.block.Sign;
 
 /*
- * MoveCraft plugin for Bukkit by Yogoda and SycoPrime
+ * MoveCraft MoveCraft.instance for Bukkit by Yogoda and SycoPrime
  *
  * You are free to modify it for your own server
- * or use part of the code for your own plugins.
+ * or use part of the code for your own MoveCraft.instances.
  * You don't need to credit me if you do, but I would appreciate it :)
  *
  * You are not allowed to distribute alternative versions of MoveCraft without my consent.
@@ -32,8 +32,6 @@ public class Craft {
 
 	// list of craft
 	public static ArrayList<Craft> craftList = new ArrayList<Craft>();
-
-	private final MoveCraft plugin;
 
 	CraftType type;
 	String name; // name, a different name can be set
@@ -116,13 +114,12 @@ public class Craft {
 	// Added engine block to test having blocks that propel the craft
 	ArrayList<DataBlock> engineBlocks = new ArrayList<DataBlock>();
 
-	Craft(MoveCraft instance, CraftType type, Player player, String customName) {
+	Craft(CraftType type, Player player, String customName) {
 
 		this.type = type;
 		this.name = type.name;
 		this.customName = customName;
 		this.player = player;
-		this.plugin = instance;
 		this.world = player.getWorld();
 	}
 
@@ -318,7 +315,7 @@ public class Craft {
 		/*
 		 * call an onblockflow event, or otherwise somehow handle worldguard's sponge fix
 		 BlockFromToEvent blockFlow = new BlockFromToEvent(Type.BLOCK_FLOW, source, blockFace);
-		  getServer().getPluginManager().callEvent(blockFlow);
+		  getServer().getMoveCraft.instanceManager().callEvent(blockFlow);
 		 */
 	}
 
@@ -336,9 +333,9 @@ public class Craft {
 	public boolean canMove(int dx, int dy, int dz) {
 
 		/*
-		 * plugin.DebugMessage("move dx : " + dx + " dy : " + dy + " dZ : " + dz);
-		 * plugin.DebugMessage("move speed : " + speed);
-		 * plugin.DebugMessage("move sizeX : " + sizeX + " sizeY : " + sizeY + " sizeZ : " + sizeZ);
+		 * MoveCraft.instance.DebugMessage("move dx : " + dx + " dy : " + dy + " dZ : " + dz);
+		 * MoveCraft.instance.DebugMessage("move speed : " + speed);
+		 * MoveCraft.instance.DebugMessage("move sizeX : " + sizeX + " sizeY : " + sizeY + " sizeZ : " + sizeZ);
 		 */
 		ArrayList<Chunk> checkChunks = new ArrayList<Chunk>();
 		dx = speed * dx;
@@ -352,7 +349,7 @@ public class Craft {
 
 		// vertical limit
 		if (posY + dy < 0 || posY + sizeY + dy > 128) {
-			plugin.DebugMessage("Craft prevented from moving due to vertical limit.");
+			MoveCraft.instance.DebugMessage("Craft prevented from moving due to vertical limit.");
 			return false;
 		}
 
@@ -369,7 +366,7 @@ public class Craft {
 					&& !canGoThrough(0, targetBlock1.getTypeId(), 0)
 					|| !isCraftBlock(X - posX, Y + 1 - posY, Z - posZ)
 					&& !canGoThrough(0, targetBlock2.getTypeId(), 0)) {
-				plugin.DebugMessage("Craft prevented from because...can't go through?");
+				MoveCraft.instance.DebugMessage("Craft prevented from because...can't go through?");
 				return false;
 			}
 		}
@@ -399,20 +396,20 @@ public class Craft {
 						// go into water
 						if (dy < 0 && blockId >= 8 && blockId <= 11) {
 
-							// plugin.DebugMessage("found water at " + y);
+							// MoveCraft.instance.DebugMessage("found water at " + y);
 							if (y > newWaterLevel)
 								newWaterLevel = y;
 						} else
 							// get out of water, into air
 							if (dy > 0 && blockId == 0) {
 
-								// plugin.DebugMessage("found air at " + y);
+								// MoveCraft.instance.DebugMessage("found air at " + y);
 								if (y - 1 < newWaterLevel)
 									newWaterLevel = y - 1;
 							}
 						
 						if (!canGoThrough(matrix[x][y][z], blockId, blockData) ) {
-							plugin.DebugMessage("Craft prevented from moving because can't go through.");
+							MoveCraft.instance.DebugMessage("Craft prevented from moving because can't go through.");
 							return false;
 						}
 						
@@ -432,7 +429,7 @@ public class Craft {
 		
 		for (Chunk checkChunk : checkChunks) {
 			if(!world.isChunkLoaded(checkChunk)) {
-				plugin.DebugMessage("Craft prevented from moving because destination chunk is not loaded.");
+				MoveCraft.instance.DebugMessage("Craft prevented from moving because destination chunk is not loaded.");
 				return false;
 			}
 		}
@@ -441,7 +438,7 @@ public class Craft {
 
 	// move the craft according to a vector d
 	public void move(int dx, int dy, int dz) {
-		Server server = plugin.getServer();
+		Server server = MoveCraft.instance.getServer();
 
 		dx = speed * dx;
 		dz = speed * dz;
@@ -542,17 +539,19 @@ public class Craft {
 					// craft block, replace by air
 					if (BlocksInfo.needsSupport(blockId)) {
 
-						Block block = world.getBlockAt(posX + x, posY + y, posZ
-								+ z);
+						Block block = world.getBlockAt(posX + x, posY + y, posZ + z);
 
 						// special case for doors
 						// we need to remove the lower part of the door only, or
 						// the door will pop
-						// lower part have data 0 - 7, upper part have data 8 -
-						// 15
-						if (blockId == 64 || blockId == 71) { // wooden door and
-							// steel door
+						// lower part have data 0 - 7, upper part have data 8 - 15
+						if (blockId == 64 || blockId == 71) { // wooden door and steel door
 							if (block.getData() >= 8)
+								continue;
+						}
+						
+						if(blockId == 26) { //bed
+							if(block.getData() > 4)
 								continue;
 						}
 
@@ -610,7 +609,7 @@ public class Craft {
 
 							//drop the item corresponding to the block if it is not a craft block
 							if(!isCraftBlock(dx + x,dy + y, dz + z)){
-								plugin.dropItem(innerBlock);
+								MoveCraft.instance.dropItem(innerBlock);
 							}
 							
 							//A BREAKA THE DRILL BLOCKA
@@ -619,11 +618,11 @@ public class Craft {
 								int num = ( (new Random()).nextInt( Math.abs( blockDurability - 0 ) + 1 ) ) + 0;
 								
 								if(num == 1) {
-									plugin.DebugMessage("Random = 1");
+									MoveCraft.instance.DebugMessage("Random = 1");
 									continue;
 								}
 								else
-									plugin.DebugMessage("Random number = " + Integer.toString(num));
+									MoveCraft.instance.DebugMessage("Random number = " + Integer.toString(num));
 							}
 
 							// inside the craft, the block is different
@@ -726,14 +725,14 @@ public class Craft {
 				inventory = furnace.getInventory();				
 			}
 			
-			if (inventory != null) {		
+			if (inventory != null) {
 				try
 				{
 					for(int slot = 0; slot < inventory.getSize(); slot++){
 						if(complexBlock.items[slot] != null && complexBlock.items[slot].getTypeId() != 0) {
 							inventory.setItem(slot, complexBlock.items[slot]);
-							plugin.DebugMessage("Moving " + complexBlock.items[slot].getAmount() + 
-									" chest item of type " + complexBlock.items[slot].getTypeId() + 
+							MoveCraft.instance.DebugMessage("Moving " + complexBlock.items[slot].getAmount() + 
+									" inventory item of type " + complexBlock.items[slot].getTypeId() + 
 									" in slot " + slot);
 						}
 					}
@@ -817,7 +816,7 @@ public class Craft {
 	}
 	
 	public boolean AsyncMove(int dx, int dy, int dz) {
-		if(plugin.getServer().getScheduler().isCurrentlyRunning(asyncTaskId))
+		if(MoveCraft.instance.getServer().getScheduler().isCurrentlyRunning(asyncTaskId))
 			return false;
 		
 		final int changeX = dx; 
@@ -830,7 +829,7 @@ public class Craft {
 			}
 		};
 		
-		asyncTaskId = plugin.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, r);
+		asyncTaskId = MoveCraft.instance.getServer().getScheduler().scheduleAsyncDelayedTask(MoveCraft.instance, r);
 		return true;
 	}
 
@@ -906,7 +905,7 @@ public class Craft {
 			//if(!MoveCraft.instance.configFile.ConfigSettings.get("EnableAsyncMovement").equalsIgnoreCase("true") ||
 			//		!AsyncMove(dx, dy, dz))
 			
-			//If the plugin is configured for async movement, it will be used
+			//If the MoveCraft.instance is configured for async movement, it will be used
 			//However, using this, if the craft hasn't finished moving before, it won't continue to move...
 			if(!MoveCraft.instance.ConfigSetting("EnableAsyncMovement").equalsIgnoreCase("true"))
 				move(dx, dy, dz);

@@ -8,6 +8,7 @@ import org.bukkit.block.Sign;
 import org.bukkit.event.block.BlockListener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRightClickEvent;
+import org.bukkit.event.block.SignChangeEvent;
 
 public class MoveCraft_BlockListener extends BlockListener {
 	private final MoveCraft plugin;
@@ -94,9 +95,10 @@ public class MoveCraft_BlockListener extends BlockListener {
 		Block block = event.getBlock();
 		Craft playerCraft = Craft.getCraft(player);
 
-
 		if (block.getState() instanceof Sign) {
 			Sign sign = (Sign) block.getState();
+
+			//player.sendMessage("A sign has been right clicked...");
 
 			if(sign.getLine(0).trim().equals("")) return;
 
@@ -171,6 +173,23 @@ public class MoveCraft_BlockListener extends BlockListener {
 				Craft_Hyperspace.exitHyperSpace(playerCraft);
 				sign.setLine(0, "Engage Hyperdrive");
 			}
+		}
+	}
+	
+	public void onSignChange(SignChangeEvent event) {
+		Player player = event.getPlayer();
+		String craftTypeName = event.getLine(0).trim().toLowerCase().replaceAll(ChatColor.BLUE.toString(), "");
+
+		//remove brackets
+		if(craftTypeName.startsWith("["))
+			craftTypeName = craftTypeName.substring(1, craftTypeName.length() - 1);
+
+		//if the first line of the sign is a craft type, get the matching craft type.
+		CraftType craftType = CraftType.getCraftType(craftTypeName);
+		
+		if (craftType != null &&
+				!PermissionInterface.CheckPermission(player, "movecraft." + craftTypeName + "." + craftType.driveCommand)) {
+			event.setCancelled(true);
 		}
 	}
 }

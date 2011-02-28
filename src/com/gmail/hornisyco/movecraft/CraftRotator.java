@@ -190,87 +190,6 @@ public class CraftRotator {
 		return true;
 	}	
 
-	public void move(int dx, int dy, int dz, int dr){
-		World world = craft.player.getWorld();
-		Server server = plugin.getServer();
-		dx = craft.speed * dx;
-		dz = craft.speed * dz;
-
-		//reduce vertical craft.speed
-		if(Math.abs(craft.speed * dy) > 1){
-			dy = craft.speed * dy / 2;
-			if(Math.abs(dy)==0) dy = (int)Math.signum(dy);
-		}
-
-		//player.sendMessage("dr " + dr);
-
-		craft.wdx = dx;
-		craft.wdy = dy;
-		craft.wdz = dz;
-
-		//rotate d vector back to get the correct local craft.direction
-		moveBlocks(rotateX(dx, dz, (360 - craft.rotation) % 360),
-				dy,
-				rotateZ(dx, dz, (360 - craft.rotation) % 360),
-				dr);
-
-		//tp all players in the craft area
-		for (Player p : server.getOnlinePlayers()) {
-			if(craft.isOnCraft(p, false)){
-				double x = p.getLocation().getX() - (craft.posX + 0.5);
-				double z = p.getLocation().getZ() - (craft.posZ + 0.5);
-
-				float r = p.getLocation().getPitch();
-
-				//all players but the driver turn with the craft
-				if(!p.getName().equalsIgnoreCase(craft.player.getName())){
-					r = r + dr;
-				}
-
-				Location tpTarget = new Location(world,
-						(double)craft.posX + 0.5d + rotateX(x, z, dr) + (double)dx,
-						p.getLocation().getY() + (double)dy,
-						(double)craft.posZ + 0.5d + rotateZ(x, z, dr) + (double)dz);
-				tpTarget.setYaw(r);
-				tpTarget.setPitch(p.getLocation().getPitch());
-				p.teleportTo(tpTarget);
-
-			}
-		}
-
-		craft.rotation = (craft.rotation + dr + 360) % 360;
-
-		craft.posX += dx;
-		craft.posY += dy;
-		craft.posZ += dz;
-
-		//update bounding box of the craft
-		//we transform the 2 points (0,0,0) and (sizeX - 1, sizeY - 1, sizeZ - 1)
-
-		int ax = rotateX(-craft.offX, -craft.offZ, craft.rotation);
-		int az = rotateZ(-craft.offX, -craft.offZ, craft.rotation);
-
-		int bx = rotateX(craft.sizeX - craft.offX, craft.sizeZ - craft.offZ, craft.rotation);
-		int bz = rotateZ(craft.sizeX - craft.offX, craft.sizeZ - craft.offZ, craft.rotation);
-
-		craft.minX = craft.posX + (ax < bx ? ax : bx);
-		craft.minY = craft.posY;
-		craft.minZ = craft.posZ + (az < bz ? az : bz);
-
-		craft.maxX = craft.posX + (ax >= bx ? ax : bx);
-		craft.maxY = craft.posY + craft.sizeY - 1;
-		craft.maxZ = craft.posZ + (az >= bz ? az : bz);
-
-		//update craft.direction of the craft
-		dx = rotateX(craft.dirX, craft.dirZ, dr);
-		dz = rotateZ(craft.dirX, craft.dirZ, dr);
-
-		craft.dirX = dx;
-		craft.dirZ = dz;
-
-		craft.lastMove = System.currentTimeMillis();
-	}
-
 	public void turn(int dr){
 		Server server = plugin.getServer();
 
@@ -364,10 +283,10 @@ public class CraftRotator {
 
 					//craft block
 					if(blockId != 255){
-						//setBlock(blockId, x - craft.offX, y, z - craft.offZ, craft.wdx, craft.wdy, craft.wdz, newRotation);
+						setBlock(blockId, x - craft.offX, y, z - craft.offZ, craft.wdx, craft.wdy, craft.wdz, newRotation);
 						
 						//setBlock(blockId, x - craft.offX, y, - + craft.offZ, 0, 0, 0, newRotation);
-						setBlock(blockId, x - craft.offX, y, - + craft.offZ, 0, 0, 0, newRotation);
+						//setBlock(blockId, x - craft.offX, y, - + craft.offZ, 0, 0, 0, newRotation);
 					}
 
 				}

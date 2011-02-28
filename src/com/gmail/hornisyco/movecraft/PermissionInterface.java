@@ -8,11 +8,6 @@ import org.bukkit.plugin.Plugin;
 
 /**
  * Permissions support file to interface Nijikokun's Permissions plugin to MoveCraft
- * A by all accounts entirely unnecessary file, except for the absolute tortoise pace of the Bukkit team in implementing
- * an official rendition.
- * Only in existence by popular, and ignorant, and nearly forceful demand.
- * Now one of you lazy $%#&s fill out the $%*& Permissions Wiki.
- * (I'm looking at you, generic user with nothing better to do than scrutinize my angry comments)
 */
 
 public class PermissionInterface {

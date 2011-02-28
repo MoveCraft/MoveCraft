@@ -165,13 +165,21 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		}
 	}
 
-	public void onPlayerCommand(PlayerChatEvent event) {
+	@Override
+	public void onPlayerCommandPreprocess (PlayerChatEvent event) {
+	//public void onPlayerCommand(PlayerChatEvent event) {
 		Player player = event.getPlayer();
 		String[] split = event.getMessage().split(" ");
 		split[0] = split[0].substring(1);
 
 		if (split[0].equalsIgnoreCase("sheep")) {
 			player.getWorld().spawnCreature(player.getLocation(), CreatureType.SHEEP);
+		}
+		else if (split[0].equalsIgnoreCase("isDataBlock")) {
+			player.sendMessage(Boolean.toString(BlocksInfo.isDataBlock(Integer.parseInt(split[1]))));
+		}
+		else if (split[0].equalsIgnoreCase("isComplexBlock")) {
+			player.sendMessage(Boolean.toString(BlocksInfo.isComplexBlock(Integer.parseInt(split[1]))));
 		}
 		else if (split[0].equalsIgnoreCase("findcenter")) {
 			Craft craft = Craft.getCraft(player);

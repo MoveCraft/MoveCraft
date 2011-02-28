@@ -429,7 +429,6 @@ public class CraftBuilder {
                    }
                    if(BlocksInfo.isComplexBlock(blockId)){
                         addComplexBlock(x, y, z);
-                        System.out.println("Heyo");
                 	   //addDataBlock(world, x, y, z);
                    }
                    //if(blockId == 61 || blockId == 62)
