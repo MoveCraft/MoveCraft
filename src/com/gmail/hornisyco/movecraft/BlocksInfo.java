@@ -44,8 +44,8 @@ public class BlocksInfo {
 		blocks[40] = new BlockInfo(40,"red mushroom", false, true, false, true);
 		blocks[41] = new BlockInfo(41,"gold block", false, false, false, 266, 9, false);
 		blocks[42] = new BlockInfo(42,"iron block", false, false, false, 265, 9, false);
-		blocks[43] = new BlockInfo(43,"double steps", false, false, false, 44, 2, false);
-		blocks[44] = new BlockInfo(44,"step", false, false, false, false);
+		blocks[43] = new BlockInfo(43,"double steps", true, false, false, 44, 2, false);
+		blocks[44] = new BlockInfo(44,"step", true, false, false, false);
 		blocks[45] = new BlockInfo(45,"brick", false, false, false, 336, 4, false);
 		blocks[46] = new BlockInfo(46,"TNT", false, false, false, false);
 		blocks[47] = new BlockInfo(47,"library", false, false, false, false);
@@ -93,6 +93,8 @@ public class BlocksInfo {
 		blocks[89] = new BlockInfo(89,"lightstone", false, false, false, false);
 		blocks[90] = new BlockInfo(90,"portal", true, true, false, false);
 		blocks[91] = new BlockInfo(91,"pumpkin", true, false, false, new short[] {3, 0, 2, 1});
+		blocks[93] = new BlockInfo(93,"repeater", true, false, false, new short[] {3, 0, 2, 1});
+		blocks[94] = new BlockInfo(94,"repeater", true, false, false, new short[] {3, 0, 2, 1});
 	}
 
 	public static String getName(int blockId) {
@@ -194,6 +196,7 @@ public class BlocksInfo {
 		}
 
 		/* Given cardinals and dropItems */
+		//cardinals are North, East, West, South
 		public BlockInfo(int id, String name, boolean isDataBlock, boolean isComplexBlock, int dropItem, int dropQuantity, short[] cardinals) {
 			this(id, name, isDataBlock, false, isComplexBlock, id, 1, false);
 			this.cardinalDirections = cardinals;

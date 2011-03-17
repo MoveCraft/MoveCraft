@@ -16,13 +16,11 @@ import org.bukkit.util.Vector;
 import org.bukkit.Location;
 import org.bukkit.block.*;
 
-//import org.bukkit.block.Sign;
-
-/*
- * MoveCraft MoveCraft.instance for Bukkit by Yogoda and SycoPrime
+/**
+ * MoveCraft for Bukkit by Yogoda and SycoPrime
  *
  * You are free to modify it for your own server
- * or use part of the code for your own MoveCraft.instances.
+ * or use part of the code for your own MoveCraft.
  * You don't need to credit me if you do, but I would appreciate it :)
  *
  * You are not allowed to distribute alternative versions of MoveCraft without my consent.
@@ -153,6 +151,7 @@ public class Craft {
 
 	// add a block to the craft, if it is connected to a craft block
 	public void addBlock(Block block) {
+		MoveCraft.instance.DebugMessage("Adding a block...");
 
 		// to craft coordinates
 		int x = block.getX() - posX;
@@ -303,17 +302,29 @@ public class Craft {
 
 	// SAFE ! setblock
 	public void setBlock(int id, Block block) {
-
 		// if(y < 0 || y > 127 || id < 0 || id > 255){
 		if (id < 0 || id > 255) {
 			// MoveCraft.logger.log(Level.SEVERE, "Invalid setBlock : id=" + id
 			// + " x=" + x + " y=" + y + " z=" + z);
 			MoveCraft.logger.log(Level.SEVERE, "Invalid setBlock : id=" + id);
+			System.out.println("Invalid block type ID. Begin panic.");
 			return;
 		}
-		block.setTypeId(id);
+		
+		if(block.getTypeId() == id) {
+			System.out.println("Tried to change a " + id + " to itself.");
+			return;
+		}
+		
+		if (block.setTypeId(id) == false) {
+			if(world.getBlockAt(block.getLocation()).setTypeId(id) == false)
+				System.out.println("Could not set block of type " + block.getTypeId() + 
+						" to type " + id + ". I tried to fix it, but I couldn't.");
+			else
+				System.out.println("I hope to whatever God you believe in that this fix worked.");
+		}
 		/*
-		 * call an onblockflow event, or otherwise somehow handle worldguard's sponge fix
+		 call an onblockflow event, or otherwise somehow handle worldguard's sponge fix
 		 BlockFromToEvent blockFlow = new BlockFromToEvent(Type.BLOCK_FLOW, source, blockFace);
 		  getServer().getMoveCraft.instanceManager().callEvent(blockFlow);
 		 */
@@ -435,6 +446,39 @@ public class Craft {
 		}
 		return true;
 	}
+	
+	/*
+	public Block getWorldBlock(int x, int y, int z){
+		if(rotation == 0)
+			return world.getBlockAt(minX + CraftRotator.rotateX(x, z, rotation),
+					minY + y,
+					minZ + CraftRotator.rotateZ(x, z, rotation));
+		
+		else
+			return world.getBlockAt(posX + CraftRotator.rotateX(x - offX, z - offZ, rotation),
+				posY + y,
+				posZ + CraftRotator.rotateZ(x - offX, z - offZ, rotation));
+	}
+	*/
+	public Block getWorldBlock(int x, int y, int z) {
+		return world.getBlockAt(posX + x, posY + y, posZ + z);
+	}
+	
+	public void dirty() {
+		for (int x = 0; x < sizeX; x++) {
+			for (int y = 0; y < sizeY; y++) {
+				for (int z = 0; z < sizeZ; z++) {
+					int craftBlockId = matrix[x][y][z];
+					
+					if (craftBlockId == -1 || craftBlockId == 0 || (craftBlockId >= 8 && craftBlockId <= 11))
+						continue;
+					
+					Block block = getWorldBlock(x, y, z);
+					block.setTypeId(3);
+				}
+			}
+		}
+	}
 
 	// move the craft according to a vector d
 	public void move(int dx, int dy, int dz) {
@@ -449,36 +493,35 @@ public class Craft {
 				dy = (int) Math.signum(dy);
 		}
 
-		// scan to know if any of the craft blocks are now missing (blocks
-		// removed, TNT damage, creeper ?)
+		// scan to know if any of the craft blocks are now missing (blocks removed, TNT damage, creeper ?)
 		// and update the structure
 		for (int x = 0; x < sizeX; x++) {
 			for (int y = 0; y < sizeY; y++) {
 				for (int z = 0; z < sizeZ; z++) {
 					int craftBlockId = matrix[x][y][z];
 
-					// remove blocks from the structure if it is not there
-					// anymore
+					// remove blocks from the structure if it is not there anymore
 					if (craftBlockId != -1 && craftBlockId != 0
 							&& !(craftBlockId >= 8 && craftBlockId <= 11)) {
 
-						int blockId = world.getBlockAt(posX + x, posY + y,
-								posZ + z).getTypeId();
+						int blockId = world.getBlockAt(posX + x, posY + y, posZ + z).getTypeId();
+						//int blockId = getWorldBlock(x, y, z).getTypeId();
 
+						 // regenerate TNT on a bomber
 						if (craftBlockId == 46 && type.bomber)
-							continue; // regenerate TNT on a bomber
+							continue;
 
 						// block is not here anymore, remove it
-						if (blockId == 0 || blockId >= 8 && blockId <= 11) { // air,
-							// water
-							// or
-							// lava
+						if (blockId == 0 || blockId >= 8 && blockId <= 11) {
+							// air, water, or lava
 							if (waterType != 0 && y <= waterLevel)
 								matrix[x][y][z] = 0;
 							else
 								matrix[x][y][z] = -1; // make a hole in the craft
 
 							blockCount--;
+							MoveCraft.instance.DebugMessage("Removing a block of type " + craftBlockId + 
+									" because of type " + blockId);
 						}
 					}
 				}
@@ -488,20 +531,22 @@ public class Craft {
 		// store the data of all complex blocks, or die trying
 		for (DataBlock complexBlock : complexBlocks) {
 			// complexBlock.data = world.getBlockAt(posX + complexBlock.getX(), posY + complexBlock.getY(), posZ + complexBlock.getZ()).getData();
-			Block currentBlock = world.getBlockAt(posX + complexBlock.x,
-					posY + complexBlock.y, posZ + complexBlock.z);
+			//Block currentBlock = world.getBlockAt(posX + complexBlock.x, posY + complexBlock.y, posZ + complexBlock.z);
+			Block currentBlock = getWorldBlock(complexBlock.x, complexBlock.y, complexBlock.z);
 			
 			Inventory inventory = null;
 			
 			if (currentBlock.getState() instanceof Sign) {
 				Sign sign = (Sign) currentBlock.getState();
 				ArrayList<String> myLines = new ArrayList<String>();
-
-				myLines.add(sign.getLine(0));
-				myLines.add(sign.getLine(1));
-				myLines.add(sign.getLine(2));
-				myLines.add(sign.getLine(3));
-				signLines.add(myLines);
+				
+				if(sign.getLine(0) != null) {
+					myLines.add(sign.getLine(0));
+					myLines.add(sign.getLine(1));
+					myLines.add(sign.getLine(2));
+					myLines.add(sign.getLine(3));
+					signLines.add(myLines);
+				}
 				
 			} else if (currentBlock.getTypeId() == 54) {
 				Chest chest = ((Chest)currentBlock.getState());
@@ -517,16 +562,19 @@ public class Craft {
 			if(inventory != null) {
 				for(int slot = 0; slot < inventory.getSize(); slot++) {
 					if(inventory.getItem(slot).getTypeId() != 0) {
-						complexBlock.setItem(slot, inventory.getItem(slot).getTypeId(), inventory.getItem(slot).getAmount());
+						//complexBlock.setItem(slot, inventory.getItem(slot).getTypeId(), inventory.getItem(slot).getAmount());
+						complexBlock.setItem(slot, inventory.getItem(slot));
 						inventory.setItem(slot, new ItemStack(0));
 					}
 				}
 			}
 		}
 
-		for (DataBlock dataBlock : dataBlocks) {			
-			dataBlock.data = world.getBlockAt(posX + dataBlock.x,
-					posY + dataBlock.y, posZ + dataBlock.z).getData();
+		for (DataBlock dataBlock : dataBlocks) {
+			//dataBlock.data = world.getBlockAt(posX + dataBlock.x, posY + dataBlock.y, posZ + dataBlock.z).getData();
+			
+			Block currentBlock = getWorldBlock(dataBlock.x, dataBlock.y, dataBlock.z);
+			dataBlock.data = currentBlock.getData();
 		}
 
 		// first pass, remove all items that need a support
@@ -539,7 +587,8 @@ public class Craft {
 					// craft block, replace by air
 					if (BlocksInfo.needsSupport(blockId)) {
 
-						Block block = world.getBlockAt(posX + x, posY + y, posZ + z);
+						//Block block = world.getBlockAt(posX + x, posY + y, posZ + z);
+						Block block = getWorldBlock(x, y, z);
 
 						// special case for doors
 						// we need to remove the lower part of the door only, or
@@ -572,7 +621,8 @@ public class Craft {
 					// if(blockId==8)
 					// System.out.println("water !");
 
-					Block block = world.getBlockAt(posX + x, posY + y, posZ + z);
+					//Block block = world.getBlockAt(posX + x, posY + y, posZ + z);
+					Block block = getWorldBlock(x, y, z);
 
 					// craft block
 					if (blockId != -1) {
@@ -584,8 +634,7 @@ public class Craft {
 							// after moving, this location is not a craft block
 							// anymore
 							if (matrix[x - dx][y - dy][z - dz] == -1
-									|| BlocksInfo.needsSupport(matrix[x - dx][y
-									                                          - dy][z - dz])) {
+									|| BlocksInfo.needsSupport(matrix[x - dx][y - dy][z - dz])) {
 								if (y > waterLevel
 										|| !(type.canNavigate || type.canDive))
 									//|| matrix [ x - dx ] [ y - dy ] [ z - dz ] == 0)
@@ -605,7 +654,8 @@ public class Craft {
 						// new block position (place)
 						if (!BlocksInfo.needsSupport(blockId)) {
 
-							Block innerBlock = world.getBlockAt(posX + dx + x,posY + dy + y, posZ + dz + z);
+							//Block innerBlock = world.getBlockAt(posX + dx + x,posY + dy + y, posZ + dz + z);
+							Block innerBlock = getWorldBlock(dx + x, dy + y, dz + z);
 
 							//drop the item corresponding to the block if it is not a craft block
 							if(!isCraftBlock(dx + x,dy + y, dz + z)){
@@ -629,8 +679,7 @@ public class Craft {
 							if (x + dx >= 0 && y + dy >= 0 && z + dz >= 0
 									&& x + dx < sizeX && y + dy < sizeY
 									&& z + dz < sizeZ) {
-								if (matrix[x][y][z] != matrix[x + dx][y + dy][z
-								                                              + dz]) {
+								if (matrix[x][y][z] != matrix[x + dx][y + dy][z + dz]) {
 									// setBlock(world, blockId, posX + dx + x,
 									// posY + dy + y, posZ + dz + z);
 									setBlock(blockId, innerBlock);
@@ -650,8 +699,8 @@ public class Craft {
 		for (DataBlock dataBlock : dataBlocks) {
 			// this is a pop item, the block needs to be created
 			if (BlocksInfo.needsSupport(matrix[dataBlock.x][dataBlock.y][dataBlock.z])) {
-				Block block = world.getBlockAt(posX + dx + dataBlock.x, posY
-						+ dy + dataBlock.y, posZ + dz + dataBlock.z);
+				//Block block = world.getBlockAt(posX + dx + dataBlock.x, posY + dy + dataBlock.y, posZ + dz + dataBlock.z);
+				Block block = getWorldBlock(dx + dataBlock.x, dy + dataBlock.y, dz + dataBlock.z);
 
 				/*
 				 * block.setX(posX + dx + dataBlock.x); block.setY(posY + dy +
@@ -671,10 +720,16 @@ public class Craft {
 				 */
 			}
 			// the block is already there, just set the data
-			else {				
+			else {
+				/*
 				world.getBlockAt(posX + dx + dataBlock.x,
 						posY + dy + dataBlock.y, posZ + dz + dataBlock.z)
 						.setData((byte) dataBlock.data);
+				*/
+				getWorldBlock(dx + dataBlock.x,
+						dy + dataBlock.y,
+						dz + dataBlock.z)
+						.setData((byte)dataBlock.data);
 			}
 		}
 
@@ -687,8 +742,8 @@ public class Craft {
 
 					if (BlocksInfo.needsSupport(blockId)
 							&& !BlocksInfo.isDataBlock(blockId)) {
-						setBlock(blockId, world.getBlockAt(posX + dx + x, posY
-								+ dy + y, posZ + dz + z));
+						//setBlock(blockId, world.getBlockAt(posX + dx + x, posY + dy + y, posZ + dz + z));
+						setBlock(blockId, getWorldBlock(dx + x, dy + y, dz + z));						
 					}
 				}
 			}
@@ -696,9 +751,15 @@ public class Craft {
 
 		// restore complex blocks
 		for (DataBlock complexBlock : complexBlocks) {
+			/*
 			Block theBlock = world.getBlockAt(posX + dx + complexBlock.x,
 					posY + dy + complexBlock.y,
 					posZ + dz + complexBlock.z);
+					*/
+			Block theBlock = getWorldBlock(dx + complexBlock.x,
+					dy + complexBlock.y,
+					dz + complexBlock.z);
+			
 			ArrayList<String> myLines = new ArrayList<String>();
 			Inventory inventory = null;
 
@@ -753,11 +814,16 @@ public class Craft {
 					&& p.getLocation().getY() <= posY + sizeY
 					&& p.getLocation().getZ() >= posZ
 					&& p.getLocation().getZ() < posZ + sizeZ) {
-				Location newLoc = new Location(p.getWorld(), p.getLocation()
+				/*
+				Location newLoc = new Location(world, p.getLocation()
 						.getX() + dx, p.getLocation().getY() + dy, p
 						.getLocation().getZ() + dz, p.getLocation().getYaw(), p
 						.getLocation().getPitch());
 				p.teleportTo(newLoc);
+				*/
+				Vector pVel = p.getVelocity();
+				pVel = pVel.add(new Vector(dx, dy, dz));
+				p.setVelocity(pVel);
 			}
 		}
 
@@ -792,7 +858,8 @@ public class Craft {
 			int xMid = matrix.length / 2;
 			int zMid = matrix[0][0].length / 2;
 
-			Block belowBlock = world.getBlockAt(posX + xMid, posY - 1, posZ + zMid);
+			//Block belowBlock = world.getBlockAt(posX + xMid, posY - 1, posZ + zMid);
+			Block belowBlock = getWorldBlock(xMid, -1, zMid);
 			railBlock = belowBlock;
 
 			if(belowBlock.getType() == Material.RAILS) {
@@ -1087,9 +1154,13 @@ public class Craft {
 			this.data = data;
 		}
 		
-		public void setItem(int slot, int itemType, int amount){
-			items[slot] = new ItemStack(itemType);
-			items[slot].setAmount(amount);
+		//public void setItem(int slot, int itemType, int amount){
+		public void setItem(int slot, ItemStack origItem){
+			//items[slot] = new ItemStack(itemType);
+			items[slot] = new ItemStack(origItem.getTypeId());
+			items[slot].setAmount(origItem.getAmount());
+			items[slot].setData(origItem.getData());
+			items[slot].setDurability(origItem.getDurability());
 		}
 	}
 }

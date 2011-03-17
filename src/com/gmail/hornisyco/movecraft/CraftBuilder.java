@@ -173,6 +173,7 @@ public class CraftBuilder {
 
     //detect and create an air bubble surrounding the player
    private static boolean createAirBubble(){
+	   MoveCraft.instance.DebugMessage("Adding an air bubble.");
 
        BlockLoc block = blocksStack.pop();
 
@@ -438,11 +439,13 @@ public class CraftBuilder {
                 	   if (block.getState() instanceof Sign) {
                 		   Sign sign = (Sign) block.getState();
                 		   
-                		   if(sign.getLine(0).trim().equalsIgnoreCase("engine")) {
-                			   addEngineBlock(x, y, z);
-                		   }
-                		   else if(sign.getLine(1).trim().equals("OOOOOO")) {
-                			   addEngineBlock(x, y, z);                			   
+                		   if(sign.getLine(0) != null) {                		   
+                			   if(sign.getLine(0).trim().equalsIgnoreCase("engine")) {
+                				   addEngineBlock(x, y, z);
+                			   }
+                			   else if(sign.getLine(1).trim().equals("OOOOOO")) {
+                				   addEngineBlock(x, y, z); 
+                			   }
                 		   }
                 	   }
                    }

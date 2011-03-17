@@ -58,6 +58,10 @@ public class MoveCraft extends JavaPlugin {
 		if(configFile.ConfigSettings.get("WriteDefaultCraft").equalsIgnoreCase("true"))
 			CraftType.saveTypes(dir);		
 	}
+	
+	public void onLoad() {
+		
+	}
 
 	public void onEnable() {
 		instance = this;

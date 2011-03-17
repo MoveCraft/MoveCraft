@@ -3,9 +3,9 @@ package com.gmail.hornisyco.movecraft;
 import java.util.List;
 
 import org.bukkit.block.Block;
-import org.bukkit.entity.CreatureType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -91,7 +91,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			ItemStack pItem = player.getItemInHand();
 			int item = pItem.getTypeId();
 
-			MoveCraft.instance.DebugMessage(player.getName() + " used item " + Integer.toString(item));
+			//MoveCraft.instance.DebugMessage(player.getName() + " used item " + Integer.toString(item));
 
 			// the craft won't budge if you have any tool in the hand
 			if (!craft.haveControl ||
@@ -162,8 +162,16 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			}
 
 			craft.calculatedMove(dx, dy, dz);
+			//craft.move(dx, dy, dz);
 		}
 	}
+	
+	/*
+	@Override
+	public void onPlayerInteract (PlayerInteractEvent event) {
+		
+	}
+	*/
 
 	@Override
 	public void onPlayerCommandPreprocess (PlayerChatEvent event) {
@@ -172,8 +180,8 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		String[] split = event.getMessage().split(" ");
 		split[0] = split[0].substring(1);
 
-		if (split[0].equalsIgnoreCase("sheep")) {
-			player.getWorld().spawnCreature(player.getLocation(), CreatureType.SHEEP);
+		if (split[0].equalsIgnoreCase("woosh")) {
+			player.setVelocity(new Vector(10, 0, 20));
 		}
 		else if (split[0].equalsIgnoreCase("isDataBlock")) {
 			player.sendMessage(Boolean.toString(BlocksInfo.isDataBlock(Integer.parseInt(split[1]))));
@@ -202,10 +210,12 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 						player.getWorld(), craft.posX + dataBlock.x, craft.posY + dataBlock.y, craft.posZ + dataBlock.z));
 				theBlock.setType(Material.GOLD_BLOCK);
 			}			
-		}
-		else if (split[0].equalsIgnoreCase("diamonds")) {
+		} else if (split[0].equalsIgnoreCase("diamonds")) {
 			CraftRotator cr = new CraftRotator(Craft.getCraft(player), MoveCraft.instance);
 			cr.Diamonds(player.getWorld());
+		} else if (split[0].equalsIgnoreCase("dirty")) {
+			Craft craft = Craft.getCraft(player);
+			craft.dirty();
 		} else
 		if (split[0].equalsIgnoreCase("movecraft")) {
 			if (!PermissionInterface.CheckPermission(player, "movecraft." + event.getMessage().substring(1))) {
@@ -360,11 +370,13 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 							Integer.toString(craftType.minBlocks) + "-" + craftType.maxBlocks + " blocks.");
 				player.sendMessage(ChatColor.YELLOW +"Max speed: " + craftType.maxSpeed);
 
-				if (MoveCraft.instance.DebugMode)
+				if (MoveCraft.instance.DebugMode) {
 					player.sendMessage(ChatColor.YELLOW + Integer.toString(craft.dataBlocks.size()) + " data Blocks, " + 
 							craft.complexBlocks.size() + " complex Blocks, " + 
 							craft.engineBlocks.size() + " engine Blocks," + 
 							craft.digBlockCount + " drill bits.");
+					player.sendMessage(ChatColor.BLUE + "Rotation angle: " + craft.rotation);
+				}
 				
 				String canDo = ChatColor.YELLOW + craftType.name + "s can ";
 

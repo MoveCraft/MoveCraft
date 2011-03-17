@@ -99,6 +99,8 @@ public class MoveCraft_BlockListener extends BlockListener {
 			Sign sign = (Sign) block.getState();
 
 			//player.sendMessage("A sign has been right clicked...");
+			
+			if(sign.getLine(0) == null) return;
 
 			if(sign.getLine(0).trim().equals("")) return;
 
