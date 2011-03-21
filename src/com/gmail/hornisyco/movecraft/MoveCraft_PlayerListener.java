@@ -5,7 +5,6 @@ import java.util.List;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.util.Vector;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -180,43 +179,34 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		String[] split = event.getMessage().split(" ");
 		split[0] = split[0].substring(1);
 
-		if (split[0].equalsIgnoreCase("woosh")) {
-			player.setVelocity(new Vector(10, 0, 20));
+		//debug commands
+		if(MoveCraft.instance.DebugMode == true) {
+			if (split[0].equalsIgnoreCase("isDataBlock")) {
+				player.sendMessage(Boolean.toString(BlocksInfo.isDataBlock(Integer.parseInt(split[1]))));
+			} else if (split[0].equalsIgnoreCase("isComplexBlock")) {
+				player.sendMessage(Boolean.toString(BlocksInfo.isComplexBlock(Integer.parseInt(split[1]))));
+			} else if (split[0].equalsIgnoreCase("findcenter")) {
+				Craft craft = Craft.getCraft(player);
+				Location blockLoc = new Location(player.getWorld(), craft.posX + craft.offX, craft.posY, craft.posZ + craft.offZ);
+				Block mcBlock = player.getWorld().getBlockAt(blockLoc);
+				mcBlock.setType(Material.GOLD_BLOCK);
+			} else if (split[0].equalsIgnoreCase("finddatablocks")) {
+				Craft craft = Craft.getCraft(player);
+				for(DataBlock dataBlock : craft.dataBlocks) {
+					Block theBlock = player.getWorld().getBlockAt(new Location(
+							player.getWorld(), craft.posX + dataBlock.x, craft.posY + dataBlock.y, craft.posZ + dataBlock.z));
+					theBlock.setType(Material.GOLD_BLOCK);
+				}			
+			} else if (split[0].equalsIgnoreCase("findcomplexblocks")) {
+				Craft craft = Craft.getCraft(player);
+				for(DataBlock dataBlock : craft.complexBlocks) {
+					Block theBlock = player.getWorld().getBlockAt(new Location(
+							player.getWorld(), craft.posX + dataBlock.x, craft.posY + dataBlock.y, craft.posZ + dataBlock.z));
+					theBlock.setType(Material.GOLD_BLOCK);
+				}
+			}
 		}
-		else if (split[0].equalsIgnoreCase("isDataBlock")) {
-			player.sendMessage(Boolean.toString(BlocksInfo.isDataBlock(Integer.parseInt(split[1]))));
-		}
-		else if (split[0].equalsIgnoreCase("isComplexBlock")) {
-			player.sendMessage(Boolean.toString(BlocksInfo.isComplexBlock(Integer.parseInt(split[1]))));
-		}
-		else if (split[0].equalsIgnoreCase("findcenter")) {
-			Craft craft = Craft.getCraft(player);
-			Location blockLoc = new Location(player.getWorld(), craft.posX + craft.offX, craft.posY, craft.posZ + craft.offZ);
-			Block mcBlock = player.getWorld().getBlockAt(blockLoc);
-			mcBlock.setType(Material.GOLD_BLOCK);
-		}
-		else if (split[0].equalsIgnoreCase("finddatablocks")) {
-			Craft craft = Craft.getCraft(player);
-			for(DataBlock dataBlock : craft.dataBlocks) {
-				Block theBlock = player.getWorld().getBlockAt(new Location(
-						player.getWorld(), craft.posX + dataBlock.x, craft.posY + dataBlock.y, craft.posZ + dataBlock.z));
-				theBlock.setType(Material.GOLD_BLOCK);
-			}			
-		}
-		else if (split[0].equalsIgnoreCase("findcomplexblocks")) {
-			Craft craft = Craft.getCraft(player);
-			for(DataBlock dataBlock : craft.complexBlocks) {
-				Block theBlock = player.getWorld().getBlockAt(new Location(
-						player.getWorld(), craft.posX + dataBlock.x, craft.posY + dataBlock.y, craft.posZ + dataBlock.z));
-				theBlock.setType(Material.GOLD_BLOCK);
-			}			
-		} else if (split[0].equalsIgnoreCase("diamonds")) {
-			CraftRotator cr = new CraftRotator(Craft.getCraft(player), MoveCraft.instance);
-			cr.Diamonds(player.getWorld());
-		} else if (split[0].equalsIgnoreCase("dirty")) {
-			Craft craft = Craft.getCraft(player);
-			craft.dirty();
-		} else
+		
 		if (split[0].equalsIgnoreCase("movecraft")) {
 			if (!PermissionInterface.CheckPermission(player, "movecraft." + event.getMessage().substring(1))) {
 				return;
@@ -448,9 +438,11 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				if(split[2].equalsIgnoreCase("right"))
 					cr.turn(90);
 					//cr.move(0, 0, 0, 90);
-				else
+				else if (split[2].equalsIgnoreCase("left"))
 					cr.turn(-90);
 					//cr.move(0, 0, 0, -90);
+				else if (split[2].equalsIgnoreCase("around"))
+					cr.turn(180);
 				
 			} else if (split[1].equalsIgnoreCase("warpdrive")) {
 					if(split.length == 1) {

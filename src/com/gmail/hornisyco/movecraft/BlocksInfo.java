@@ -62,8 +62,8 @@ public class BlocksInfo {
 		blocks[58] = new BlockInfo(58,"workbench", false, false, false, false);
 		blocks[59] = new BlockInfo(59,"seed", true, true, false, 295, 1, false);
 		blocks[60] = new BlockInfo(60,"field", true, false, false, 3, 1, false);
-		blocks[61] = new BlockInfo(61,"furnace", true, false, 4, 8, new short[] {4, 2, 3, 5}); /* Might need support...*/
-		blocks[62] = new BlockInfo(62,"furnace", true, false, 4, 8, new short[] {4, 2, 3, 5});
+		blocks[61] = new BlockInfo(61,"furnace", true, true, 4, 8, new short[] {4, 2, 3, 5}); /* Might need support...*/
+		blocks[62] = new BlockInfo(62,"furnace", true, true, 4, 8, new short[] {4, 2, 3, 5});
 		blocks[63] = new BlockInfo(63,"sign", true, true, true, 323, 1, false);
 		blocks[64] = new BlockInfo(64,"wooden door", true, true, false, 5, 3, false);
 		blocks[65] = new BlockInfo(65,"ladder", true, true, false, false);

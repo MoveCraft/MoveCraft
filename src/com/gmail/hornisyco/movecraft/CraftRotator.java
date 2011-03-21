@@ -1,11 +1,15 @@
 package com.gmail.hornisyco.movecraft;
 
+import java.util.ArrayList;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+
+import com.gmail.hornisyco.movecraft.Craft.DataBlock;
 
 public class CraftRotator {
 	public static MoveCraft plugin;
@@ -92,39 +96,43 @@ public class CraftRotator {
 		else
 			return z;
 	}
+
+	//setblock, SAFE !
+	public void setBlock(double id, int X, int Y, int Z) {
+		if(Y < 0 || Y > 127 || id < 0 || id > 255){
+			return;
+		}
+
+		craft.world.getBlockAt(X, Y, Z).setTypeId((int)id);
+	}
+
+	public void setBlock(double id, int x, int y, int z, int dx, int dy, int dz, int r) {  
+		int X = craft.minX + rotateX(x, z, r) + dx;
+		int Y = craft.minY + y + dy;
+		int Z = craft.minZ + rotateZ(x, z, r) + dz;
+
+		setBlock(id, X, Y, Z);
+	}
 	
-    //setblock, SAFE !
-    public void setBlock(double id, int X, int Y, int Z) {
-    	World world = craft.player.getWorld();
-        //int blockId = world.getBlockTypeIdAt(X, Y, Z);
+	public void setDataBlock(short id, byte data, int X, int Y, int Z) {
+		if(Y < 0 || Y > 127 || id < 0 || id > 255){
+			return;
+		}
 
-        //if(blockId !=0 && blockId != 4)
-            //craft.player.sendMessage("§ceat block !");
+		craft.world.getBlockAt(X, Y, Z).setTypeId(id);
+		craft.world.getBlockAt(X, Y, Z).setData(data);
+	}
 
-       if(Y < 0 || Y > 127 || id < 0 || id > 255){
-           return;
-       }
-
-       world.getBlockAt(X, Y, Z).setTypeId((int)id);
-    }
-
-    public void setBlock(double id, int x, int y, int z, int dx, int dy, int dz, int r) {  
-       int X = craft.posX + rotateX(x, z, r) + dx;
-       int Y = craft.posY + y + dy;
-       int Z = craft.posZ + rotateZ(x, z, r) + dz;
-
-       setBlock(id, X, Y, Z);
-    }
 
 	//get world block id with matrix coordinates and rotation
 	public short getWorldBlockId(int x, int y, int z, int r){
 		World world = craft.player.getWorld();
 		short blockId;
 
-		blockId = (short) world.getBlockTypeIdAt(craft.posX + rotateX(x - craft.offX, z - craft.offZ, r),
-				craft.posY + y,
-				craft.posZ + rotateZ(x - craft.offX, z - craft.offZ, r));
-		
+		blockId = (short) world.getBlockTypeIdAt(craft.minX + rotateX(x - craft.offX, z - craft.offZ, r),
+				craft.minY + y,
+				craft.minZ + rotateZ(x - craft.offX, z - craft.offZ, r));
+
 		return blockId;
 	}
 
@@ -151,19 +159,19 @@ public class CraftRotator {
 		//int backRotation = (360 - dr) % 360;
 
 		//vertical limit
-		if(craft.posY + dy < 0 || craft.posY + craft.sizeY + dy > 128){
+		if(craft.minY + dy < 0 || craft.minY + craft.sizeY + dy > 128){
 			return false;
 		}
 
 		//watch out for the head !
 		if(craft.isOnCraft(craft.player, false)){
 
-			int px = (int)Math.floor(craft.player.getLocation().getX()) - craft.posX;
-			int pz = (int)Math.floor(craft.player.getLocation().getZ()) - craft.posZ;
+			int px = (int)Math.floor(craft.player.getLocation().getX()) - craft.minX;
+			int pz = (int)Math.floor(craft.player.getLocation().getZ()) - craft.minZ;
 
-			int X = craft.posX + rotateX(px + dx, pz + dz, dr);
+			int X = craft.minX + rotateX(px + dx, pz + dz, dr);
 			int Y = (int)Math.floor(craft.player.getLocation().getY()) + dy;
-			int Z = craft.posZ + rotateZ(px + dx, pz + dz, dr);
+			int Z = craft.minZ + rotateZ(px + dx, pz + dz, dr);
 
 			if(world.getBlockTypeIdAt(X, Y, Z) != 0 && world.getBlockTypeIdAt(X, Y + 1, Z) != 0){
 				craft.player.sendMessage("head check !");
@@ -192,40 +200,52 @@ public class CraftRotator {
 
 	public void turn(int dr){
 		Server server = plugin.getServer();
-		
+
 		if(dr < 0)
 			dr = 360 - Math.abs(dr);
 		while(dr > 359)
 			dr = dr - 360;
 
-		//rotate d vector back to get the correct local craft.direction
+		ArrayList<Double> xDists = new ArrayList<Double>();
+		ArrayList<Double> zDists = new ArrayList<Double>();
 		
-		/*
-		moveBlocks(rotateX(0, 0, (360 - craft.rotation) % 360),
-				0,
-				rotateZ(0, 0, (360 - craft.rotation) % 360),
-				dr);
-				*/
+		for (Player p : server.getOnlinePlayers()) {
+			if(craft.isOnCraft(p, false)){
+				Location pLoc = p.getLocation();
+			
+				double xDist = pLoc.getX() - (craft.minX + craft.offX);
+				double zDist = pLoc.getZ() - (craft.minZ + craft.offZ);
+			
+				xDists.add(xDist);
+				zDists.add(zDist);
+			}
+		}
+		
 		moveBlocks(0, 0, 0, dr);
 
 		//tp all players in the craft area
 		for (Player p : server.getOnlinePlayers()) {
 			if(craft.isOnCraft(p, false)){
-				double x = p.getLocation().getX() - (craft.posX);
-				double z = p.getLocation().getZ() - (craft.posZ);
-				float r = p.getLocation().getPitch();
-
-				Location tpTarget = p.getLocation();
+				Location pLoc = p.getLocation();
+			
+				double xDist = xDists.get(0);
+				double zDist = zDists.get(0);
+				xDists.remove(0);
+				zDists.remove(0);
 				
-				tpTarget.setX((double)craft.posX + rotateX(x, z, dr));
-				tpTarget.setZ((double)craft.posZ + rotateZ(x, z, dr));
-				tpTarget.setYaw(r + dr);
-				tpTarget.setPitch(tpTarget.getPitch());
-				p.teleportTo(tpTarget);
+				double x = (craft.minX + craft.offX) + rotateX(xDist, zDist, dr);
+				double z = (craft.minZ + craft.offZ) + rotateZ(xDist, zDist, dr);
+
+				pLoc.setX(x);
+				pLoc.setZ(z);
+				pLoc.setYaw(pLoc.getYaw() + dr);
+				//tpTarget.setPitch(tpTarget.getPitch());
+				
+				p.teleportTo(pLoc);
 
 			}
 		}
-		
+
 	}
 
 	//move the craft according to a vector d
@@ -234,101 +254,190 @@ public class CraftRotator {
 	//wdz : world delta z
 	//dr : delta rotation (90, -90)
 	public void moveBlocks(int dx, int dy, int dz, int dr){
-		//something's going all wierd in the 90 degree turns, so I'ma try this to fix it
-		//dr += 180;
-		//new rotation of the craft
-		int newRotation = (craft.rotation + dr + 360) % 360;
+
+		dr = dr % 360;
+
+		//craft.player.sendMessage("rotation");
+		//int newRotation = (craft.rotation + dr + 360) % 360;
+
+		//rotate dimensions
+		int newSizeX = craft.sizeX;
+		int newSizeZ = craft.sizeZ;
+
+		if(dr == 90 ||dr == 270){
+			newSizeX = craft.sizeZ;
+			newSizeZ = craft.sizeX;
+		}
+
+		//new matrix
+		short newMatrix[][][] = new short[newSizeX]
+		                                  [craft.sizeY]
+		                                   [newSizeZ];
 		
+		//store data blocks
+		craft.storeDataBlocks();
+		craft.storeComplexBlocks();
+		
+		System.out.println("PosX is " + craft.posX + ", posZ is " + craft.posZ);
+		System.out.println("minx is " + craft.minX + ", minz is " + craft.minZ);
+		System.out.println("Started with " + craft.dataBlocks.size() + " data blocks and " + 
+				craft.complexBlocks.size() + " complex blocks.");
+		
+		//ArrayList<DataBlock> unMovedDataBlocks = craft.dataBlocks;
+		//ArrayList<DataBlock> unMovedComplexBlocks = craft.complexBlocks;
+		ArrayList<DataBlock> unMovedDataBlocks = new ArrayList<DataBlock>();
+		ArrayList<DataBlock> unMovedComplexBlocks = new ArrayList<DataBlock>();
+		
+		for(int i = 0; i < craft.dataBlocks.size(); i ++ ) {
+			unMovedDataBlocks.add(craft.dataBlocks.get(i));
+			craft.dataBlocks.remove(i);
+		}
+		for(int i = 0; i < craft.complexBlocks.size(); i ++ ) {
+			unMovedDataBlocks.add(craft.complexBlocks.get(i));
+			craft.complexBlocks.remove(i);
+		}
+		
+		//craft.dataBlocks = new ArrayList<DataBlock>();
+		//craft.complexBlocks = new ArrayList<DataBlock>();
+		
+		//rotate matrix
+		for(int x=0; x<newSizeX; x++){
+			for(int y=0; y < craft.sizeY; y++){
+				for(int z=0; z < newSizeZ; z++){
+					int newX = 0;
+					int newZ = 0;
+					if(dr == 90) {
+						newX = z;
+						newZ = newSizeX - 1 - x;
+					} else if(dr == 270){
+						newX = newSizeZ - 1 - z;
+						newZ = x;							
+					} else {
+						newX = newSizeX - 1 - x;
+						newZ = newSizeZ - 1 - z;						
+					}
+
+					newMatrix[x][y][z] = craft.matrix[newX][y][newZ];
+
+					for(int i = 0; i < unMovedDataBlocks.size(); i ++ ) {
+						DataBlock dataBlock = unMovedDataBlocks.get(i);
+						if(dataBlock.locationMatches(newX, y, newZ)) {
+							dataBlock.x = x;
+							dataBlock.z = z;
+
+							craft.dataBlocks.add(dataBlock);
+							unMovedDataBlocks.remove(i);
+						}
+					}
+					for(int i = 0; i < unMovedComplexBlocks.size(); i ++ ) {
+						DataBlock dataBlock = unMovedComplexBlocks.get(i);
+						if(dataBlock.locationMatches(newX, y, newZ)) {
+							dataBlock.x = x;
+							dataBlock.z = z;
+
+							craft.complexBlocks.add(dataBlock);
+							unMovedComplexBlocks.remove(i);
+						}
+					}
+					/*
+					for(int i = 0; i < unMovedDataBlocks.size(); i ++ ) {
+						DataBlock dataBlock = unMovedDataBlocks.get(i);
+						if(dataBlock.locationMatches(x, y, z)) {
+							dataBlock.x = newX;
+							dataBlock.z = newZ;
+
+							craft.dataBlocks.add(dataBlock);
+							unMovedDataBlocks.remove(i);
+						}
+					}
+					for(int i = 0; i < unMovedComplexBlocks.size(); i ++ ) {
+						DataBlock dataBlock = unMovedComplexBlocks.get(i);
+						if(dataBlock.locationMatches(x, y, z)) {
+							dataBlock.x = newX;
+							dataBlock.z = newZ;
+
+							craft.complexBlocks.add(dataBlock);
+							unMovedComplexBlocks.remove(i);
+						}
+					}
+					*/
+				}
+			}
+		}
+
+		System.out.println("Ended with " + craft.dataBlocks.size() + " data blocks and " + 
+				craft.complexBlocks.size() + " complex blocks.");
+
+		//COLLISION DETECTION GOES HERE
+
 		//remove all the current blocks
 		for(int x=0;x<craft.sizeX;x++){
-			for(int z=0;z<craft.sizeZ;z++){
-				for(int y=0;y<craft.sizeY;y++){
-
-					short blockId = craft.matrix[x][y][z];
-
-					//craft block
-					if(blockId != 255){
-						//setBlock(0, x - craft.offX, y, z - craft.offZ, 0, 0, 0, craft.rotation);
-						setBlock(0, x, y, z, 0, 0, 0, craft.rotation);
+			for(int y=0;y<craft.sizeY;y++){
+				for(int z=0;z<craft.sizeZ;z++){
+					if(craft.matrix[x][y][z] != -1){
+						setBlock(0, craft.minX + x,
+								craft.minY + y,
+								craft.minZ + z);
 					}
-
 				}
 			}
 		}
-		
-		//new matrix...
-		short newMatrix[][][] = new short[Math.abs(rotateX(craft.sizeX, craft.sizeZ, dr))]
-		                                  [craft.sizeY]
-		                                   [Math.abs(rotateZ(craft.sizeX, craft.sizeZ, dr))];
 
-	      for(int x=0; x<newMatrix.length; x++){
-	          for(int z=0; z < newMatrix[0].length; z++){
-	              for(int y=0; y<newMatrix[0][0].length; y++){
-	                  newMatrix[x][z][y] = -1;
-	              }
-	          }
-	       }
-		
-		//need to rotate all data and complex blocks
-	      
-	      //because I'm lazy
-	      int leftMostX = craft.posX;
-	      int bottomMostZ = craft.posZ;
-	      
-	      int oldOffX = craft.sizeX / 2;
-	      int oldOffZ = craft.sizeZ / 2;
-			
-			int newOffX = newMatrix.length / 2;
-			int newOffZ = newMatrix[0][0].length / 2;
-			
-			int cenXPos = craft.posX + oldOffX;
-			int cenZPos = craft.posZ + oldOffZ;
-		
-		//second pass, the regular blocks
-		for(int x=0;x<craft.sizeX;x++){
-			for(int z=0;z<craft.sizeZ;z++){
-				for(int y=0;y<craft.sizeY;y++){
-					//System.out.println("X: " + x + ", Z: " + z);
-
-					short blockId = craft.matrix[x][y][z];
-
-					//craft block
-					if(blockId != 255 && blockId != 0 && blockId != -1){
-						int xDist = x - oldOffX;
-						int zDist = z - oldOffZ;
-						int newX = rotateX(xDist, zDist, newRotation);
-						int newZ = rotateZ(xDist, zDist, newRotation);
-						//System.out.println(xDist + ", " + zDist + " becomes " + newX + ", " + newZ);
-						
-						//setBlock(blockId, craft.posX + newX, craft.posY + y, craft.posZ + newZ);
-						setBlock(blockId, newX + cenXPos, craft.posY + y, newZ + cenZPos);
-						
-						if((newX + cenXPos) < leftMostX)
-							leftMostX = (newX + cenXPos);
-						if((newZ + cenZPos) < bottomMostZ)
-							bottomMostZ = newZ + cenZPos;
-						
-					    newMatrix[newX + newOffX][y][newZ + newOffZ] = blockId;
-					}
-
-				}
-			}
-		}
-		
 		craft.matrix = newMatrix;
-		craft.sizeX = newMatrix.length;
-		craft.sizeZ = newMatrix[0][0].length;
-		craft.posX = leftMostX + 1;
-		craft.posZ = bottomMostZ;
+		craft.sizeX = newSizeX;
+		craft.sizeZ = newSizeZ;
+
+		//craft pivot
+		int posX = craft.minX + craft.offX;
+		int posZ = craft.minZ + craft.offZ;
+
+		//rotate offset
+		int newOffX = rotateX(craft.offX, craft.offZ, -dr % 360);
+		int newOffZ = rotateZ(craft.offX, craft.offZ, -dr % 360);
+
+		if(newOffX < 0)
+			newOffX = newSizeX - 1 - newOffX;
+		if(newOffZ < 0)
+			newOffZ = newSizeZ - 1 - newOffZ;
+
+		craft.offX = newOffX;
+		craft.offZ = newOffZ;
+
+		//update min/max
+		craft.minX = posX - craft.offX;
+		craft.minZ = posZ - craft.offZ;
+		craft.maxX = craft.minX + craft.sizeX -1;
+		craft.maxZ = craft.minZ + craft.sizeZ -1;
+
+		//put craft back
+		for(int x=0;x<craft.sizeX;x++){
+			for(int y=0;y<craft.sizeY;y++){
+				for(int z=0;z<craft.sizeZ;z++){
+					short blockId = newMatrix[x][y][z];
+					//BlocksInfo.is
+					if(blockId != -1){
+						setBlock(blockId, craft.minX + x,
+								craft.minY + y,
+								craft.minZ + z);
+					}
+				}
+			}
+		}
+		
+		System.out.println("PosX is " + craft.posX + ", posZ is " + craft.posZ);
+		System.out.println("minx is " + craft.minX + ", minz is " + craft.minZ);
+		
+		craft.restoreDataBlocks(0, 0, 0);
+		craft.restoreComplexBlocks(0, 0, 0);
 	}
-	
+
 	public void Diamonds(World world) {
 		for(int x=0;x<craft.sizeX;x++){
 			for(int z=0;z<craft.sizeZ;z++){
 				for(int y=0;y<craft.sizeY;y++){
 					if(craft.matrix[x][y][z] == 0 || craft.matrix[x][y][z] == -1 || craft.matrix[x][y][z] == 255)
 						continue;
-					Block block = world.getBlockAt(craft.posX + x, craft.posY + y, craft.posZ+ z);
+					Block block = world.getBlockAt(craft.minX + x, craft.minY + y, craft.minZ+ z);
 					block.setType(Material.DIAMOND_BLOCK);
 					//craft.matrix[x][y][z] = 
 				}

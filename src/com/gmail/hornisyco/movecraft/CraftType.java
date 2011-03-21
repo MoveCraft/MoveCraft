@@ -54,6 +54,9 @@ public class CraftType {
 	String sayOnRelease = "You release the craft";
 
 	short[] structureBlocks = null; // blocks that can make the structure of the craft
+	short[] extendedBlocks = null;		//structureblocks only for this craft type 
+	short[] restrictedBlocks = null;	//structureblocks to be exlcuded from this craft type 
+	short[] forbiddenBlocks = null;		//blocks that are not allowed whatsoever on this craft
 
 	public static ArrayList<CraftType> craftTypes = new ArrayList<CraftType>();
 
@@ -315,6 +318,58 @@ public class CraftType {
 				craftType.structureBlocks[i] = Short.parseShort(blockId);
 				i++;
 			}
+		} else if (attribute.equalsIgnoreCase("restrictedBlocks")) {
+			if(craftType.structureBlocks == null)
+				return;
+			
+			ArrayList<Short> restrictedBlocks = new ArrayList<Short>();
+			ArrayList<Short> newStructureBlocks = new ArrayList<Short>();
+			//short[] newStructureBlocks = new short[craftType.structureBlocks.length];
+			String[] split = value.split(",");
+			
+			for(String s : split){
+				try
+				{
+					restrictedBlocks.add(Short.parseShort(s));
+				}
+				catch (NumberFormatException ex) {
+					System.out.println("Tried to remove invalid block ID " + s + 
+							" from structureblocks of craft type " + craftType.name);
+				}
+			}
+			for(Short i: craftType.structureBlocks)
+				if(!restrictedBlocks.contains(i))
+					newStructureBlocks.add(i);
+			
+			Short nsb[] = new Short[newStructureBlocks.size()];
+			//craftType.structureBlocks = newStructureBlocks.toArray(short[]);
+			newStructureBlocks.toArray(nsb);
+			//I give up.
+			//craftType.structureBlocks = nsb;
+			
+		} else if (attribute.equalsIgnoreCase("extendedBlocks")) {
+			if(craftType.structureBlocks == null)
+				return;
+			
+			String[] split = value.split(",");
+			short[] newStructureBlocks = new short[craftType.structureBlocks.length + split.length];
+			
+			for(int i = 0; i < craftType.structureBlocks.length; i++) {
+				newStructureBlocks[i] = craftType.structureBlocks[i];
+			}
+			
+			int i = 0;
+			for(String s : split) {
+				try
+				{
+					newStructureBlocks[craftType.structureBlocks.length + i] = Short.parseShort(s);
+				}
+				catch (NumberFormatException ex) {
+					System.out.println("Tried to add invalid block ID " + s + 
+							" to structureblocks of craft type " + craftType.name);					
+				}				
+			}
+			craftType.structureBlocks = newStructureBlocks;
 		}
 	}
 

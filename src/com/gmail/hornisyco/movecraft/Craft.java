@@ -38,7 +38,7 @@ public class Craft {
 	ArrayList<DataBlock> dataBlocks;
 	//convert to LinkedList for preformance boost?
 	ArrayList<DataBlock> complexBlocks = new ArrayList<DataBlock>();
-	ArrayList<ArrayList<String>> signLines = new ArrayList<ArrayList<String>>();
+	//ArrayList<ArrayList<String>> signLines = new ArrayList<ArrayList<String>>();
 
 	// size of the craft
 	int sizeX = 0;
@@ -312,7 +312,7 @@ public class Craft {
 		}
 		
 		if(block.getTypeId() == id) {
-			System.out.println("Tried to change a " + id + " to itself.");
+			MoveCraft.instance.DebugMessage("Tried to change a " + id + " to itself.");
 			return;
 		}
 		
@@ -464,20 +464,126 @@ public class Craft {
 		return world.getBlockAt(posX + x, posY + y, posZ + z);
 	}
 	
-	public void dirty() {
-		for (int x = 0; x < sizeX; x++) {
-			for (int y = 0; y < sizeY; y++) {
-				for (int z = 0; z < sizeZ; z++) {
-					int craftBlockId = matrix[x][y][z];
-					
-					if (craftBlockId == -1 || craftBlockId == 0 || (craftBlockId >= 8 && craftBlockId <= 11))
-						continue;
-					
-					Block block = getWorldBlock(x, y, z);
-					block.setTypeId(3);
+	public void storeDataBlocks() {
+		for (DataBlock dataBlock : dataBlocks) {
+			dataBlock.data = getWorldBlock(dataBlock.x, dataBlock.y, dataBlock.z).getData();
+		}
+	}
+	
+	public void storeComplexBlocks() {
+		// store the data of all complex blocks, or die trying
+		for (DataBlock complexBlock : complexBlocks) {
+			Block currentBlock = getWorldBlock(complexBlock.x, complexBlock.y, complexBlock.z);
+			
+			Inventory inventory = null;
+			
+			if (currentBlock.getState() instanceof Sign) {
+				Sign sign = (Sign) currentBlock.getState();
+				
+				complexBlock.signLines = sign.getLines();
+				
+				ArrayList<String> myLines = new ArrayList<String>();
+				
+				if(sign.getLine(0) != null) {
+					myLines.add(sign.getLine(0));
+					myLines.add(sign.getLine(1));
+					myLines.add(sign.getLine(2));
+					myLines.add(sign.getLine(3));
+					//signLines.add(myLines);
+				}
+				
+			} else if (currentBlock.getTypeId() == 54) {
+				Chest chest = ((Chest)currentBlock.getState());
+				inventory = chest.getInventory();
+			} else if (currentBlock.getTypeId() == 23) {
+				Dispenser dispenser = (Dispenser) currentBlock.getState();
+				inventory = dispenser.getInventory();
+			} else if (currentBlock.getTypeId() == 61) {
+				Furnace furnace = (Furnace) currentBlock.getState();
+				inventory = furnace.getInventory();				
+			}
+			
+			if(inventory != null) {
+				for(int slot = 0; slot < inventory.getSize(); slot++) {
+					if(inventory.getItem(slot).getTypeId() != 0) {
+						//complexBlock.setItem(slot, inventory.getItem(slot).getTypeId(), inventory.getItem(slot).getAmount());
+						complexBlock.setItem(slot, inventory.getItem(slot));
+						inventory.setItem(slot, new ItemStack(0));
+					}
 				}
 			}
 		}
+	}
+	
+	public void restoreDataBlocks(int dx, int dy, int dz) {
+		for (DataBlock dataBlock : dataBlocks) {
+			// this is a pop item, the block needs to be created
+			if (BlocksInfo.needsSupport(matrix[dataBlock.x][dataBlock.y][dataBlock.z])) {
+				Block block = getWorldBlock(dx + dataBlock.x, dy + dataBlock.y, dz + dataBlock.z);
+				
+				System.out.println("Data block ID was: " + block.getType() + 
+						" and is now " + Material.getMaterial(matrix[dataBlock.x][dataBlock.y][dataBlock.z]));
+
+				block.setTypeId(matrix[dataBlock.x][dataBlock.y][dataBlock.z]);
+				block.setData((byte) dataBlock.data);
+			} else { //the block is already there, just set the data
+				getWorldBlock(dx + dataBlock.x,
+						dy + dataBlock.y,
+						dz + dataBlock.z)
+						.setData((byte)dataBlock.data);
+			}
+		}
+	}
+	
+	public void restoreComplexBlocks(int dx, int dy, int dz) {
+		for (DataBlock complexBlock : complexBlocks) {
+			Block theBlock = getWorldBlock(dx + complexBlock.x,
+					dy + complexBlock.y,
+					dz + complexBlock.z);
+			
+			System.out.println("Complex block ID: " + theBlock.getTypeId());
+			
+			Inventory inventory = null;
+
+			if (theBlock.getTypeId() == 63 || theBlock.getTypeId() == 68) {
+				Sign sign = (Sign) theBlock.getState();
+				
+				sign.setLine(0, complexBlock.signLines[0]);
+				sign.setLine(1, complexBlock.signLines[1]);
+				sign.setLine(2, complexBlock.signLines[2]);
+				sign.setLine(3, complexBlock.signLines[3]);
+
+				//sign.update();
+			}  else if (theBlock.getTypeId() == 54) {
+				Chest chest = ((Chest)theBlock.getState());
+				inventory = chest.getInventory();
+			} else if (theBlock.getTypeId() == 23) {
+				Dispenser dispenser = (Dispenser) theBlock.getState();
+				inventory = dispenser.getInventory();
+			} else if (theBlock.getTypeId() == 61) {
+				Furnace furnace = (Furnace) theBlock.getState();
+				inventory = furnace.getInventory();				
+			}
+			
+			if (inventory != null) {
+				try
+				{
+					for(int slot = 0; slot < inventory.getSize(); slot++){
+						if(complexBlock.items[slot] != null && complexBlock.items[slot].getTypeId() != 0) {
+							inventory.setItem(slot, complexBlock.items[slot]);
+							MoveCraft.instance.DebugMessage("Moving " + complexBlock.items[slot].getAmount() + 
+									" inventory item of type " + complexBlock.items[slot].getTypeId() + 
+									" in slot " + slot);
+						}
+					}
+				}
+				catch (ArrayIndexOutOfBoundsException ex)
+				{
+					System.out.println("There was an error copying chests. This is a bukkit issue. " +
+					"It will likely resolve itself after some updates.");
+				}				
+			}
+		}		
 	}
 
 	// move the craft according to a vector d
@@ -527,55 +633,10 @@ public class Craft {
 				}
 			}
 		}
-
-		// store the data of all complex blocks, or die trying
-		for (DataBlock complexBlock : complexBlocks) {
-			// complexBlock.data = world.getBlockAt(posX + complexBlock.getX(), posY + complexBlock.getY(), posZ + complexBlock.getZ()).getData();
-			//Block currentBlock = world.getBlockAt(posX + complexBlock.x, posY + complexBlock.y, posZ + complexBlock.z);
-			Block currentBlock = getWorldBlock(complexBlock.x, complexBlock.y, complexBlock.z);
-			
-			Inventory inventory = null;
-			
-			if (currentBlock.getState() instanceof Sign) {
-				Sign sign = (Sign) currentBlock.getState();
-				ArrayList<String> myLines = new ArrayList<String>();
-				
-				if(sign.getLine(0) != null) {
-					myLines.add(sign.getLine(0));
-					myLines.add(sign.getLine(1));
-					myLines.add(sign.getLine(2));
-					myLines.add(sign.getLine(3));
-					signLines.add(myLines);
-				}
-				
-			} else if (currentBlock.getTypeId() == 54) {
-				Chest chest = ((Chest)currentBlock.getState());
-				inventory = chest.getInventory();
-			} else if (currentBlock.getTypeId() == 23) {
-				Dispenser dispenser = (Dispenser) currentBlock.getState();
-				inventory = dispenser.getInventory();
-			} else if (currentBlock.getTypeId() == 61) {
-				Furnace furnace = (Furnace) currentBlock.getState();
-				inventory = furnace.getInventory();				
-			}
-			
-			if(inventory != null) {
-				for(int slot = 0; slot < inventory.getSize(); slot++) {
-					if(inventory.getItem(slot).getTypeId() != 0) {
-						//complexBlock.setItem(slot, inventory.getItem(slot).getTypeId(), inventory.getItem(slot).getAmount());
-						complexBlock.setItem(slot, inventory.getItem(slot));
-						inventory.setItem(slot, new ItemStack(0));
-					}
-				}
-			}
-		}
-
-		for (DataBlock dataBlock : dataBlocks) {
-			//dataBlock.data = world.getBlockAt(posX + dataBlock.x, posY + dataBlock.y, posZ + dataBlock.z).getData();
-			
-			Block currentBlock = getWorldBlock(dataBlock.x, dataBlock.y, dataBlock.z);
-			dataBlock.data = currentBlock.getData();
-		}
+		
+		storeDataBlocks();
+		
+		storeComplexBlocks();		
 
 		// first pass, remove all items that need a support
 		for (int x = 0; x < sizeX; x++) {
@@ -591,8 +652,7 @@ public class Craft {
 						Block block = getWorldBlock(x, y, z);
 
 						// special case for doors
-						// we need to remove the lower part of the door only, or
-						// the door will pop
+						// we need to remove the lower part of the door only, or the door will pop
 						// lower part have data 0 - 7, upper part have data 8 - 15
 						if (blockId == 64 || blockId == 71) { // wooden door and steel door
 							if (block.getData() >= 8)
@@ -604,7 +664,6 @@ public class Craft {
 								continue;
 						}
 
-						// setBlock(world, 0, posX + x, posY + y, posZ + z);
 						setBlock(0, block);
 					}
 				}
@@ -695,43 +754,7 @@ public class Craft {
 			}
 		}
 
-		// restore block data
-		for (DataBlock dataBlock : dataBlocks) {
-			// this is a pop item, the block needs to be created
-			if (BlocksInfo.needsSupport(matrix[dataBlock.x][dataBlock.y][dataBlock.z])) {
-				//Block block = world.getBlockAt(posX + dx + dataBlock.x, posY + dy + dataBlock.y, posZ + dz + dataBlock.z);
-				Block block = getWorldBlock(dx + dataBlock.x, dy + dataBlock.y, dz + dataBlock.z);
-
-				/*
-				 * block.setX(posX + dx + dataBlock.x); block.setY(posY + dy +
-				 * dataBlock.y); block.setZ(posZ + dz + dataBlock.z);
-				 */
-
-				block.setTypeId(matrix[dataBlock.x][dataBlock.y][dataBlock.z]);
-				block.setData((byte) dataBlock.data);
-
-				/*
-				if(block.getTypeId() == 64 || block.getTypeId() == 71){
-					world.getBlockAt(posX + dataBlock.x,posY + dataBlock.y + 1, posZ + dataBlock.z).
-							setTypeId(matrix[dataBlock.x][dataBlock.y][dataBlock.z]);
-					world.getBlockAt(posX + dataBlock.x,posY + dataBlock.y + 1, posZ + dataBlock.z).
-							setData( (byte) (block.getData() + 8));
-				}
-				 */
-			}
-			// the block is already there, just set the data
-			else {
-				/*
-				world.getBlockAt(posX + dx + dataBlock.x,
-						posY + dy + dataBlock.y, posZ + dz + dataBlock.z)
-						.setData((byte) dataBlock.data);
-				*/
-				getWorldBlock(dx + dataBlock.x,
-						dy + dataBlock.y,
-						dz + dataBlock.z)
-						.setData((byte)dataBlock.data);
-			}
-		}
+		restoreDataBlocks(dx, dy, dz);
 
 		// restore items that need a support but are not data blocks
 		for (int x = 0; x < sizeX; x++) {
@@ -749,81 +772,24 @@ public class Craft {
 			}
 		}
 
-		// restore complex blocks
-		for (DataBlock complexBlock : complexBlocks) {
-			/*
-			Block theBlock = world.getBlockAt(posX + dx + complexBlock.x,
-					posY + dy + complexBlock.y,
-					posZ + dz + complexBlock.z);
-					*/
-			Block theBlock = getWorldBlock(dx + complexBlock.x,
-					dy + complexBlock.y,
-					dz + complexBlock.z);
-			
-			ArrayList<String> myLines = new ArrayList<String>();
-			Inventory inventory = null;
-
-			if (theBlock.getTypeId() == 63 || theBlock.getTypeId() == 68) {
-				Sign sign = (Sign) theBlock.getState();
-
-				// myLines = signLines.remove(signLines.size() - 1);
-				myLines = signLines.remove(0);
-
-				sign.setLine(0, myLines.get(0));
-				sign.setLine(1, myLines.get(1));
-				sign.setLine(2, myLines.get(2));
-				sign.setLine(3, myLines.get(3));
-
-				sign.update();
-			}  else if (theBlock.getTypeId() == 54) {
-				Chest chest = ((Chest)theBlock.getState());
-				inventory = chest.getInventory();
-			} else if (theBlock.getTypeId() == 23) {
-				Dispenser dispenser = (Dispenser) theBlock.getState();
-				inventory = dispenser.getInventory();
-			} else if (theBlock.getTypeId() == 61) {
-				Furnace furnace = (Furnace) theBlock.getState();
-				inventory = furnace.getInventory();				
-			}
-			
-			if (inventory != null) {
-				try
-				{
-					for(int slot = 0; slot < inventory.getSize(); slot++){
-						if(complexBlock.items[slot] != null && complexBlock.items[slot].getTypeId() != 0) {
-							inventory.setItem(slot, complexBlock.items[slot]);
-							MoveCraft.instance.DebugMessage("Moving " + complexBlock.items[slot].getAmount() + 
-									" inventory item of type " + complexBlock.items[slot].getTypeId() + 
-									" in slot " + slot);
-						}
-					}
-				}
-				catch (ArrayIndexOutOfBoundsException ex)
-				{
-					System.out.println("There was an error copying chests. This is a bukkit issue. " +
-					"It will likely resolve itself after some updates.");
-				}				
-			}
-		}
+		restoreComplexBlocks(dx, dy, dz);
 
 		// tp all players in the craft area
 		for (Player p : server.getOnlinePlayers()) {
-			if (p.getLocation().getX() >= posX
-					&& p.getLocation().getX() < posX + sizeX
-					&& p.getLocation().getY() >= posY
-					&& p.getLocation().getY() <= posY + sizeY
-					&& p.getLocation().getZ() >= posZ
-					&& p.getLocation().getZ() < posZ + sizeZ) {
-				/*
-				Location newLoc = new Location(world, p.getLocation()
-						.getX() + dx, p.getLocation().getY() + dy, p
-						.getLocation().getZ() + dz, p.getLocation().getYaw(), p
-						.getLocation().getPitch());
-				p.teleportTo(newLoc);
-				*/
-				Vector pVel = p.getVelocity();
-				pVel = pVel.add(new Vector(dx, dy, dz));
-				p.setVelocity(pVel);
+			if(isOnCraft(p, false)) {
+				if(MoveCraft.instance.ConfigSetting("ForceTeleport").equalsIgnoreCase("true")) {
+					Location pLoc = p.getLocation();
+					pLoc.setX(pLoc.getX() + dx);
+					pLoc.setY(pLoc.getY() + dy);
+					pLoc.setZ(pLoc.getZ() + dz);
+					p.teleportTo(pLoc);					
+				} else {
+					double emm = Double.parseDouble(MoveCraft.instance.ConfigSetting("ExperimentalMovementMultiplier"));
+					Vector pVel = p.getVelocity();
+					//pVel = pVel.add(new Vector(dx * speed, dy * speed, dz * speed));
+					pVel = pVel.add(new Vector(dx * speed * emm, dy * speed * emm, dz * speed * emm));
+					p.setVelocity(pVel);					
+				}
 			}
 		}
 
@@ -1146,6 +1112,7 @@ public class Craft {
 		int z;
 		int data;
 		private ItemStack[] items = new ItemStack[27];
+		public String[] signLines = new String[4];
 
 		DataBlock(int x, int y, int z, int data) {
 			this.x = x;
@@ -1154,7 +1121,13 @@ public class Craft {
 			this.data = data;
 		}
 		
-		//public void setItem(int slot, int itemType, int amount){
+		public boolean locationMatches(int locX, int locY, int locZ) {
+			if(locX == x && locY == y && locZ == z)
+				return true;
+			else
+				return false;
+		}
+		
 		public void setItem(int slot, ItemStack origItem){
 			//items[slot] = new ItemStack(itemType);
 			items[slot] = new ItemStack(origItem.getTypeId());

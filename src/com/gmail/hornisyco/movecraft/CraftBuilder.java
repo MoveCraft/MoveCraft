@@ -57,7 +57,7 @@ public class CraftBuilder {
        return null;
     }
 
-    private static void set(short blockType, int x, int y, int z){
+    private static void set(short blockType, int x, int y, int z) {
 
        HashMap<Integer,HashMap<Integer,Short>> xRow;
 
@@ -461,17 +461,23 @@ public class CraftBuilder {
        Short blockType = get(x, y, z);
 
        //location have already been visited
-       if(blockType!=null) return;
-
-       //blockType = new Short((short)etc.getServer().getBlockIdAt(x, y, z));
-       //int blockData = etc.getServer().getBlockData(x, y, z);
+       if(blockType != null) return;
        
-       Block theBlock = craft.world.getBlockAt(x, y, z);
-       blockType = new Short((short) theBlock.getTypeId());
-       //int BlockData = world.getBlockAt(x, y, z).getData();
+       blockType = new Short((short) craft.world.getBlockAt(x, y, z).getTypeId());
+       int BlockData = craft.world.getBlockAt(x, y, z).getData();
+       
+       //check for fobidden blocks
+       if(craft.type.forbiddenBlocks != null && craft.type.forbiddenBlocks.length > 0) {
+    	   for(int i = 0; i < craft.type.forbiddenBlocks.length; i++) {
+    		   if(blockType == craft.type.forbiddenBlocks[i]) {
+    			   craft.player.sendMessage("Forbidden block of type " + Material.getMaterial(blockType) + " found.");
+    			   return;
+    		   }
+    	   }
+       }
 
        //found water, record water level and water type
-       if((blockType == 8 || blockType == 9) && theBlock.getData() == 0){ //water
+       if((blockType == 8 || blockType == 9) && BlockData == 0){ //water
            if(y > craft.waterLevel) craft.waterLevel = y;
            craft.waterType = 8;
            set(nullBlock, x, y, z);
@@ -479,7 +485,7 @@ public class CraftBuilder {
        }
 
        //found lava, record lava level and water type
-       if((blockType == 10 || blockType == 11) && theBlock.getData() == 0){ //lava
+       if((blockType == 10 || blockType == 11) && BlockData == 0){ //lava
            if(y > craft.waterLevel) craft.waterLevel = y;
            craft.waterType = 10;
            set(nullBlock, x, y, z);
@@ -536,7 +542,7 @@ public class CraftBuilder {
         } else {
 
            boolean found = false;
-           for(short blockId:craft.type.structureBlocks){
+           for(short blockId : craft.type.structureBlocks){
                 if(blockType == blockId) found = true;
            }
            if(!found){
