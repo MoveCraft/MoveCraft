@@ -59,6 +59,9 @@ public class CraftType {
 	short[] forbiddenBlocks = null;		//blocks that are not allowed whatsoever on this craft
 
 	public static ArrayList<CraftType> craftTypes = new ArrayList<CraftType>();
+	
+	boolean listenItem = true;
+	boolean listenAnimation, listenMovement = false;
 
 	public CraftType(String name) {
 		this.name = name;
@@ -310,6 +313,12 @@ public class CraftType {
 			craftType.sayOnRelease = value;
 		else if (attribute.equalsIgnoreCase("remoteControllerItem"))
 			craftType.remoteControllerItem = Integer.parseInt(value);
+		else if (attribute.equalsIgnoreCase("listenItem"))
+			craftType.listenItem = Boolean.parseBoolean(value);
+		else if (attribute.equalsIgnoreCase("listenAnimation"))
+			craftType.listenAnimation = Boolean.parseBoolean(value);
+		else if (attribute.equalsIgnoreCase("listenMovement"))
+			craftType.listenMovement = Boolean.parseBoolean(value);
 		else if (attribute.equalsIgnoreCase("structureBlocks")) {
 			String[] split = value.split(",");
 			craftType.structureBlocks = new short[split.length];
@@ -370,6 +379,12 @@ public class CraftType {
 				}				
 			}
 			craftType.structureBlocks = newStructureBlocks;
+		} else if (attribute.equalsIgnoreCase("forbiddenBlocks")) {
+			String[] split = value.split(",");
+			craftType.forbiddenBlocks = new short[split.length];
+			for (int i = 0; i < split.length; i++) {
+				craftType.forbiddenBlocks[i] = Short.parseShort(split[i]);
+			}			
 		}
 	}
 
