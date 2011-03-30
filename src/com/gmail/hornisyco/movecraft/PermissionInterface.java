@@ -22,6 +22,8 @@ public class PermissionInterface {
 	}
 
 	public static boolean CheckGroupPermission(Player player, String group) {
+		MoveCraft.instance.DebugMessage("Checking if " + player.getName() + " is in group " + group);
+		
 		if(Permissions == null) {
 			System.out.println("Movecraft: WARNING! A command attempted to check against a group, " + 
 				"but no group handling plugin was found!");
@@ -39,7 +41,9 @@ public class PermissionInterface {
 	public static boolean CheckPermission(Player player, String command) {		
 		command = command.replace(" ", ".");
 		
-		if (Permissions != null) {
+		MoveCraft.instance.DebugMessage("Checking if " + player.getName() + " can " + command);
+		
+		if (Permissions != null) {			
 		    if(Permissions.has(player, command) || player.isOp())
 		    	return true;
 		    else

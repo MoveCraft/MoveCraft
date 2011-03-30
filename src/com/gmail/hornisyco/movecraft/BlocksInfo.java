@@ -35,7 +35,7 @@ public class BlocksInfo {
 		blocks[18] = new BlockInfo(18,"foliage", false, false, false, -1, 0, false);
 		blocks[19] = new BlockInfo(19,"sponge", false, false, false, false);
 		blocks[20] = new BlockInfo(20,"glass", false, false, false, -1, 0, false);
-		blocks[23] = new BlockInfo(23,"dispenser", true, false, true, new short[] {4, 2, 3, 5});
+		blocks[23] = new BlockInfo(23,"dispenser", true, false, true, new byte[] {4, 2, 5, 3});
 		blocks[26] = new BlockInfo(26,"bed", true, true, false, 355, 1, false);
 		blocks[35] = new BlockInfo(35,"wool", true, false, false, 35, 1, false);
 		blocks[37] = new BlockInfo(37,"yellow flower", false, true, false, true);
@@ -62,14 +62,14 @@ public class BlocksInfo {
 		blocks[58] = new BlockInfo(58,"workbench", false, false, false, false);
 		blocks[59] = new BlockInfo(59,"seed", true, true, false, 295, 1, false);
 		blocks[60] = new BlockInfo(60,"field", true, false, false, 3, 1, false);
-		blocks[61] = new BlockInfo(61,"furnace", true, true, 4, 8, new short[] {4, 2, 3, 5}); /* Might need support...*/
-		blocks[62] = new BlockInfo(62,"furnace", true, true, 4, 8, new short[] {4, 2, 3, 5});
+		blocks[61] = new BlockInfo(61,"furnace", false, true, 4, 8, new byte[] {4, 2, 5, 3}); /* Might need support...*/
+		blocks[62] = new BlockInfo(62,"furnace", false, true, 4, 8, new byte[] {4, 2, 5, 3});
 		blocks[63] = new BlockInfo(63,"sign", true, true, true, 323, 1, false);
 		blocks[64] = new BlockInfo(64,"wooden door", true, true, false, 5, 3, false);
 		blocks[65] = new BlockInfo(65,"ladder", true, true, false, false);
 		blocks[66] = new BlockInfo(66,"rail", true, true, false, false);
 		blocks[67] = new BlockInfo(67,"cobblestone stair", true, false, false, false);
-		blocks[68] = new BlockInfo(68,"sign", true, true, true, 323, 1, false);
+		blocks[68] = new BlockInfo(68,"sign", false, true, true, 323, 1, false);
 		blocks[69] = new BlockInfo(69,"lever", true, true, false, false);
 		blocks[70] = new BlockInfo(70,"pressure plate", true, true, false, false);
 		blocks[71] = new BlockInfo(71,"steel door", true, true, false, 265, 3, false);
@@ -87,14 +87,36 @@ public class BlocksInfo {
 		blocks[83] = new BlockInfo(83,"reed", true, true, false, 338, 1, false);
 		blocks[84] = new BlockInfo(84,"jukebox", true, false, false, false);
 		blocks[85] = new BlockInfo(85,"fence", true, false, false, false);
-		blocks[86] = new BlockInfo(86,"pumpkin", true, false, false, new short[] {3, 0, 2, 1});
+		blocks[86] = new BlockInfo(86,"pumpkin", true, false, false, new byte[] {3, 0, 1, 2});
 		blocks[87] = new BlockInfo(87,"hellstone", false, false, false, false);
 		blocks[88] = new BlockInfo(88,"mud", false, false, false, false);
 		blocks[89] = new BlockInfo(89,"lightstone", false, false, false, false);
 		blocks[90] = new BlockInfo(90,"portal", true, true, false, false);
-		blocks[91] = new BlockInfo(91,"pumpkin", true, false, false, new short[] {3, 0, 2, 1});
-		blocks[93] = new BlockInfo(93,"repeater", true, false, false, new short[] {3, 0, 2, 1});
-		blocks[94] = new BlockInfo(94,"repeater", true, false, false, new short[] {3, 0, 2, 1});
+		blocks[91] = new BlockInfo(91,"pumpkin", true, false, false, new byte[] {3, 0, 1, 2});
+		blocks[93] = new BlockInfo(93,"repeater", true, true, false, new byte[] {3, 0, 2, 1});
+		blocks[94] = new BlockInfo(94,"repeater", true, true, false, new byte[] {3, 0, 2, 1});
+
+		//torch
+		blocks[50].cardinalDirections = new byte[] {2, 4, 1, 3};
+		//wooden stair
+		blocks[53].cardinalDirections = new byte[] {1, 3, 0, 2};
+		//sign
+		//blocks[63].cardinalDirections = new byte[] {4, 2, 5, 3};
+		blocks[63].cardinalDirections = new byte[] {5, 3, 4, 2};
+		//wooden door
+		blocks[64].cardinalDirections = new byte[] {0, 1, 2, 3};
+		//ladder
+		blocks[65].cardinalDirections = new byte[] {4, 2, 5, 3};
+		//cobblestone stairs
+		blocks[67].cardinalDirections = new byte[] {1, 3, 0, 2};
+		//wall sign
+		blocks[68].cardinalDirections = new byte[] {4, 2, 5, 3};
+		//steel door
+		blocks[71].cardinalDirections = new byte[] {0, 1, 2, 3};
+		//restone torch on
+		blocks[75].cardinalDirections = new byte[] {2, 4, 1, 3};
+		//restone torch off
+		blocks[76].cardinalDirections = new byte[] {2, 4, 1, 3};		
 	}
 
 	public static String getName(int blockId) {
@@ -159,6 +181,9 @@ public class BlocksInfo {
 	}
 	
 	public static String getCardinalDirection(int BlockId, short BlockData) {
+		if(blocks[BlockId].cardinalDirections == null)
+			return "Woops";
+			
 		switch(getCardinalDirectionFromInt(BlockId, BlockData)) {
 		case 0:
 			return "North";
@@ -172,9 +197,22 @@ public class BlocksInfo {
 		
 		return "";
 	}
+	
+	public static byte[] getCardinals(int BlockId) {
+		if(blocks[BlockId] == null) {
+			System.out.println("NO BLOCK INFO FOUND FOR " + BlockId + "! PANIC!");
+			return null;
+		}
+		
+		if (blocks[BlockId].cardinalDirections == null)
+			return null;
+		else
+			return blocks[BlockId].cardinalDirections;
+	}
 
 	private static class BlockInfo {
-		//int id;
+		@SuppressWarnings("unused")
+		int id;
 		//String name;
 		boolean isDataBlock;
 		boolean needSupport;
@@ -182,7 +220,8 @@ public class BlocksInfo {
 		int     dropItem = -1;
 		int     dropQuantity = 0;
 		boolean isGrassCover; 
-		short[] cardinalDirections;
+		byte[] cardinalDirections = null;
+		//by default, cardinals are usually 4,2,5,3 -> North,East,South,West
 
 		/* Given grasscover */
 		public BlockInfo(int id, String name, boolean isDataBlock, boolean needSupport, boolean isComplexBlock, boolean isGrassCover) {
@@ -190,23 +229,30 @@ public class BlocksInfo {
 		}
 
 		/* Given cardinals */
-		public BlockInfo(int id, String name, boolean isDataBlock, boolean needSupport, boolean isComplexBlock, short[] cardinals) {
+		public BlockInfo(int id, String name, boolean isDataBlock, boolean needSupport, boolean isComplexBlock, byte[] cardinals) {
 			this(id, name, isDataBlock, needSupport, isComplexBlock, id, 1, false);
 			this.cardinalDirections = cardinals;
+			//blocks[id].cardinalDirections = cardinals;
 		}
 
 		/* Given cardinals and dropItems */
 		//cardinals are North, East, West, South
-		public BlockInfo(int id, String name, boolean isDataBlock, boolean isComplexBlock, int dropItem, int dropQuantity, short[] cardinals) {
-			this(id, name, isDataBlock, false, isComplexBlock, id, 1, false);
+		public BlockInfo(int id, String name, boolean isDataBlock, boolean isComplexBlock, int dropItem, int dropQuantity, byte[] cardinals) {
+			//this(id, name, isDataBlock, false, isComplexBlock, id, 1, false);
+			this.id = id;
+			this.isDataBlock = isDataBlock;
+			this.isComplexBlock = isComplexBlock;
+			this.dropItem = dropItem;
+			this.dropQuantity = dropQuantity;
 			this.cardinalDirections = cardinals;
+			//blocks[id].cardinalDirections = cardinals;
 		}
 
 		/* Given dropitems */
 		public BlockInfo(int id, String name, boolean isDataBlock, boolean needSupport,
 				boolean isComplexBlock, int dropItem, int dropQuantity, boolean isGrassCover) {
 
-			//this.id = id;
+			this.id = id;
 			//this.name = name;
 			this.isDataBlock = isDataBlock;
 			this.needSupport = needSupport;

@@ -1,16 +1,15 @@
 package com.gmail.hornisyco.movecraft;
-//import java.awt.Toolkit;
+import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 
 public class MoveCraft_Timer {
-	//Toolkit toolkit;
-
 	Timer timer;
 	Craft craft;
 	//public String state = "";
+	public static HashMap<Player, MoveCraft_Timer> playerTimers = new HashMap<Player, MoveCraft_Timer>();
 
 	public MoveCraft_Timer(int seconds, Craft vehicle, String state, boolean forward) {
 		//toolkit = Toolkit.getDefaultToolkit();
@@ -65,8 +64,7 @@ public class MoveCraft_Timer {
 			if(state.equals("abandonCheck")) {
 			*/				
 				if(craft != null) {
-					craft.player.sendMessage(ChatColor.YELLOW + craft.type.sayOnRelease);
-					Craft.removeCraft(craft);
+					MoveCraft.instance.releaseCraft(craft.player, craft);
 				}
 				timer.cancel();
 				return;

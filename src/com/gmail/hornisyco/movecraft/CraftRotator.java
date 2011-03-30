@@ -1,6 +1,7 @@
 package com.gmail.hornisyco.movecraft;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -126,10 +127,9 @@ public class CraftRotator {
 
 	//get world block id with matrix coordinates and rotation
 	public short getWorldBlockId(int x, int y, int z, int r){
-		World world = craft.player.getWorld();
 		short blockId;
 
-		blockId = (short) world.getBlockTypeIdAt(craft.minX + rotateX(x - craft.offX, z - craft.offZ, r),
+		blockId = (short) craft.world.getBlockTypeIdAt(craft.minX + rotateX(x - craft.offX, z - craft.offZ, r),
 				craft.minY + y,
 				craft.minZ + rotateZ(x - craft.offX, z - craft.offZ, r));
 
@@ -199,15 +199,17 @@ public class CraftRotator {
 	}	
 
 	public void turn(int dr){
-		Server server = plugin.getServer();
+		Server server = MoveCraft.instance.getServer();
 
 		if(dr < 0)
 			dr = 360 - Math.abs(dr);
 		while(dr > 359)
 			dr = dr - 360;
 
-		ArrayList<Double> xDists = new ArrayList<Double>();
-		ArrayList<Double> zDists = new ArrayList<Double>();
+		//ArrayList<Double> xDists = new ArrayList<Double>();
+		//ArrayList<Double> zDists = new ArrayList<Double>();
+		HashMap<Player, Double> xDists = new HashMap<Player, Double>(); 
+		HashMap<Player, Double> zDists = new HashMap<Player, Double>();
 		
 		for (Player p : server.getOnlinePlayers()) {
 			if(craft.isOnCraft(p, false)){
@@ -215,9 +217,13 @@ public class CraftRotator {
 			
 				double xDist = pLoc.getX() - (craft.minX + craft.offX);
 				double zDist = pLoc.getZ() - (craft.minZ + craft.offZ);
+				
+				MoveCraft.instance.DebugMessage(p.getName() + " is " + xDist + "," + zDist + " from center.");
 			
-				xDists.add(xDist);
-				zDists.add(zDist);
+				//xDists.add(xDist);
+				//zDists.add(zDist);
+				xDists.put(p, xDist);
+				zDists.put(p, zDist);
 			}
 		}
 		
@@ -225,24 +231,29 @@ public class CraftRotator {
 
 		//tp all players in the craft area
 		for (Player p : server.getOnlinePlayers()) {
-			if(craft.isOnCraft(p, false)){
+			if(xDists.containsKey(p)) {
+			//if(craft.isOnCraft(p, false)) {
 				Location pLoc = p.getLocation();
 			
-				double xDist = xDists.get(0);
-				double zDist = zDists.get(0);
-				xDists.remove(0);
-				zDists.remove(0);
+				//double xDist = xDists.get(0);
+				//double zDist = zDists.get(0);
+				//xDists.remove(0);
+				//zDists.remove(0);
+				double xDist = xDists.get(p);
+				double zDist = zDists.get(p);
 				
 				double x = (craft.minX + craft.offX) + rotateX(xDist, zDist, dr);
 				double z = (craft.minZ + craft.offZ) + rotateZ(xDist, zDist, dr);
+				
+				MoveCraft.instance.DebugMessage("Putting " + p.getName() + " " + rotateX(xDist, zDist, dr) + 
+						"," + rotateZ(xDist, zDist, dr) + " from center.");
 
 				pLoc.setX(x);
 				pLoc.setZ(z);
 				pLoc.setYaw(pLoc.getYaw() + dr);
 				//tpTarget.setPitch(tpTarget.getPitch());
 				
-				p.teleportTo(pLoc);
-
+				p.teleport(pLoc);
 			}
 		}
 
@@ -277,24 +288,20 @@ public class CraftRotator {
 		//store data blocks
 		craft.storeDataBlocks();
 		craft.storeComplexBlocks();
-		
-		System.out.println("PosX is " + craft.posX + ", posZ is " + craft.posZ);
-		System.out.println("minx is " + craft.minX + ", minz is " + craft.minZ);
-		System.out.println("Started with " + craft.dataBlocks.size() + " data blocks and " + 
-				craft.complexBlocks.size() + " complex blocks.");
-		
 		//ArrayList<DataBlock> unMovedDataBlocks = craft.dataBlocks;
 		//ArrayList<DataBlock> unMovedComplexBlocks = craft.complexBlocks;
 		ArrayList<DataBlock> unMovedDataBlocks = new ArrayList<DataBlock>();
 		ArrayList<DataBlock> unMovedComplexBlocks = new ArrayList<DataBlock>();
 		
-		for(int i = 0; i < craft.dataBlocks.size(); i ++ ) {
-			unMovedDataBlocks.add(craft.dataBlocks.get(i));
-			craft.dataBlocks.remove(i);
+		//for(int i = 0; i < craft.dataBlocks.size(); i ++ ) {
+		while(craft.dataBlocks.size() > 0) {
+			unMovedDataBlocks.add(craft.dataBlocks.get(0));
+			craft.dataBlocks.remove(0);
 		}
-		for(int i = 0; i < craft.complexBlocks.size(); i ++ ) {
-			unMovedDataBlocks.add(craft.complexBlocks.get(i));
-			craft.complexBlocks.remove(i);
+		//for(int i = 0; i < craft.complexBlocks.size(); i ++ ) {
+		while(craft.complexBlocks.size() > 0) {
+			unMovedComplexBlocks.add(craft.complexBlocks.get(0));
+			craft.complexBlocks.remove(0);
 		}
 		
 		//craft.dataBlocks = new ArrayList<DataBlock>();
@@ -320,6 +327,7 @@ public class CraftRotator {
 					newMatrix[x][y][z] = craft.matrix[newX][y][newZ];
 
 					for(int i = 0; i < unMovedDataBlocks.size(); i ++ ) {
+					//while(unMovedDataBlocks.size() > 0) {
 						DataBlock dataBlock = unMovedDataBlocks.get(i);
 						if(dataBlock.locationMatches(newX, y, newZ)) {
 							dataBlock.x = x;
@@ -327,9 +335,11 @@ public class CraftRotator {
 
 							craft.dataBlocks.add(dataBlock);
 							unMovedDataBlocks.remove(i);
+							break;
 						}
 					}
 					for(int i = 0; i < unMovedComplexBlocks.size(); i ++ ) {
+					//while(unMovedComplexBlocks.size() > 0) {
 						DataBlock dataBlock = unMovedComplexBlocks.get(i);
 						if(dataBlock.locationMatches(newX, y, newZ)) {
 							dataBlock.x = x;
@@ -337,48 +347,54 @@ public class CraftRotator {
 
 							craft.complexBlocks.add(dataBlock);
 							unMovedComplexBlocks.remove(i);
+							break;
 						}
 					}
-					/*
-					for(int i = 0; i < unMovedDataBlocks.size(); i ++ ) {
-						DataBlock dataBlock = unMovedDataBlocks.get(i);
-						if(dataBlock.locationMatches(x, y, z)) {
-							dataBlock.x = newX;
-							dataBlock.z = newZ;
-
-							craft.dataBlocks.add(dataBlock);
-							unMovedDataBlocks.remove(i);
-						}
-					}
-					for(int i = 0; i < unMovedComplexBlocks.size(); i ++ ) {
-						DataBlock dataBlock = unMovedComplexBlocks.get(i);
-						if(dataBlock.locationMatches(x, y, z)) {
-							dataBlock.x = newX;
-							dataBlock.z = newZ;
-
-							craft.complexBlocks.add(dataBlock);
-							unMovedComplexBlocks.remove(i);
-						}
-					}
-					*/
 				}
 			}
 		}
 
-		System.out.println("Ended with " + craft.dataBlocks.size() + " data blocks and " + 
-				craft.complexBlocks.size() + " complex blocks.");
-
 		//COLLISION DETECTION GOES HERE
+		
+		//remove blocks that need support first
+		for(int x=0;x<craft.sizeX;x++){
+			for(int z=0;z<craft.sizeZ;z++){
+				for(int y=0;y<craft.sizeY;y++){
+					if(craft.matrix[x][y][z] != -1){
+						int blockId = craft.matrix[x][y][z];	
+						Block block = craft.world.getBlockAt(craft.posX + x, craft.posY + y, craft.posZ + z);
+						
+						if(BlocksInfo.needsSupport(blockId)) {
+							
+							if (blockId == 64 || blockId == 71) { // wooden door and steel door						
+								if (block.getData() >= 8) {
+								//if(belowBlock.getTypeId() == 64 || belowBlock.getTypeId() == 71) {
+									continue;
+								}
+							}
+							
+							if(blockId == 26) { //bed
+								if(block.getData() > 4)
+									continue;
+							}
+							
+							setBlock(0, craft.minX + x, craft.minY + y, craft.minZ + z);
+						}
+					}
+				}
+			}
+		}
 
 		//remove all the current blocks
 		for(int x=0;x<craft.sizeX;x++){
 			for(int y=0;y<craft.sizeY;y++){
 				for(int z=0;z<craft.sizeZ;z++){
-					if(craft.matrix[x][y][z] != -1){
-						setBlock(0, craft.minX + x,
-								craft.minY + y,
-								craft.minZ + z);
-					}
+					int blockId = craft.matrix[x][y][z];
+
+					if(blockId != -1 && !BlocksInfo.needsSupport(blockId))
+						setBlock(0, craft.minX + x, craft.minY + y, craft.minZ + z);
+					//if(craft.matrix[x][y][z] != -1){
+					//}
 				}
 			}
 		}
@@ -403,44 +419,103 @@ public class CraftRotator {
 		craft.offX = newOffX;
 		craft.offZ = newOffZ;
 
-		//update min/max
+		//update min/max		
 		craft.minX = posX - craft.offX;
 		craft.minZ = posZ - craft.offZ;
 		craft.maxX = craft.minX + craft.sizeX -1;
 		craft.maxZ = craft.minZ + craft.sizeZ -1;
+		
+		rotateCardinals(craft.dataBlocks, dr);
+		rotateCardinals(craft.complexBlocks, dr);
 
 		//put craft back
 		for(int x=0;x<craft.sizeX;x++){
 			for(int y=0;y<craft.sizeY;y++){
 				for(int z=0;z<craft.sizeZ;z++){
 					short blockId = newMatrix[x][y][z];
-					//BlocksInfo.is
-					if(blockId != -1){
-						setBlock(blockId, craft.minX + x,
-								craft.minY + y,
-								craft.minZ + z);
-					}
+
+					if(blockId != -1 
+							&& !BlocksInfo.needsSupport(blockId))
+						setBlock(blockId, craft.minX + x, craft.minY + y, craft.minZ + z);
 				}
 			}
 		}
 		
-		System.out.println("PosX is " + craft.posX + ", posZ is " + craft.posZ);
-		System.out.println("minx is " + craft.minX + ", minz is " + craft.minZ);
-		
 		craft.restoreDataBlocks(0, 0, 0);
 		craft.restoreComplexBlocks(0, 0, 0);
-	}
 
-	public void Diamonds(World world) {
+		//blocks that need support, but are not data blocks
 		for(int x=0;x<craft.sizeX;x++){
-			for(int z=0;z<craft.sizeZ;z++){
-				for(int y=0;y<craft.sizeY;y++){
-					if(craft.matrix[x][y][z] == 0 || craft.matrix[x][y][z] == -1 || craft.matrix[x][y][z] == 255)
-						continue;
-					Block block = world.getBlockAt(craft.minX + x, craft.minY + y, craft.minZ+ z);
-					block.setType(Material.DIAMOND_BLOCK);
-					//craft.matrix[x][y][z] = 
+			for(int y=0;y<craft.sizeY;y++){
+				for(int z=0;z<craft.sizeZ;z++){
+					short blockId = newMatrix[x][y][z];
+
+					if (BlocksInfo.needsSupport(blockId)
+							&& !BlocksInfo.isDataBlock(blockId)) {
+						setBlock(blockId, craft.minX + x, craft.minY + y, craft.minZ + z);
+					}
 				}
+			}
+		}		
+	}
+	
+	public void rotateCardinals(ArrayList<DataBlock> blocksToRotate, int dr) {		
+		//doors are going to need a special case...
+		//as are levers...
+		//as are minecart tracks
+		//and beds
+		
+		for(DataBlock dataBlock: blocksToRotate) {			
+			//Block theBlock = craft.getWorldBlock(dataBlock.x, dataBlock.y, dataBlock.z);
+			int blockId = dataBlock.id;
+			
+			//torches, skip 'em if they're centered on the tile on the ground
+			if(blockId == 50 || blockId == 75 || blockId == 76) {
+				if(dataBlock.data == 5)
+					continue;
+			}
+			
+			byte[] cardinals = BlocksInfo.getCardinals(blockId);
+			
+			//wooden door
+			if(blockId == 64 || blockId == 71) {
+				int blockData = dataBlock.data;
+				
+				if(blockData > 11) {	//if the door is an open top 
+					for(int c = 0; c < 4; c++)
+						cardinals[c] += 11;
+				} else if (blockData > 8) {		//if the door is a top
+					for(int c = 0; c < 4; c++)
+						cardinals[c] += 8; 
+				} else if (blockData > 4) {		//not a top, but open
+					for(int c = 0; c < 4; c++)
+						cardinals[c] += 4;					
+				}
+			}
+			
+			if(cardinals != null) {
+				MoveCraft.instance.DebugMessage(Material.getMaterial(blockId) + 
+						" Cardinals are "
+						+ cardinals[0] + ", "
+						+ cardinals[1] + ", "
+						+ cardinals[2] + ", "
+						+ cardinals[3]);
+				
+				int i = 0;
+				for(i = 0; i < 3; i++)
+					if(dataBlock.data == cardinals[i])
+						break;
+
+				//MoveCraft.instance.DebugMessage("i starts as " + i + " which is " + cardinals[i]);
+
+				i += (dr / 90);
+				
+				if(i > 3)
+					i = 0;
+
+				//MoveCraft.instance.DebugMessage("i ends as " + i + ", which is " + cardinals[i]);
+				
+				dataBlock.data = cardinals[i];
 			}
 		}
 	}

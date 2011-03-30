@@ -237,11 +237,11 @@ public class CraftBuilder {
                         craft.matrix[x][y][z] = (short)blockId; // record this block as part of the craft, also fill with air
 
                         if(BlocksInfo.isDataBlock(blockId)){
-                            addDataBlock(craft.posX + x, craft.posY + y, craft.posZ + z);
+                            addDataBlock(blockId, craft.posX + x, craft.posY + y, craft.posZ + z);
                         }
                         
                         if(BlocksInfo.isComplexBlock(blockId)){
-                            addComplexBlock(craft.posX + x, craft.posY + y, craft.posZ + z);
+                            addComplexBlock(blockId, craft.posX + x, craft.posY + y, craft.posZ + z);
                         	craft.findFuel(block);
                         }
 
@@ -381,19 +381,19 @@ public class CraftBuilder {
 
    }
 
-   private static void addDataBlock(int x, int y, int z){
-        craft.dataBlocks.add(new Craft.DataBlock(x - craft.posX,y - craft.posY,z - craft.posZ,
+   private static void addDataBlock(int id, int x, int y, int z){
+        craft.dataBlocks.add(new Craft.DataBlock(id, x - craft.posX,y - craft.posY,z - craft.posZ,
         		craft.world.getBlockAt(x, y, z).getData()));
    }
 
-   private static void addComplexBlock(int x, int y, int z){
-	   craft.complexBlocks.add(new Craft.DataBlock(x - craft.posX,y - craft.posY,z - craft.posZ,
+   private static void addComplexBlock(int id, int x, int y, int z){
+	   craft.complexBlocks.add(new Craft.DataBlock(id, x - craft.posX,y - craft.posY,z - craft.posZ,
 			   craft.world.getBlockAt(x, y, z).getData()));
 	   //craft.complexBlocks.add(world.getBlockAt(x - craft.posX, y - craft.posY, z - craft.posZ));
    }
    
-   private static void addEngineBlock(int x, int y, int z){
-	   craft.engineBlocks.add(new Craft.DataBlock(x - craft.posX,y - craft.posY,z - craft.posZ,
+   private static void addEngineBlock(int id, int x, int y, int z){
+	   craft.engineBlocks.add(new Craft.DataBlock(id, x - craft.posX,y - craft.posY,z - craft.posZ,
 			   craft.world.getBlockAt(x, y, z).getData()));
    }
 
@@ -426,29 +426,16 @@ public class CraftBuilder {
                    craft.matrix[x - craft.posX][y - craft.posY][z - craft.posZ] = blockId;
 
                    if(BlocksInfo.isDataBlock(blockId)){
-                        addDataBlock(x, y, z);
+                        addDataBlock(blockId, x, y, z);
                    }
                    if(BlocksInfo.isComplexBlock(blockId)){
-                        addComplexBlock(x, y, z);
+                        addComplexBlock(blockId, x, y, z);
                 	   //addDataBlock(world, x, y, z);
                    }
-                   //if(blockId == 61 || blockId == 62)
-                   //addEngineBlock(world.getBlockAt(x,y,z));
-                   if(blockId == 63 || blockId == 68) {
-                	   Block block = craft.world.getBlockAt(x,y,z);
-                	   if (block.getState() instanceof Sign) {
-                		   Sign sign = (Sign) block.getState();
-                		   
-                		   if(sign.getLine(0) != null) {                		   
-                			   if(sign.getLine(0).trim().equalsIgnoreCase("engine")) {
-                				   addEngineBlock(x, y, z);
-                			   }
-                			   else if(sign.getLine(1).trim().equals("OOOOOO")) {
-                				   addEngineBlock(x, y, z); 
-                			   }
-                		   }
-                	   }
+                   if(blockId == craft.type.engineBlockId) {
+                	   addEngineBlock(blockId, x, y, z);
                    }
+
                }
            }
        }
@@ -471,6 +458,7 @@ public class CraftBuilder {
     	   for(int i = 0; i < craft.type.forbiddenBlocks.length; i++) {
     		   if(blockType == craft.type.forbiddenBlocks[i]) {
     			   craft.player.sendMessage("Forbidden block of type " + Material.getMaterial(blockType) + " found.");
+                   set(nullBlock, x, y, z);
     			   return;
     		   }
     	   }
@@ -671,9 +659,6 @@ public class CraftBuilder {
            //create the craft matrix
            craft.sizeX = (craft.maxX - craft.minX) + 1;
            craft.sizeY = (craft.maxY - craft.minY) + 1;
-
-           //plugin.DebugMessage(" maxZ : " + maxZ);
-           //plugin.DebugMessage(" minZ : " + minZ);
 
            craft.sizeZ = (craft.maxZ - craft.minZ) + 1;
 

@@ -41,15 +41,11 @@ public class Craft {
 	//ArrayList<ArrayList<String>> signLines = new ArrayList<ArrayList<String>>();
 
 	// size of the craft
-	int sizeX = 0;
-	int sizeZ = 0;
-	int sizeY = 0;
+	int sizeX, sizeZ, sizeY = 0;
 
 	// position of the craft on the map
 	World world;
-	int posX;
-	int posY;
-	int posZ;
+	int posX, posY, posZ;
 
 	/* Rotation code */
     int rotation = 0; //current rotation 0, 90, 180, 270
@@ -58,19 +54,10 @@ public class Craft {
     int offX = 0;
     //int offY;
     int offZ = 0;
-
-    //current direction of the craft
-    int dirX = 0;
-    int dirZ = 0;
-
-    int wdx = 0;
-    int wdy = 0;
-    int wdz = 0;
     /* End Rotation Code */
 
 	int blockCount = 0;
-	int flyBlockCount = 0;
-	int digBlockCount = 0;
+	int flyBlockCount, digBlockCount = 0;
 
 	int maxBlocks;
 
@@ -79,12 +66,7 @@ public class Craft {
 
 	short waterType = 0; // water or lava
 
-	int minX = 0;
-	int maxX = 0;
-	int minY = 0;
-	int maxY = 0;
-	int minZ = 0;
-	int maxZ = 0;
+	int minX, maxX, minY, maxY, minZ, maxZ = 0;
 
 	public Player player;
 
@@ -176,12 +158,12 @@ public class Craft {
 			else if (blockId == 324) { // door
 				blockId = 64;
 				matrix[x][y + 1][z] = blockId;
-				dataBlocks.add(new DataBlock(x, y + 1, z, block.getData() + 8));
+				dataBlocks.add(new DataBlock(blockId, x, y + 1, z, block.getData() + 8));
 				blockCount++;
 			} else if (blockId == 330) { // door
 				blockId = 71;
 				matrix[x][y + 1][z] = blockId;
-				dataBlocks.add(new DataBlock(x, y + 1, z, block.getData() + 8));
+				dataBlocks.add(new DataBlock(blockId, x, y + 1, z, block.getData() + 8));
 				blockCount++;
 			} else if (blockId == 338) { // reed
 				blockId = 83;
@@ -193,7 +175,7 @@ public class Craft {
 
 			// add block data
 			if (BlocksInfo.isDataBlock(blockId)) {
-				dataBlocks.add(new DataBlock(x, y, z, block.getData()));
+				dataBlocks.add(new DataBlock(blockId, x, y, z, block.getData()));
 			}
 
 			blockCount++;
@@ -474,6 +456,7 @@ public class Craft {
 		// store the data of all complex blocks, or die trying
 		for (DataBlock complexBlock : complexBlocks) {
 			Block currentBlock = getWorldBlock(complexBlock.x, complexBlock.y, complexBlock.z);
+			complexBlock.data = currentBlock.getData();
 			
 			Inventory inventory = null;
 			
@@ -520,9 +503,6 @@ public class Craft {
 			// this is a pop item, the block needs to be created
 			if (BlocksInfo.needsSupport(matrix[dataBlock.x][dataBlock.y][dataBlock.z])) {
 				Block block = getWorldBlock(dx + dataBlock.x, dy + dataBlock.y, dz + dataBlock.z);
-				
-				System.out.println("Data block ID was: " + block.getType() + 
-						" and is now " + Material.getMaterial(matrix[dataBlock.x][dataBlock.y][dataBlock.z]));
 
 				block.setTypeId(matrix[dataBlock.x][dataBlock.y][dataBlock.z]);
 				block.setData((byte) dataBlock.data);
@@ -540,8 +520,6 @@ public class Craft {
 			Block theBlock = getWorldBlock(dx + complexBlock.x,
 					dy + complexBlock.y,
 					dz + complexBlock.z);
-			
-			System.out.println("Complex block ID: " + theBlock.getTypeId());
 			
 			Inventory inventory = null;
 
@@ -564,24 +542,17 @@ public class Craft {
 				Furnace furnace = (Furnace) theBlock.getState();
 				inventory = furnace.getInventory();				
 			}
-			
+
+			//restore the block's inventory
 			if (inventory != null) {
-				try
-				{
-					for(int slot = 0; slot < inventory.getSize(); slot++){
-						if(complexBlock.items[slot] != null && complexBlock.items[slot].getTypeId() != 0) {
-							inventory.setItem(slot, complexBlock.items[slot]);
-							MoveCraft.instance.DebugMessage("Moving " + complexBlock.items[slot].getAmount() + 
-									" inventory item of type " + complexBlock.items[slot].getTypeId() + 
-									" in slot " + slot);
-						}
+				for(int slot = 0; slot < inventory.getSize(); slot++){
+					if(complexBlock.items[slot] != null && complexBlock.items[slot].getTypeId() != 0) {
+						inventory.setItem(slot, complexBlock.items[slot]);
+						MoveCraft.instance.DebugMessage("Moving " + complexBlock.items[slot].getAmount() + 
+								" inventory item of type " + complexBlock.items[slot].getTypeId() + 
+								" in slot " + slot);
 					}
-				}
-				catch (ArrayIndexOutOfBoundsException ex)
-				{
-					System.out.println("There was an error copying chests. This is a bukkit issue. " +
-					"It will likely resolve itself after some updates.");
-				}				
+				}			
 			}
 		}		
 	}
@@ -782,13 +753,28 @@ public class Craft {
 					pLoc.setX(pLoc.getX() + dx);
 					pLoc.setY(pLoc.getY() + dy);
 					pLoc.setZ(pLoc.getZ() + dz);
-					p.teleportTo(pLoc);					
-				} else {
+					p.teleport(pLoc);					
+				} else if(type.listenMovement == false || p != player) {
+					int mcSpeed = speed;
+					if(mcSpeed > 2)
+						mcSpeed = 2;
+					
 					double emm = Double.parseDouble(MoveCraft.instance.ConfigSetting("ExperimentalMovementMultiplier"));
 					Vector pVel = p.getVelocity();
 					//pVel = pVel.add(new Vector(dx * speed, dy * speed, dz * speed));
-					pVel = pVel.add(new Vector(dx * speed * emm, dy * speed * emm, dz * speed * emm));
-					p.setVelocity(pVel);					
+					MoveCraft.instance.DebugMessage("Moving player X by " + dx + " * " + mcSpeed + " * " + emm);
+					pVel = pVel.add(new Vector(dx * emm, dy * emm, dz * emm));
+					//pVel = new Vector(dx * mcSpeed, dy * mcSpeed, dz * mcSpeed);
+					pVel.setY(pVel.getY() / 2);
+					
+					if(pVel.getX() > 10 || pVel.getZ() > 10 || pVel.getY() > 10) {
+						Location pLoc = p.getLocation();
+						pLoc.setX(pLoc.getX() + pVel.getX());
+						pLoc.setY(pLoc.getY() + pVel.getY());
+						pLoc.setZ(pLoc.getZ() + pVel.getZ());
+						p.teleport(pLoc);						
+					} else
+						p.setVelocity(pVel);
 				}
 			}
 		}
@@ -1106,7 +1092,7 @@ public class Craft {
 	}
 
 	public static class DataBlock {
-
+		int id;
 		int x;
 		int y;
 		int z;
@@ -1114,7 +1100,8 @@ public class Craft {
 		private ItemStack[] items = new ItemStack[27];
 		public String[] signLines = new String[4];
 
-		DataBlock(int x, int y, int z, int data) {
+		DataBlock(int id, int x, int y, int z, int data) {
+			this.id = id;
 			this.x = x;
 			this.y = y;
 			this.z = z;

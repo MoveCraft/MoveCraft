@@ -7,22 +7,19 @@ import org.bukkit.entity.Player;
 import org.bukkit.block.Sign;
 import org.bukkit.event.block.BlockListener;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.block.BlockRightClickEvent;
 import org.bukkit.event.block.SignChangeEvent;
 
 public class MoveCraft_BlockListener extends BlockListener {
-	private final MoveCraft plugin;
 
-	public MoveCraft_BlockListener(MoveCraft instance) {
-		plugin = instance;
+	public MoveCraft_BlockListener() {
 	}
 
-	//@Override
+	@Override
 	public void onBlockPlace(BlockPlaceEvent event) {
 		Player player = event.getPlayer();
 		Block blockPlaced = event.getBlockPlaced();
 
-		plugin.DebugMessage(player.getName() + " placed a block of type " + blockPlaced.getTypeId());
+		MoveCraft.instance.DebugMessage(player.getName() + " placed a block of type " + blockPlaced.getTypeId());
 
 		Craft playerCraft = Craft.getCraft(player);
 
@@ -50,49 +47,11 @@ public class MoveCraft_BlockListener extends BlockListener {
 			if (playerCraft != null)
 				playerCraft.blockPlaced = true;
 		}
-
-		if (blockPlaced.getState() instanceof Sign) {
-			player.sendMessage("This is a sign.");
-			/*
-
-			if (playerCraft == null) {
-				Sign sign = (Sign) blockPlaced.getState();
-
-				// if the first line of the sign is a craft type, get the
-				// matching craft type.
-				CraftType craftType = CraftType.getCraftType(sign.getLine(0).trim());
-
-				// it is a registered craft type !
-				if (craftType != null) {
-
-					int x = blockPlaced.getX();
-					int y = blockPlaced.getY();
-					int z = blockPlaced.getZ();
-
-					int direction = blockPlaced.getData();
-
-					// get the block the sign is attached to (not rly needed
-					// lol)
-					x = x + (direction == 4 ? 1 : (direction == 5 ? -1 : 0));
-					z = z + (direction == 2 ? 1 : (direction == 3 ? -1 : 0));
-
-					String name = sign.getLine(1);
-					if (name.trim().equals(""))
-						name = null;
-
-					plugin.createCraft(player, craftType, x, y, z, name);
-				}
-			} else {
-				plugin.releaseCraft(player, playerCraft);
-			}
-			*/
-		}
 	}
 
 	//@Override
-	public void onBlockRightClick(BlockRightClickEvent event) {
-		Player player = event.getPlayer();
-		Block block = event.getBlock();
+	//public void onBlockRightClick(BlockRightClickEvent event) {
+	public static void RightClickedABlock(Player player, Block block) {
 		Craft playerCraft = Craft.getCraft(player);
 
 		if (block.getState() instanceof Sign) {
@@ -121,7 +80,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 
 				if(playerCraft != null) {
 					if(playerCraft.type == craftType) {
-						plugin.releaseCraft(player, playerCraft);
+						MoveCraft.instance.releaseCraft(player, playerCraft);
 						return;
 					}
 				}
@@ -157,7 +116,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 				x = x + (direction == 4 ? 1 : (direction == 5 ? -1 : 0));
 				z = z + (direction == 2 ? 1 : (direction == 3 ? -1 : 0));
 
-				plugin.createCraft(player, craftType, x, y, z, name);
+				MoveCraft.instance.createCraft(player, craftType, x, y, z, name);
 
 				return;                        
 			} else if(craftTypeName.equalsIgnoreCase("engage") && sign.getLine(1).equalsIgnoreCase("hyperdrive")) {
@@ -179,6 +138,8 @@ public class MoveCraft_BlockListener extends BlockListener {
 	}
 	
 	public void onSignChange(SignChangeEvent event) {
+		MoveCraft.instance.DebugMessage("A SIGN CHANGED!");
+		
 		Player player = event.getPlayer();
 		String craftTypeName = event.getLine(0).trim().toLowerCase().replaceAll(ChatColor.BLUE.toString(), "");
 

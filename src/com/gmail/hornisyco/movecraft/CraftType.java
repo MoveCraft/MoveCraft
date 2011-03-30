@@ -25,16 +25,12 @@ public class CraftType {
 	int maxBlocks = 500;
 	int maxSpeed = 4;
 
-	// type of stone needed to make the vehicle fly
-	int flyBlockType = 0;
-	// the type of block needed to make the vehicle able to drill through
-	// terrain
-	int digBlockId = 0;
-	// percent of flystone needed to make it fly
-	double flyBlockPercent = 0;
+	int flyBlockType = 0;	//type of stone needed to make the vehicle fly
+	int digBlockId = 0;		//the type of block needed to make the vehicle able to drill through terrain
+	int engineBlockId = 0;		//the type of block used to detect engines
+	double flyBlockPercent = 0;		//percent of flystone needed to make it fly
 	double digBlockPercent = 0;
 	int digBlockDurability = 0;
-	int engineBlockId = 0;
 	int fuelItemId = 0;
 	int fuelConsumptionMultiplier = 1;
 	
@@ -71,7 +67,6 @@ public class CraftType {
 		for(int i = 0; i < bob.length; i++)
 			juan[i] = Short.parseShort(bob[i]);
 		structureBlocks = juan;
-		//structureBlocks = plugin.configFile.ConfigSettings.get("");
 	}
 
 	public static CraftType getCraftType(String name) {
@@ -319,6 +314,14 @@ public class CraftType {
 			craftType.listenAnimation = Boolean.parseBoolean(value);
 		else if (attribute.equalsIgnoreCase("listenMovement"))
 			craftType.listenMovement = Boolean.parseBoolean(value);
+		else if (attribute.equalsIgnoreCase("engineBlockId")) {
+			craftType.engineBlockId = Integer.parseInt(value);
+			if(BlocksInfo.getCardinals(craftType.engineBlockId) == null){
+				System.out.println("Invalid engine block specified in craft type " +
+						craftType.name + ". Use something that has a face, like a furnace or a dispenser.");
+				craftType.engineBlockId = 0;
+			}				
+		}
 		else if (attribute.equalsIgnoreCase("structureBlocks")) {
 			String[] split = value.split(",");
 			craftType.structureBlocks = new short[split.length];

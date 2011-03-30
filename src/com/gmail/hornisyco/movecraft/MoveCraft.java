@@ -40,15 +40,15 @@ public class MoveCraft extends JavaPlugin {
 
 	public ConfigFile configFile;
 
-	private final MoveCraft_PlayerListener playerListener = new MoveCraft_PlayerListener(this);
-	private final MoveCraft_BlockListener blockListener = new MoveCraft_BlockListener(this);
+	private final MoveCraft_PlayerListener playerListener = new MoveCraft_PlayerListener();
+	private final MoveCraft_BlockListener blockListener = new MoveCraft_BlockListener();
 
 	public static void consoleSay(String msg) {
 		System.out.println(getDateTime() + " [INFO] " + pluginName + " " + msg);
 	}
 
 	public void loadProperties() {
-		configFile = new ConfigFile(this);
+		configFile = new ConfigFile();
 
 		File dir = getDataFolder();
 		if (!dir.exists())
@@ -70,14 +70,11 @@ public class MoveCraft extends JavaPlugin {
 		pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_COMMAND_PREPROCESS, playerListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Priority.Normal, this);
-		pm.registerEvent(Event.Type.PLAYER_ITEM, playerListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.PLAYER_INTERACT, playerListener, Priority.Normal, this);
 
-		pm.registerEvent(Event.Type.BLOCK_PLACED, blockListener, Priority.Normal, this);
-		pm.registerEvent(Event.Type.BLOCK_RIGHTCLICKED, blockListener, Priority.Normal, this);
-		pm.registerEvent(Event.Type.BLOCK_INTERACT, blockListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.SIGN_CHANGE, blockListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.BLOCK_PLACE, blockListener, Priority.Normal, this);
 		//pm.registerEvent(Event.Type.REDSTONE_CHANGE, blockListener, Priority.Normal, this);
-		//pm.registerEvent(Event.Type.BLOCK_CANBUILD, blockListener, Priority.Normal, this);
 
 		loadProperties();
 		PermissionInterface.setupPermissions();
@@ -134,20 +131,6 @@ public class MoveCraft extends JavaPlugin {
 		}
 
 		/* Rotation code */
-		float sin45 = (float)Math.sin((float)Math.PI * 45.0 / 180f);
-		//get player current orientation
-		float rotation = (float)Math.PI * player.getLocation().getPitch() / 180f;
-
-		float nx = - (float)Math.sin(rotation);
-		float nz = (float)Math.cos(rotation);
-
-		//current direction of the craft
-		int dirX = (Math.abs(nx) > sin45 ? 1 : 0) * (int)Math.signum(nx);
-		int dirZ = (Math.abs(nz) >= sin45 ? 1 : 0) * (int)Math.signum(nz);
-		
-		craft.dirX = dirX;
-		craft.dirZ = dirZ;		
-
         craft.offX = craft.sizeX / 2;
         craft.offZ = craft.sizeZ / 2;
 
@@ -168,7 +151,12 @@ public class MoveCraft extends JavaPlugin {
 			}
 		}
 
-		player.sendMessage(ChatColor.GRAY + "Right-click in the direction you want to go.");
+		if(craft.type.listenItem == true)
+			player.sendMessage(ChatColor.GRAY + "With an item in your hand, right-click in the direction you want to go.");
+		if(craft.type.listenAnimation == true)
+			player.sendMessage(ChatColor.GRAY + "Swing your arm in the direction you want to go.");
+		if(craft.type.listenMovement == true)
+			player.sendMessage(ChatColor.GRAY + "Move in the direction you want to go.");
 	}
 	
 	public String ConfigSetting(String setting) {

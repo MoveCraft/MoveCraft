@@ -13,7 +13,7 @@ import org.bukkit.entity.Player;
 public class ConfigFile {
 	public HashMap<String, String> ConfigSettings = new HashMap<String, String>();
 
-	public ConfigFile(MoveCraft plugin) {
+	public ConfigFile() {
 		String filename = "movecraft.config";
 
 		ConfigSettings.put("CraftReleaseDelay", "15");
@@ -25,9 +25,9 @@ public class ConfigFile {
 		ConfigSettings.put("allowHoles", "false");
 		ConfigSettings.put("EnableAsyncMovement", "false");
 		ConfigSettings.put("ExperimentalMovementMultiplier", "1.0");
-		ConfigSettings.put("ForceTeleport", "false");
+		ConfigSettings.put("ForceTeleport", "true");
 		
-		File dir = plugin.getDataFolder();
+		File dir = MoveCraft.instance.getDataFolder();
 		if (!dir.exists())
 			dir.mkdir();
 
