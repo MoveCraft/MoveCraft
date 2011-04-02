@@ -41,13 +41,18 @@ public class PermissionInterface {
 	public static boolean CheckPermission(Player player, String command) {		
 		command = command.replace(" ", ".");
 		
-		MoveCraft.instance.DebugMessage("Checking if " + player.getName() + " can " + command);
-		
 		if (Permissions != null) {			
-		    if(Permissions.has(player, command) || player.isOp())
+		    if(Permissions.has(player, command) || player.isOp()) {
+		    	MoveCraft.instance.DebugMessage("Player has permissions: " + 
+		    			Permissions.has(player, command));
+		    	MoveCraft.instance.DebugMessage("Player isop: " + 
+		    			player.isOp());
 		    	return true;
-		    else
+		    }
+		    else {
 				player.sendMessage("You do not have permission to preform " + command);
+				return false;
+		    }
 		}
 		else {
 			if(MoveCraft.instance.ConfigSetting("RequireOp").equalsIgnoreCase("true") && !player.isOp())

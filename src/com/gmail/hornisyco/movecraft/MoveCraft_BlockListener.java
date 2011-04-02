@@ -51,89 +51,87 @@ public class MoveCraft_BlockListener extends BlockListener {
 
 	//@Override
 	//public void onBlockRightClick(BlockRightClickEvent event) {
-	public static void RightClickedABlock(Player player, Block block) {
+	public static void ClickedASign(Player player, Block block) {
 		Craft playerCraft = Craft.getCraft(player);
 
-		if (block.getState() instanceof Sign) {
-			Sign sign = (Sign) block.getState();
+		Sign sign = (Sign) block.getState();
 
-			//player.sendMessage("A sign has been right clicked...");
-			
-			if(sign.getLine(0) == null) return;
+		//player.sendMessage("A sign has been right clicked...");
 
-			if(sign.getLine(0).trim().equals("")) return;
+		if(sign.getLine(0) == null) return;
 
-			String craftTypeName = sign.getLine(0).trim().toLowerCase();;
+		if(sign.getLine(0).trim().equals("")) return;
 
-			//remove colors
-			craftTypeName = craftTypeName.replaceAll(ChatColor.BLUE.toString(), "");
+		String craftTypeName = sign.getLine(0).trim().toLowerCase();;
 
-			//remove brackets
-			if(craftTypeName.startsWith("["))
-				craftTypeName = craftTypeName.substring(1, craftTypeName.length() - 1);
+		//remove colors
+		craftTypeName = craftTypeName.replaceAll(ChatColor.BLUE.toString(), "");
 
-			//if the first line of the sign is a craft type, get the matching craft type.
-			CraftType craftType = CraftType.getCraftType(craftTypeName);
+		//remove brackets
+		if(craftTypeName.startsWith("["))
+			craftTypeName = craftTypeName.substring(1, craftTypeName.length() - 1);
 
-			//it is a registred craft type !
-			if(craftType != null){
+		//if the first line of the sign is a craft type, get the matching craft type.
+		CraftType craftType = CraftType.getCraftType(craftTypeName);
 
-				if(playerCraft != null) {
-					if(playerCraft.type == craftType) {
-						MoveCraft.instance.releaseCraft(player, playerCraft);
-						return;
-					}
+		//it is a registred craft type !
+		if(craftType != null){
+
+			if(playerCraft != null) {
+				if(playerCraft.type == craftType) {
+					MoveCraft.instance.releaseCraft(player, playerCraft);
+					return;
 				}
+			}
 
-				//All players can use signs...
-				/*
+			//All players can use signs...
+			/*
 				if(!craftType.canUse(player)){
 					player.sendMessage(ChatColor.RED + "You are not allowed to use this type of craft");
 					return;
 				}
-				*/
+			 */
 
-				String restriction = sign.getLine(1).trim();
-				if(!restriction.equals("") && restriction != null) {
-					if(restriction != "public" && restriction != player.getName()) {
-						if(!PermissionInterface.CheckGroupPermission(player, restriction))
-							return;
-					}
+			String restriction = sign.getLine(1).trim();
+			if(!restriction.equals("") && restriction != null) {
+				if(restriction != "public" && restriction != player.getName()) {
+					if(!PermissionInterface.CheckGroupPermission(player, restriction))
+						return;
 				}
-
-				String name = sign.getLine(2).replaceAll("§.", "");
-
-				if(name.trim().equals(""))
-					name = null;
-
-				int x = block.getX();
-				int y = block.getY();
-				int z = block.getZ();
-
-				int direction = block.getData();
-
-				//get the block the sign is attached to (not rly needed lol)
-				x = x + (direction == 4 ? 1 : (direction == 5 ? -1 : 0));
-				z = z + (direction == 2 ? 1 : (direction == 3 ? -1 : 0));
-
-				MoveCraft.instance.createCraft(player, craftType, x, y, z, name);
-
-				return;                        
-			} else if(craftTypeName.equalsIgnoreCase("engage") && sign.getLine(1).equalsIgnoreCase("hyperdrive")) {
-				if(playerCraft == null) {
-					player.kickPlayer("I am TIRED of these MOTHERFUCKING noobs on this MOTHERFUCKING server.");
-					return;
-				}
-				Craft_Hyperspace.enterHyperSpace(playerCraft);
-				sign.setLine(0, "Disengage Hyperdrive");
-			} else if(craftTypeName.equalsIgnoreCase("disengage") && sign.getLine(1).equalsIgnoreCase("hyperdrive")) {
-				if(playerCraft == null) {
-					player.kickPlayer("I am TIRED of these MOTHER____ING noobs on this MOTHER____ING server.");
-					return;
-				}
-				Craft_Hyperspace.exitHyperSpace(playerCraft);
-				sign.setLine(0, "Engage Hyperdrive");
 			}
+
+			String name = sign.getLine(2).replaceAll("§.", "");
+
+			if(name.trim().equals(""))
+				name = null;
+
+			int x = block.getX();
+			int y = block.getY();
+			int z = block.getZ();
+
+			int direction = block.getData();
+
+			//get the block the sign is attached to (not rly needed lol)
+			x = x + (direction == 4 ? 1 : (direction == 5 ? -1 : 0));
+			z = z + (direction == 2 ? 1 : (direction == 3 ? -1 : 0));
+
+			MoveCraft.instance.createCraft(player, craftType, x, y, z, name);
+
+			return;                        
+		} else if(craftTypeName.equalsIgnoreCase("engage") && sign.getLine(1).equalsIgnoreCase("hyperdrive")) {
+			if(playerCraft == null) {
+				player.kickPlayer("I am TIRED of these MOTHERFUCKING noobs on this MOTHERFUCKING server.");
+				return;
+			}
+			Craft_Hyperspace.enterHyperSpace(playerCraft);
+			sign.setLine(0, "Disengage Hyperdrive");
+		} else if(craftTypeName.equalsIgnoreCase("disengage") && sign.getLine(1).equalsIgnoreCase("hyperdrive")) {
+			if(playerCraft == null) {
+				player.kickPlayer("I am TIRED of these MOTHER____ING noobs on this MOTHER____ING server.");
+				return;
+			}
+			Craft_Hyperspace.exitHyperSpace(playerCraft);
+			sign.setLine(0, "Engage Hyperdrive");
 		}
 	}
 	

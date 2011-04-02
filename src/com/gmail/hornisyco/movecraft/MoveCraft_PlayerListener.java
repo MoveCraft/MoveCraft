@@ -3,6 +3,7 @@ package com.gmail.hornisyco.movecraft;
 import java.util.List;
 
 import org.bukkit.block.Block;
+import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.ChatColor;
@@ -96,7 +97,10 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		}
 		
 		if(action == Action.RIGHT_CLICK_BLOCK) {
-			MoveCraft_BlockListener.RightClickedABlock(player, event.getClickedBlock());
+			if (event.getClickedBlock().getState() instanceof Sign)
+				MoveCraft_BlockListener.ClickedASign(player, event.getClickedBlock());
+			else
+				playerUsedAnItem(player);
 		}
 	}
 	
@@ -134,8 +138,9 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					if (craft.haveControl) {
 						player.sendMessage(ChatColor.YELLOW + "You switch off the remote controller");
 					} else {
-						if(craft.timer != null)
-							craft.timer.Destroy();
+						MoveCraft_Timer timer = MoveCraft_Timer.playerTimers.get(player);
+						if(timer != null)
+							timer.Destroy();
 						player.sendMessage(ChatColor.YELLOW + "You switch on the remote controller");
 					}
 					craft.haveControl = !craft.haveControl;
@@ -221,6 +226,9 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 							player.getWorld(), craft.posX + dataBlock.x, craft.posY + dataBlock.y, craft.posZ + dataBlock.z));
 					theBlock.setType(Material.GOLD_BLOCK);
 				}
+			} else if (split[0].equalsIgnoreCase("maxmom")) {
+				double MAXIMUM_MOMENTUM = 1E150D;
+				player.sendMessage(MAXIMUM_MOMENTUM + "");
 			}
 		}
 
@@ -361,8 +369,9 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					if (craft.haveControl) {
 						player.sendMessage(ChatColor.YELLOW + "You switch off the remote controller");
 					} else {
-						if(craft.timer != null)
-							craft.timer.Destroy();
+						MoveCraft_Timer timer = MoveCraft_Timer.playerTimers.get(player);
+						if(timer != null)
+							timer.Destroy();
 						player.sendMessage(ChatColor.YELLOW + "You switch on the remote controller");
 					}
 

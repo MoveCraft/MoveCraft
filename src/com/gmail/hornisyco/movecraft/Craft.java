@@ -763,18 +763,21 @@ public class Craft {
 					Vector pVel = p.getVelocity();
 					//pVel = pVel.add(new Vector(dx * speed, dy * speed, dz * speed));
 					MoveCraft.instance.DebugMessage("Moving player X by " + dx + " * " + mcSpeed + " * " + emm);
-					pVel = pVel.add(new Vector(dx * emm, dy * emm, dz * emm));
+					MoveCraft.instance.DebugMessage("Moving player Z by " + dz + " * " + mcSpeed + " * " + emm);
+					pVel = pVel.add(new Vector(dx, dy, dz));
 					//pVel = new Vector(dx * mcSpeed, dy * mcSpeed, dz * mcSpeed);
-					pVel.setY(pVel.getY() / 2);
+					//pVel.setY(pVel.getY() / 2);
 					
 					if(pVel.getX() > 10 || pVel.getZ() > 10 || pVel.getY() > 10) {
+						p.sendMessage("I have to teleport you.");
 						Location pLoc = p.getLocation();
 						pLoc.setX(pLoc.getX() + pVel.getX());
 						pLoc.setY(pLoc.getY() + pVel.getY());
 						pLoc.setZ(pLoc.getZ() + pVel.getZ());
 						p.teleport(pLoc);						
-					} else
+					} else {
 						p.setVelocity(pVel);
+					}
 				}
 			}
 		}

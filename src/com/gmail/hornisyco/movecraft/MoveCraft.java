@@ -64,6 +64,7 @@ public class MoveCraft extends JavaPlugin {
 	}
 
 	public void onEnable() {
+		// getServer().getScheduler().scheduleSyncDelayedTask(this, loadSensors, 20*5);
 		instance = this;
 
 		PluginManager pm = getServer().getPluginManager();
@@ -71,6 +72,7 @@ public class MoveCraft extends JavaPlugin {
 		pm.registerEvent(Event.Type.PLAYER_COMMAND_PREPROCESS, playerListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_INTERACT, playerListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.PLAYER_ANIMATION, playerListener, Priority.Normal, this);
 
 		pm.registerEvent(Event.Type.SIGN_CHANGE, blockListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.BLOCK_PLACE, blockListener, Priority.Normal, this);
