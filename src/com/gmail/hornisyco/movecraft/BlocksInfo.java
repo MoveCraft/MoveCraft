@@ -19,8 +19,8 @@ public class BlocksInfo {
 		blocks[2] = new BlockInfo(2,"grass", false, false, false, 3, 1, false);
 		blocks[3] = new BlockInfo(3,"dirt", false, false, false, 3, 1, false);
 		blocks[4] = new BlockInfo(4,"cobblestone", false, false, false, false);
-		blocks[5] = new BlockInfo(5,"wood", false, false, false, false);
-		blocks[6] = new BlockInfo(6,"sapling", false, false, false, false);
+		blocks[5] = new BlockInfo(5,"wood", true, false, false, false);
+		blocks[6] = new BlockInfo(6,"sapling", true, false, false, false);
 		blocks[7] = new BlockInfo(7,"adminium", false, false, false, false);
 		blocks[8] = new BlockInfo(8,"water", true, false, false, -1, 0, false);
 		blocks[9] = new BlockInfo(9,"water", true, false, false, -1, 0, false);
@@ -32,7 +32,7 @@ public class BlocksInfo {
 		blocks[15] = new BlockInfo(15,"iron ore", false, false, false, false);
 		blocks[16] = new BlockInfo(16,"charcoal", false, false, false, 263, 1, false);
 		blocks[17] = new BlockInfo(17,"trunk", true, false, false, false);
-		blocks[18] = new BlockInfo(18,"foliage", false, false, false, -1, 0, false);
+		blocks[18] = new BlockInfo(18,"leaves", true, false, false, -1, 0, false);
 		blocks[19] = new BlockInfo(19,"sponge", false, false, false, false);
 		blocks[20] = new BlockInfo(20,"glass", false, false, false, -1, 0, false);
 		blocks[23] = new BlockInfo(23,"dispenser", true, false, true, new byte[] {4, 2, 5, 3});
@@ -82,7 +82,7 @@ public class BlocksInfo {
 		blocks[78] = new BlockInfo(78,"snow", false, true, false, 332, 1, true);
 		blocks[79] = new BlockInfo(79,"ice", false, false, false, false);
 		blocks[80] = new BlockInfo(80,"snow block", false, false, false, false);
-		blocks[81] = new BlockInfo(81,"cacti", false, true, false, false);
+		blocks[81] = new BlockInfo(81,"cacti", true, true, false, false);
 		blocks[82] = new BlockInfo(82,"clay", false, false, false, false);
 		blocks[83] = new BlockInfo(83,"reed", true, true, false, 338, 1, false);
 		blocks[84] = new BlockInfo(84,"jukebox", true, false, false, false);
@@ -92,6 +92,7 @@ public class BlocksInfo {
 		blocks[88] = new BlockInfo(88,"mud", false, false, false, false);
 		blocks[89] = new BlockInfo(89,"lightstone", false, false, false, false);
 		blocks[90] = new BlockInfo(90,"portal", true, true, false, false);
+		blocks[92] = new BlockInfo(92,"cake", true, false, false, false);
 		blocks[91] = new BlockInfo(91,"pumpkin", true, false, false, new byte[] {3, 0, 1, 2});
 		blocks[93] = new BlockInfo(93,"repeater", true, true, false, new byte[] {3, 0, 2, 1});
 		blocks[94] = new BlockInfo(94,"repeater", true, true, false, new byte[] {3, 0, 2, 1});
@@ -111,12 +112,16 @@ public class BlocksInfo {
 		blocks[67].cardinalDirections = new byte[] {1, 3, 0, 2};
 		//wall sign
 		blocks[68].cardinalDirections = new byte[] {4, 2, 5, 3};
+		//lever
+		blocks[69].cardinalDirections = new byte[] {2, 4, 1, 3};
 		//steel door
 		blocks[71].cardinalDirections = new byte[] {0, 1, 2, 3};
 		//restone torch on
 		blocks[75].cardinalDirections = new byte[] {2, 4, 1, 3};
 		//restone torch off
-		blocks[76].cardinalDirections = new byte[] {2, 4, 1, 3};		
+		blocks[76].cardinalDirections = new byte[] {2, 4, 1, 3};	
+		//button
+		blocks[77].cardinalDirections = new byte[] {2, 4, 1, 3};		
 	}
 
 	public static String getName(int blockId) {
