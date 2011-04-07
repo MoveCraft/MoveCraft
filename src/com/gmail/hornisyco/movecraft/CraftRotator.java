@@ -440,9 +440,6 @@ public class CraftRotator {
 				}
 			}
 		}
-		
-		craft.restoreDataBlocks(0, 0, 0);
-		craft.restoreComplexBlocks(0, 0, 0);
 
 		//blocks that need support, but are not data blocks
 		for(int x=0;x<craft.sizeX;x++){
@@ -456,7 +453,10 @@ public class CraftRotator {
 					}
 				}
 			}
-		}		
+		}
+		
+		craft.restoreDataBlocks(0, 0, 0);
+		craft.restoreComplexBlocks(0, 0, 0);		
 	}
 	
 	public void rotateCardinals(ArrayList<DataBlock> blocksToRotate, int dr) {		
@@ -464,6 +464,8 @@ public class CraftRotator {
 		//as are levers...
 		//as are minecart tracks
 		//and beds
+		//cake
+		//repeaters?
 		
 		for(DataBlock dataBlock: blocksToRotate) {			
 			//Block theBlock = craft.getWorldBlock(dataBlock.x, dataBlock.y, dataBlock.z);
@@ -477,8 +479,7 @@ public class CraftRotator {
 			
 			byte[] cardinals = BlocksInfo.getCardinals(blockId);
 			
-			//wooden door
-			if(blockId == 64 || blockId == 71) {
+			if(blockId == 64 || blockId == 71) {	//wooden or steel door
 				int blockData = dataBlock.data;
 				
 				if(blockData > 11) {	//if the door is an open top 
@@ -490,6 +491,18 @@ public class CraftRotator {
 				} else if (blockData > 4) {		//not a top, but open
 					for(int c = 0; c < 4; c++)
 						cardinals[c] += 4;					
+				}
+			}
+			
+			if(blockId == 69) {	//lever
+				int blockData = dataBlock.data;
+				
+				System.out.println("LEVER DATA IS " + blockData);
+				
+				if(blockData > 7) {
+					for(int c = 0; c < 4; c++) {
+						cardinals[c] += 8;
+					}
 				}
 			}
 			
