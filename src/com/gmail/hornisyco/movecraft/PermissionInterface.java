@@ -40,6 +40,7 @@ public class PermissionInterface {
 	
 	public static boolean CheckPermission(Player player, String command) {		
 		command = command.replace(" ", ".");
+		MoveCraft.instance.DebugMessage("Checking if " + player.getName() + " can " + command);
 		
 		if (Permissions != null) {			
 		    if(Permissions.has(player, command) || player.isOp()) {
@@ -55,8 +56,10 @@ public class PermissionInterface {
 		    }
 		}
 		else {
-			if(MoveCraft.instance.ConfigSetting("RequireOp").equalsIgnoreCase("true") && !player.isOp())
+			if(MoveCraft.instance.ConfigSetting("RequireOp").equalsIgnoreCase("true") && !player.isOp()) {
+				MoveCraft.instance.DebugMessage("Op is required, and you don't have it.");
 				return false;
+			}
 		}
 		
 		return true;
