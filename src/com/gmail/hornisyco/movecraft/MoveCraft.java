@@ -112,7 +112,7 @@ public class MoveCraft extends JavaPlugin {
 		return this.DebugMode;
 	}
 
-	public void createCraft(Player player, CraftType craftType, int x, int y, int z, String name) {
+	public Craft createCraft(Player player, CraftType craftType, int x, int y, int z, String name) {
 		if (DebugMode == true)
 			player.sendMessage("Attempting to create " + craftType.name
 					+ "at coordinates " + Integer.toString(x) + ", "
@@ -129,7 +129,7 @@ public class MoveCraft extends JavaPlugin {
 
 		// auto-detect and create the craft
 		if (!CraftBuilder.detect(craft, x, y, z)) {
-			return;
+			return null;
 		}
 
 		/* Rotation code */
@@ -143,8 +143,6 @@ public class MoveCraft extends JavaPlugin {
 		// }
 		/* End Rotation Code */
 
-		Craft.addCraft(craft);
-
 		if(craft.engineBlocks.size() > 0)
 			craft.timer = new MoveCraft_Timer(0, craft, "engineCheck", false);
 		else {
@@ -153,12 +151,16 @@ public class MoveCraft extends JavaPlugin {
 			}
 		}
 
+		Craft.addCraft(craft);
+
 		if(craft.type.listenItem == true)
 			player.sendMessage(ChatColor.GRAY + "With an item in your hand, right-click in the direction you want to go.");
 		if(craft.type.listenAnimation == true)
 			player.sendMessage(ChatColor.GRAY + "Swing your arm in the direction you want to go.");
 		if(craft.type.listenMovement == true)
 			player.sendMessage(ChatColor.GRAY + "Move in the direction you want to go.");
+		
+		return craft;
 	}
 	
 	public String ConfigSetting(String setting) {

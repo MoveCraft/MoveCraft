@@ -7,8 +7,8 @@ import java.util.logging.Level;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
-import org.bukkit.Server;
 import org.bukkit.World;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -46,6 +46,7 @@ public class Craft {
 	// position of the craft on the map
 	World world;
 	int posX, posY, posZ;
+	int centerX, centerZ = -1;
 
 	/* Rotation code */
     int rotation = 0; //current rotation 0, 90, 180, 270
@@ -282,6 +283,26 @@ public class Craft {
 		return false;
 	}
 
+	public boolean isOnCraft(Entity player, boolean precise) {
+
+		int x = (int) Math.floor(player.getLocation().getX());
+		int y = (int) Math.floor(player.getLocation().getY());
+		int z = (int) Math.floor(player.getLocation().getZ());
+
+		if (isIn(x, y - 1, z)) {
+
+			if (!precise)
+				return true;
+
+			// the block the player is standing on is part of the craft
+			if (matrix[x - posX][y - posY - 1][z - posZ] != -1) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	// SAFE ! setblock
 	public void setBlock(int id, Block block) {
 		// if(y < 0 || y > 127 || id < 0 || id > 255){
@@ -465,6 +486,7 @@ public class Craft {
 				
 				complexBlock.signLines = sign.getLines();
 				
+				/*
 				ArrayList<String> myLines = new ArrayList<String>();
 				
 				if(sign.getLine(0) != null) {
@@ -474,6 +496,7 @@ public class Craft {
 					myLines.add(sign.getLine(3));
 					//signLines.add(myLines);
 				}
+				*/
 				
 			} else if (currentBlock.getTypeId() == 54) {
 				Chest chest = ((Chest)currentBlock.getState());
@@ -521,6 +544,8 @@ public class Craft {
 					dy + complexBlock.y,
 					dz + complexBlock.z);
 			
+			theBlock.setData((byte) complexBlock.data);
+			
 			Inventory inventory = null;
 
 			if (theBlock.getTypeId() == 63 || theBlock.getTypeId() == 68) {
@@ -559,7 +584,13 @@ public class Craft {
 
 	// move the craft according to a vector d
 	public void move(int dx, int dy, int dz) {
-		Server server = MoveCraft.instance.getServer();
+		if(type.canDig) {
+			MoveCraft.instance.DebugMessage("Waterlevel is " + waterLevel);
+			MoveCraft.instance.DebugMessage("Watertype is " + waterType);
+			MoveCraft.instance.DebugMessage("newWaterlevel is " + newWaterLevel);
+		}
+		
+		//Server server = MoveCraft.instance.getServer();
 
 		dx = speed * dx;
 		dz = speed * dz;
@@ -744,43 +775,58 @@ public class Craft {
 		}
 
 		restoreComplexBlocks(dx, dy, dz);
-
-		// tp all players in the craft area
-		for (Player p : server.getOnlinePlayers()) {
-			if(isOnCraft(p, false)) {
-				if(MoveCraft.instance.ConfigSetting("ForceTeleport").equalsIgnoreCase("true")) {
-					Location pLoc = p.getLocation();
-					pLoc.setX(pLoc.getX() + dx);
-					pLoc.setY(pLoc.getY() + dy);
-					pLoc.setZ(pLoc.getZ() + dz);
-					p.teleport(pLoc);					
-				} else if(type.listenMovement == false || p != player) {
-					int mcSpeed = speed;
-					if(mcSpeed > 2)
-						mcSpeed = 2;
-					
-					double emm = Double.parseDouble(MoveCraft.instance.ConfigSetting("ExperimentalMovementMultiplier"));
-					Vector pVel = p.getVelocity();
-					//pVel = pVel.add(new Vector(dx * speed, dy * speed, dz * speed));
-					MoveCraft.instance.DebugMessage("Moving player X by " + dx + " * " + mcSpeed + " * " + emm);
-					MoveCraft.instance.DebugMessage("Moving player Z by " + dz + " * " + mcSpeed + " * " + emm);
-					pVel = pVel.add(new Vector(dx, dy, dz));
-					//pVel = new Vector(dx * mcSpeed, dy * mcSpeed, dz * mcSpeed);
-					//pVel.setY(pVel.getY() / 2);
-					
-					if(pVel.getX() > 10 || pVel.getZ() > 10 || pVel.getY() > 10) {
-						p.sendMessage("I have to teleport you.");
-						Location pLoc = p.getLocation();
-						pLoc.setX(pLoc.getX() + pVel.getX());
-						pLoc.setY(pLoc.getY() + pVel.getY());
-						pLoc.setZ(pLoc.getZ() + pVel.getZ());
-						p.teleport(pLoc);						
-					} else {
-						p.setVelocity(pVel);
-					}
+		
+		ArrayList<Entity> checkEntities = new ArrayList<Entity>();
+		
+		Chunk firstChunk = world.getChunkAt(new Location(world, posX, posY, posZ));
+		Chunk lastChunk = world.getChunkAt(new Location(world, posX + sizeX, posY + sizeY, posZ + sizeZ));
+		
+		for(int x = 0; Math.abs(firstChunk.getX() - lastChunk.getX()) >= x; x++) {
+			int targetX = 0;
+			if(firstChunk.getX() < lastChunk.getX()) {
+				targetX = firstChunk.getX() + x;
+			} else {
+				targetX = firstChunk.getX() - x;
+			}
+			for(int z = 0; Math.abs(firstChunk.getZ() - lastChunk.getZ()) >= z; z++) {
+				int targetZ = 0;
+				if(firstChunk.getZ() < lastChunk.getZ()) {
+					targetZ = firstChunk.getZ() + z;
+				} else {
+					targetZ = firstChunk.getZ() - z;
+				}
+				
+				Chunk addChunk = world.getChunkAt(targetX, targetZ);
+				
+				Entity[] ents = addChunk.getEntities();
+				for(Entity e : ents) {
+					checkEntities.add(e);
 				}
 			}
 		}
+		
+		for(Entity e : checkEntities) {
+			if(isOnCraft(e, false)) {
+				if(MoveCraft.instance.ConfigSetting("ForceTeleport").equalsIgnoreCase("true")) {
+					teleportPlayer(e, dx, dy, dz);
+				} else if(type.listenMovement == false || e != player) {
+					movePlayer(e, dx, dy, dz);
+				}
+			}
+		}
+
+		// tp all players in the craft area
+		/*
+		for (Player p : server.getOnlinePlayers()) {
+			if(isOnCraft(p, false)) {
+				if(MoveCraft.instance.ConfigSetting("ForceTeleport").equalsIgnoreCase("true")) {
+					teleportPlayer(p, dx, dy, dz);
+				} else if(type.listenMovement == false || p != player) {
+					movePlayer(p, dx, dy, dz);
+				}
+			}
+		}
+		*/
 
 		posX += dx;
 		posY += dy;
@@ -822,6 +868,43 @@ public class Craft {
 			}
 		}
 
+	}
+	
+	public void teleportPlayer(Entity p, int dx, int dy, int dz) {
+		MoveCraft.instance.DebugMessage("Teleporting player");
+		Location pLoc = p.getLocation();
+		pLoc.setX(pLoc.getX() + dx);
+		pLoc.setY(pLoc.getY() + dy);
+		pLoc.setZ(pLoc.getZ() + dz);
+		p.teleport(pLoc);		
+	}
+	
+	public void movePlayer(Entity p, int dx, int dy, int dz) {
+		MoveCraft.instance.DebugMessage("Moving player");
+		int mcSpeed = speed;
+		if(mcSpeed > 2)
+			mcSpeed = 2;
+		
+		double emm = Double.parseDouble(MoveCraft.instance.ConfigSetting("ExperimentalMovementMultiplier"));
+		Vector pVel = p.getVelocity();
+		//pVel = pVel.add(new Vector(dx * speed, dy * speed, dz * speed));
+		MoveCraft.instance.DebugMessage("Moving player X by " + dx + " * " + mcSpeed + " * " + emm);
+		MoveCraft.instance.DebugMessage("Moving player Z by " + dz + " * " + mcSpeed + " * " + emm);
+		pVel = pVel.add(new Vector(dx, dy, dz));
+		//pVel = new Vector(dx * mcSpeed, dy * mcSpeed, dz * mcSpeed);
+		//pVel.setY(pVel.getY() / 2);
+		
+		if(pVel.getX() > 10 || pVel.getZ() > 10 || pVel.getY() > 10) {
+			//p.sendMessage("I have to teleport you.");
+			System.out.println("Velocity is too high, have to teleport " + p.getEntityId());
+			Location pLoc = p.getLocation();
+			pLoc.setX(pLoc.getX() + pVel.getX());
+			pLoc.setY(pLoc.getY() + pVel.getY());
+			pLoc.setZ(pLoc.getZ() + pVel.getZ());
+			p.teleport(pLoc);						
+		} else {
+			p.setVelocity(pVel);
+		}		
 	}
 
 	public void setSpeed(int speed) {

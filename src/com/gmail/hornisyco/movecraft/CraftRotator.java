@@ -475,6 +475,7 @@ public class CraftRotator {
 			if(blockId == 50 || blockId == 75 || blockId == 76) {
 				if(dataBlock.data == 5)
 					continue;
+				
 			}
 			
 			byte[] cardinals = BlocksInfo.getCardinals(blockId);

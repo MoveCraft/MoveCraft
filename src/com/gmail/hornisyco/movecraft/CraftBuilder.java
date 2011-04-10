@@ -597,8 +597,8 @@ public class CraftBuilder {
 
        CraftBuilder.craft = craft;
        
-       if(craft.type.canDig)
-    	   craft.waterType = 1;
+       //if(craft.type.canDig)
+    	   //craft.waterType = 1;
         
        dmatrix = new HashMap<Integer,HashMap<Integer,HashMap<Integer,Short>>>();
 

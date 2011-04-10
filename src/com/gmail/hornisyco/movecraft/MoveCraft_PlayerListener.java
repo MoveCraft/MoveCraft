@@ -3,7 +3,6 @@ package com.gmail.hornisyco.movecraft;
 import java.util.List;
 
 import org.bukkit.block.Block;
-import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.ChatColor;
@@ -89,25 +88,19 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		
 		Craft craft = Craft.getCraft(player);
 		
-		if(craft == null)
-			return;
-		
-		if(action == Action.RIGHT_CLICK_AIR && craft.type.listenItem == true) {
-			playerUsedAnItem(player);	
+		if(action == Action.RIGHT_CLICK_BLOCK) {
+			if(event.getClickedBlock().getTypeId() == 63 || event.getClickedBlock().getTypeId() == 68)
+				MoveCraft_BlockListener.ClickedASign(player, event.getClickedBlock());
+			else if (craft != null)
+				playerUsedAnItem(player, craft);
 		}
 		
-		if(action == Action.RIGHT_CLICK_BLOCK) {
-			if (event.getClickedBlock().getState() instanceof Sign)
-				MoveCraft_BlockListener.ClickedASign(player, event.getClickedBlock());
-			else
-				playerUsedAnItem(player);
+		if(action == Action.RIGHT_CLICK_AIR && craft != null && craft.type.listenItem == true) {
+			playerUsedAnItem(player, craft);
 		}
 	}
 	
-	public void playerUsedAnItem(Player player) {
-		Craft craft = Craft.getCraft(player);
-
-		if (craft != null) {
+	public void playerUsedAnItem(Player player, Craft craft) {
 			
 			// minimum time between 2 swings
 			if (System.currentTimeMillis() - craft.lastMove < 0.2 * 1000)
@@ -179,7 +172,6 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				}
 
 				craft.calculatedMove(dx, dy, dz);
-		}
 	}
 
 	@Override
@@ -189,7 +181,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			Craft craft = Craft.getCraft(player);
 
 			if(craft != null && craft.type.listenAnimation == true) {
-				playerUsedAnItem(player);			
+				playerUsedAnItem(player, craft);			
 			}
 		}
 	}

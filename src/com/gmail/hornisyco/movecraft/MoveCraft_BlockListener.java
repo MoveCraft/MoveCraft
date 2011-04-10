@@ -49,19 +49,13 @@ public class MoveCraft_BlockListener extends BlockListener {
 		}
 	}
 
-	//@Override
-	//public void onBlockRightClick(BlockRightClickEvent event) {
 	public static void ClickedASign(Player player, Block block) {
 		Craft playerCraft = Craft.getCraft(player);
 
 		Sign sign = (Sign) block.getState();
 
-		//player.sendMessage("A sign has been right clicked...");
-
-		if(sign.getLine(0) == null) return;
-
-		if(sign.getLine(0).trim().equals("")) return;
-
+		if(sign.getLine(0) == null || sign.getLine(0).trim().equals("")) return;
+		
 		String craftTypeName = sign.getLine(0).trim().toLowerCase();;
 
 		//remove colors
@@ -77,11 +71,9 @@ public class MoveCraft_BlockListener extends BlockListener {
 		//it is a registred craft type !
 		if(craftType != null){
 
-			if(playerCraft != null) {
-				if(playerCraft.type == craftType) {
-					MoveCraft.instance.releaseCraft(player, playerCraft);
-					return;
-				}
+			if(playerCraft != null && playerCraft.type == craftType) {
+				MoveCraft.instance.releaseCraft(player, playerCraft);
+				return;
 			}
 
 			//All players can use signs...
@@ -92,7 +84,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 				}
 			 */
 
-			String restriction = sign.getLine(1).trim();
+			String restriction = sign.getLine(2).trim();
 			if(!restriction.equals("") && restriction != null) {
 				if(restriction != "public" && restriction != player.getName()) {
 					if(!PermissionInterface.CheckGroupPermission(player, restriction))
@@ -100,7 +92,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 				}
 			}
 
-			String name = sign.getLine(2).replaceAll("§.", "");
+			String name = sign.getLine(1);//.replaceAll("§.", "");
 
 			if(name.trim().equals(""))
 				name = null;
@@ -115,7 +107,12 @@ public class MoveCraft_BlockListener extends BlockListener {
 			x = x + (direction == 4 ? 1 : (direction == 5 ? -1 : 0));
 			z = z + (direction == 2 ? 1 : (direction == 3 ? -1 : 0));
 
-			MoveCraft.instance.createCraft(player, craftType, x, y, z, name);
+			Craft tehCraft = MoveCraft.instance.createCraft(player, craftType, x, y, z, name);
+			
+			if(sign.getLine(3).equalsIgnoreCase("center")) {
+				tehCraft.offX = x;
+				tehCraft.offZ = z;
+			}
 
 			return;                        
 		} else if(craftTypeName.equalsIgnoreCase("engage") && sign.getLine(1).equalsIgnoreCase("hyperdrive")) {
