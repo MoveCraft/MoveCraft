@@ -6,47 +6,11 @@ import org.bukkit.entity.Player;
 
 import org.bukkit.block.Sign;
 import org.bukkit.event.block.BlockListener;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
 
 public class MoveCraft_BlockListener extends BlockListener {
 
 	public MoveCraft_BlockListener() {
-	}
-
-	@Override
-	public void onBlockPlace(BlockPlaceEvent event) {
-		Player player = event.getPlayer();
-		Block blockPlaced = event.getBlockPlaced();
-
-		MoveCraft.instance.DebugMessage(player.getName() + " placed a block of type " + blockPlaced.getTypeId());
-
-		Craft playerCraft = Craft.getCraft(player);
-
-		if (blockPlaced != null) {
-
-			// try to find a craft at this location
-			Craft craft = Craft.getCraft(blockPlaced.getX(),
-					blockPlaced.getY(), blockPlaced.getZ());
-
-			// if there is a craft, add the block to it
-			if (craft != null) {
-
-				if (blockPlaced.getTypeId() == 321 || // picture
-						blockPlaced.getTypeId() == 323 || // sign
-						blockPlaced.getTypeId() == 324 || // door
-						blockPlaced.getTypeId() == 330) { // door
-
-					player.sendMessage(ChatColor.YELLOW + "please release the " + craft.type.name + " to add this item");
-					return;
-				}
-
-				craft.addBlock(blockPlaced);
-			}
-
-			if (playerCraft != null)
-				playerCraft.blockPlaced = true;
-		}
 	}
 
 	public static void ClickedASign(Player player, Block block) {
@@ -117,7 +81,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 			return;                        
 		} else if(craftTypeName.equalsIgnoreCase("engage") && sign.getLine(1).equalsIgnoreCase("hyperdrive")) {
 			if(playerCraft == null) {
-				player.kickPlayer("I am TIRED of these MOTHERFUCKING noobs on this MOTHERFUCKING server.");
+				player.kickPlayer("Don't.");
 				return;
 			}
 			Craft_Hyperspace.enterHyperSpace(playerCraft);
@@ -147,6 +111,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 		
 		if (craftType != null &&
 				!PermissionInterface.CheckPermission(player, "movecraft." + craftTypeName + "." + craftType.driveCommand)) {
+			player.sendMessage("You don't have permission to do that!");
 			event.setCancelled(true);
 		}
 	}
