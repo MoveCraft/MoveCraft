@@ -1,8 +1,5 @@
 package com.sycoprime.movecraft;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.logging.*;
 import java.io.File;
 
@@ -16,7 +13,7 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.PluginManager;
 
-/*
+/**
  * MoveCraft plugin for Hey0 mod (hMod) by Yogoda
  * Ported to Bukkit by SycoPrime
  *
@@ -34,7 +31,6 @@ public class MoveCraft extends JavaPlugin {
 	static String version;
 	public static MoveCraft instance;
 
-	static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	public static Logger logger = Logger.getLogger("Minecraft");
 	boolean DebugMode = false;
 
@@ -42,10 +38,6 @@ public class MoveCraft extends JavaPlugin {
 
 	private final MoveCraft_PlayerListener playerListener = new MoveCraft_PlayerListener();
 	private final MoveCraft_BlockListener blockListener = new MoveCraft_BlockListener();
-
-	public static void consoleSay(String msg) {
-		System.out.println(getDateTime() + " [INFO] " + pluginName + " " + msg);
-	}
 
 	public void loadProperties() {
 		configFile = new ConfigFile();
@@ -91,7 +83,8 @@ public class MoveCraft extends JavaPlugin {
 	}
 
 	public void onDisable() {
-		consoleSay(version + " plugin disabled");
+		PluginDescriptionFile pdfFile = this.getDescription();
+		System.out.println(pdfFile.getName() + " " + version + " plugin disabled");
 	}
 
 	public void releaseCraft(Player player, Craft craft) {
@@ -170,14 +163,10 @@ public class MoveCraft extends JavaPlugin {
 		if(configFile.ConfigSettings.containsKey(setting))
 			return configFile.ConfigSettings.get(setting);
 		else {
-			System.out.println("Sycoprime needs to be notified that a non-existing config setting " +
-					"was attempted to be accessed.");
+			System.out.println("Sycoprime needs to be notified that a non-existing config setting '" + setting + 
+					"' was attempted to be accessed.");
 			return "";
 		}
-	}
-
-	public static String getDateTime() {
-		return dateFormat.format(new Date());
 	}
 
 	public void dropItem(Block block){
