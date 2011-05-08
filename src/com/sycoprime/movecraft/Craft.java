@@ -925,14 +925,17 @@ public class Craft {
 		if(mcSpeed > 2)
 			mcSpeed = 2;
 		
-		double emm = Double.parseDouble(MoveCraft.instance.ConfigSetting("ExperimentalMovementMultiplier"));
+		//double emm = Double.parseDouble(MoveCraft.instance.ConfigSetting("ExperimentalMovementMultiplier"));
 		Vector pVel = p.getVelocity();
 		//pVel = pVel.add(new Vector(dx * speed, dy * speed, dz * speed));
-		MoveCraft.instance.DebugMessage("Moving player X by " + dx + " * " + mcSpeed + " * " + emm);
-		MoveCraft.instance.DebugMessage("Moving player Z by " + dz + " * " + mcSpeed + " * " + emm);
-		if(dx != 0) dx = mcSpeed;
-		if(dy != 0) dy = mcSpeed;
-		if(dz != 0) dz = mcSpeed;
+		//MoveCraft.instance.DebugMessage("Moving player X by " + dx + " * " + mcSpeed + " * " + emm);
+		//MoveCraft.instance.DebugMessage("Moving player Z by " + dz + " * " + mcSpeed + " * " + emm);
+		if(dx > 0) dx = speed;
+		else dx = speed * -1;
+		if(dy > 0) dy = speed;
+		else dy = speed * -1;
+		if(dz > 0) dz = speed;
+		else dz = speed * -1;
 		pVel = pVel.add(new Vector(dx, dy, dz));
 		//pVel = new Vector(dx * mcSpeed, dy * mcSpeed, dz * mcSpeed);
 		//pVel.setY(pVel.getY() / 2);
