@@ -1,4 +1,4 @@
 name: MoveCraft
-main: com.gmail.hornisyco.movecraft.MoveCraft
-version: 0.6.8
+main: com.sycoprime.movecraft.MoveCraft
+version: 0.6.9 Beta
 authors: [Yogoda, SycoPrime]

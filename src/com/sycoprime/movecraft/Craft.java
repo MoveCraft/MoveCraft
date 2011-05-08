@@ -15,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.bukkit.Location;
 import org.bukkit.block.*;
+import org.bukkit.entity.Item;
 
 /**
  * MoveCraft for Bukkit by Yogoda and SycoPrime
@@ -178,6 +179,9 @@ public class Craft {
 			if (BlocksInfo.isDataBlock(blockId)) {
 				dataBlocks.add(new DataBlock(blockId, x, y, z, block.getData()));
 			}
+			if (BlocksInfo.isComplexBlock(blockId)) {
+				complexBlocks.add(new DataBlock(blockId, x, y, z, block.getData()));
+			}
 
 			blockCount++;
 		}
@@ -333,12 +337,28 @@ public class Craft {
 		 */
 	}
 
-	private boolean isCraftBlock(int x, int y, int z) {
+	public boolean isCraftBlock(int x, int y, int z) {
 
 		if (x >= 0 && y >= 0 && z >= 0 && x < sizeX && y < sizeY && z < sizeZ) {
 
 			return !(matrix[x][y][z] == -1);
 		} else {
+			return false;
+		}
+	}
+
+	public boolean isitaCraftBlock(int x, int y, int z) {
+
+		if (x >= 0 && y >= 0 && z >= 0 && x < sizeX && y < sizeY && z < sizeZ) {
+
+			Boolean emptyMatrix = (matrix[x][y][z] == -1);
+			System.out.println("Matrix at " + x + ", " + y + ", " + z + " is " + matrix[x][y][z]);
+			System.out.println("Emptymatrix is " + emptyMatrix + " for " + x + ", " + y + ", " + z);
+			return !emptyMatrix;
+		} else {
+			System.out.println(x + " isn't close to " + sizeX + ", " +
+					y + " isn't close to " + sizeY + ", " +
+					z + " isn't close to " + sizeZ);
 			return false;
 		}
 	}
@@ -477,6 +497,7 @@ public class Craft {
 		// store the data of all complex blocks, or die trying
 		for (DataBlock complexBlock : complexBlocks) {
 			Block currentBlock = getWorldBlock(complexBlock.x, complexBlock.y, complexBlock.z);
+			complexBlock.id = currentBlock.getTypeId();
 			complexBlock.data = currentBlock.getData();
 			
 			Inventory inventory = null;
@@ -501,10 +522,6 @@ public class Craft {
 			} else if (currentBlock.getTypeId() == 54) {
 				Chest chest = ((Chest)currentBlock.getState());
 				inventory = chest.getInventory();
-				Chest adjChest = getAdjacentChest(chest);
-				if(adjChest != null) {
-					//IInventory IChest = (IInventory)new InventoryLargeChest("Large chest", cInventory1.getInventory(), cInventory2.getInventory());
-				}
 			} else if (currentBlock.getTypeId() == 23) {
 				Dispenser dispenser = (Dispenser) currentBlock.getState();
 				inventory = dispenser.getInventory();
@@ -514,27 +531,22 @@ public class Craft {
 			}
 			
 			if(inventory != null) {
+				MoveCraft.instance.DebugMessage("Inventory is " + inventory.getSize());
 				for(int slot = 0; slot < inventory.getSize(); slot++) {
-					if(inventory.getItem(slot).getTypeId() != 0) {
+					if(inventory.getItem(slot).getTypeId() != 0 && inventory.getItem(slot) != null) {
 						//complexBlock.setItem(slot, inventory.getItem(slot).getTypeId(), inventory.getItem(slot).getAmount());
 						complexBlock.setItem(slot, inventory.getItem(slot));
-						inventory.setItem(slot, new ItemStack(0));
+						//inventory.setItem(slot, new ItemStack(0));
+
+						MoveCraft.instance.DebugMessage("Inventory has " + inventory.getItem(slot).getAmount() + 
+								" inventory item of type " + inventory.getItem(slot).getTypeId() + 
+								" in slot " + slot);
+						
+						inventory.setItem(slot, null);
 					}
 				}
 			}
 		}
-	}
-	
-	public static Chest getAdjacentChest(Chest chest) {
-		if(chest.getBlock().getRelative(BlockFace.NORTH).getType() == Material.CHEST)
-            return (Chest)chest.getBlock().getRelative(BlockFace.NORTH).getState();
-       else if(chest.getBlock().getRelative(BlockFace.SOUTH).getType() == Material.CHEST)
-            return (Chest)chest.getBlock().getRelative(BlockFace.SOUTH).getState();
-       else if(chest.getBlock().getRelative(BlockFace.EAST).getType() == Material.CHEST)
-            return (Chest)chest.getBlock().getRelative(BlockFace.EAST).getState();
-       else if(chest.getBlock().getRelative(BlockFace.WEST).getType() == Material.CHEST)
-            return (Chest)chest.getBlock().getRelative(BlockFace.WEST).getState();
-       return null;
 	}
 	
 	public void restoreDataBlocks(int dx, int dy, int dz) {
@@ -564,7 +576,11 @@ public class Craft {
 			
 			Inventory inventory = null;
 
-			if (theBlock.getTypeId() == 63 || theBlock.getTypeId() == 68) {
+			if (complexBlock.id == 63 || complexBlock.id == 68) {
+			//if (theBlock.getTypeId() == 63 || theBlock.getTypeId() == 68) {
+				MoveCraft.instance.DebugMessage("Restoring a sign.");
+				theBlock.setTypeId(complexBlock.id);
+				theBlock.setData((byte) complexBlock.data);
 				Sign sign = (Sign) theBlock.getState();
 				
 				sign.setLine(0, complexBlock.signLines[0]);
@@ -587,7 +603,7 @@ public class Craft {
 			//https://github.com/Afforess/MinecartMania/blob/master/src/com/afforess/minecartmaniacore/MinecartManiaChest.java
 			//restore the block's inventory
 			if (inventory != null) {
-				for(int slot = 0; slot < inventory.getSize(); slot++){
+				for(int slot = 0; slot < inventory.getSize(); slot++) {
 					if(complexBlock.items[slot] != null && complexBlock.items[slot].getTypeId() != 0) {
 						inventory.setItem(slot, complexBlock.items[slot]);
 						MoveCraft.instance.DebugMessage("Moving " + complexBlock.items[slot].getAmount() + 
@@ -596,8 +612,9 @@ public class Craft {
 					}
 				}			
 			}
+			
 			if(theBlock.getTypeId() == 54)
-				((Chest) theBlock).update();
+				((Chest)theBlock.getState()).update();
 		}		
 	}
 
@@ -694,7 +711,8 @@ public class Craft {
 		// second pass, the regular blocks
 		for (int x = 0; x < sizeX; x++) {
 			for (int z = 0; z < sizeZ; z++) {
-				for (int y = 0; y < sizeY; y++) {
+				for (int y = sizeY - 1; y > -1; y--) {
+				//for (int y = 0; y < sizeY; y++) {
 
 					short blockId = matrix[x][y][z];
 
@@ -715,10 +733,10 @@ public class Craft {
 							// anymore
 							if (matrix[x - dx][y - dy][z - dz] == -1
 									|| BlocksInfo.needsSupport(matrix[x - dx][y - dy][z - dz])) {
-								if (y > waterLevel
-										|| !(type.canNavigate || type.canDive))
+								if (y > waterLevel || !(type.canNavigate || type.canDive)) {
 									//|| matrix [ x - dx ] [ y - dy ] [ z - dz ] == 0)
 									setBlock(0, block);
+								}
 								else
 									setBlock(waterType, block);
 							}
@@ -776,6 +794,7 @@ public class Craft {
 		}
 
 		restoreDataBlocks(dx, dy, dz);
+		restoreComplexBlocks(dx, dy, dz);
 
 		// restore items that need a support but are not data blocks
 		for (int x = 0; x < sizeX; x++) {
@@ -792,8 +811,6 @@ public class Craft {
 				}
 			}
 		}
-
-		restoreComplexBlocks(dx, dy, dz);
 		
 		ArrayList<Entity> checkEntities = new ArrayList<Entity>();
 		
@@ -820,7 +837,8 @@ public class Craft {
 				try {
 					Entity[] ents = addChunk.getEntities();
 					for(Entity e : ents) {
-						checkEntities.add(e);
+						if(!(e instanceof Item))
+							checkEntities.add(e);
 					}
 				}
 				catch (Exception ex) {
@@ -912,6 +930,9 @@ public class Craft {
 		//pVel = pVel.add(new Vector(dx * speed, dy * speed, dz * speed));
 		MoveCraft.instance.DebugMessage("Moving player X by " + dx + " * " + mcSpeed + " * " + emm);
 		MoveCraft.instance.DebugMessage("Moving player Z by " + dz + " * " + mcSpeed + " * " + emm);
+		if(dx != 0) dx = mcSpeed;
+		if(dy != 0) dy = mcSpeed;
+		if(dz != 0) dz = mcSpeed;
 		pVel = pVel.add(new Vector(dx, dy, dz));
 		//pVel = new Vector(dx * mcSpeed, dy * mcSpeed, dz * mcSpeed);
 		//pVel.setY(pVel.getY() / 2);
@@ -961,6 +982,7 @@ public class Craft {
 	}
 
 	public void calculatedMove(int dx, int dy, int dz) {
+		MoveCraft.instance.DebugMessage("DXYZ is (" + dx + ", " + dy + ", " + dz + ")" );
 		//instead of forcing the craft to move, check some things beforehand
 
 		if(this.inHyperSpace) {

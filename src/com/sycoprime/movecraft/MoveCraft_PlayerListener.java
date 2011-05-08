@@ -86,11 +86,49 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 	public void onPlayerInteract(PlayerInteractEvent event) {
 		Action action = event.getAction();
 		Player player = event.getPlayer();
-
+		
 		Craft playerCraft = Craft.getCraft(player);
 
 		if(action == Action.RIGHT_CLICK_BLOCK) {
+			
+			if(event.hasBlock()) {
+				Block block = event.getClickedBlock();
+				
+				MoveCraft.instance.DebugMessage("The action has a block " + block + " associated with it.");
+				
+				if(block.getTypeId() == 54 || 
+						block.getTypeId() == 23 || 
+						block.getTypeId() == 61 ) {
+					//Need to handle workbench as well...
+					
+					return;
+				}
+				
+				if(MoveCraft.instance.ConfigSetting("RequireRemote") == "true" &&
+						playerCraft != null) {
+					playerCraft.addBlock(block);
+				}
+
+				/*
+				Craft craft = Craft.getCraft(block.getX(),
+						block.getY(), block.getZ());
+				
+				if(craft != null) {
+					Location blockLoc = block.getLocation();
+					//if(Craft.getCraft(blockLoc.getBlockX(), blockLoc.getBlockX(), blockLoc.getBlockX()) == null) {
+					int cX = ((int) (blockLoc.getX()) - craft.minX);
+					int cY = ((int) (blockLoc.getY()) - craft.minY);
+					int cZ = ((int) (blockLoc.getZ()) - craft.minZ);
+					if(!craft.isitaCraftBlock(cX, cY, cZ)) {
+						System.out.println("Shits not a craft block.");
+						craft.addBlock(block);
+						return;
+					}
+				}
+				*/
+			}
 			//if (event.hasBlock() || event.hasItem()) {
+			/* Fuck, I thought this worked for a minute. It definitely doesn't now.
 			if (event.hasBlock()) {
 				Block blockPlaced = event.getClickedBlock();
 				Craft craft = Craft.getCraft(blockPlaced.getX(),
@@ -112,12 +150,17 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					return;
 				}
 			}
+			*/
 
 			if(event.getClickedBlock().getTypeId() == 63 || event.getClickedBlock().getTypeId() == 68)
 				MoveCraft_BlockListener.ClickedASign(player, event.getClickedBlock());
-			else if (playerCraft != null)
+			else if (playerCraft != null) {
+				if (MoveCraft.instance.ConfigSetting("RequireRemote") == "true" && 
+						event.getItem().getTypeId() != playerCraft.type.remoteControllerItem)
+					return;
+				
 				playerUsedAnItem(player, playerCraft);
-			else {
+			} else {
 				Vector pVel = player.getVelocity();
 				if(player.getLocation().getPitch() < 90 || player.getLocation().getPitch() > 180)
 					pVel.setX(pVel.getX() + 1);
@@ -127,7 +170,20 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		}
 
 		if(action == Action.RIGHT_CLICK_AIR && playerCraft != null && playerCraft.type.listenItem == true) {
+			if (MoveCraft.instance.ConfigSetting("RequireRemote") == "true" && 
+					event.getItem().getTypeId() != playerCraft.type.remoteControllerItem)
+				return;
+			
 			playerUsedAnItem(player, playerCraft);
+		}
+		
+		if(action == Action.RIGHT_CLICK_AIR && playerCraft == null && MoveCraft.instance.DebugMode) {
+			Vector pVel = player.getVelocity();
+			int dx = 3;
+			int dy = 0;
+			int dz = 0;
+			pVel = pVel.add(new Vector(dx, dy, dz));
+			player.setVelocity(pVel);
 		}
 	}
 	

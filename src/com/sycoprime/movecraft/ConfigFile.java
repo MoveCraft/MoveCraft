@@ -1,21 +1,15 @@
 package com.sycoprime.movecraft;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.HashMap;
 
 import org.bukkit.entity.Player;
 
 public class ConfigFile {
+	public String filename = "movecraft.xml";
 	public HashMap<String, String> ConfigSettings = new HashMap<String, String>();
+	public HashMap<String, String> ConfigComments = new HashMap<String, String>();
 
 	public ConfigFile() {
-		String filename = "movecraft.ini";
-
 		ConfigSettings.put("CraftReleaseDelay", "15");
 		ConfigSettings.put("UniversalRemoteId", "294");
 		//ConfigSettings.put("WriteDefaultCraft", "true");
@@ -26,58 +20,29 @@ public class ConfigFile {
 		ConfigSettings.put("EnableAsyncMovement", "false");
 		ConfigSettings.put("ExperimentalMovementMultiplier", "1.0");
 		ConfigSettings.put("TryNudge", "false");
+		ConfigSettings.put("LogLevel", "1");
+		//ConfigSettings.put("RequireRemote", "false");
 		
-		File dir = MoveCraft.instance.getDataFolder();
-		if (!dir.exists())
-			dir.mkdir();
-
-		File MCConfig = new File(dir, filename);
-		if(MCConfig.exists()) {
-			LoadFile(MCConfig);
-		} else {
-			try {
-				MCConfig.createNewFile();
-			} catch (IOException e) {
-			}
-		}
+		ConfigComments.put("CraftReleaseDelay", "<Number:15> The amount of time between when a user exists a craft and when" +
+				" the craft automatically releases.");
+		ConfigComments.put("UniversalRemoteId", "<Number:294> The item ID of the remote control that works on all vehicles.");
+		ConfigComments.put("RequireOp", "<TRUE/false> Only users with Bukkit-given 'op' can use craft.");
+		ConfigComments.put("StructureBlocks", "The blocks that define the structure of the craft. " +
+				"It is recommended not to use blocks like stone, dirt, and grass.");
+		ConfigComments.put("allowHoles", "<true/FALSE> Are holes allowed in craft (for submarines, drills, etc.)");
+		ConfigComments.put("EnableAsyncMovement", "<true/FALSE> Puts craft movement in asyncronous threading." +
+				" This is experimental, and might not work. There could be a preformance increase from it if it does, though.");
+		ConfigComments.put("TryNudge", "<true/FALSE> 'Nudge' the player rather than moving them. Currently broken.");
+		ConfigComments.put("LogLevel", "<Number:1> The amount of output to display to the console. " +
+				"1 means nothing beyond what Bukkit normally does, 2 means suspected errors, " +
+				"3 means errors and notifications, and 4 means suspected errors, notifications, and status messages.");
+		ConfigComments.put("RequireRemote", "<true/FALSE> The vehicle only moves if the remote item is in the player's hand.");
+				
+		MoveCraft.instance.configFile = this;
 		
-		//save the file whether it was just loaded or not, thus injecting out of date config files with new config settings
-		SaveFile(MCConfig);
-	}
-	
-	public void LoadFile(File MCConfig) {
-		try {
-			BufferedReader in = new BufferedReader(new FileReader(MCConfig));
-
-			String line;
-			while( (line=in.readLine() ) != null ) {
-				line = line.trim();
-
-				if( line.startsWith( "#" ) )
-					continue;
-
-				String[] split = line.split("=");
-
-				ConfigSettings.put(split[0], split[1]);
-			}
-			in.close();
-		}
-		catch (IOException e) {
-		}		
-	}
-	
-	public void SaveFile(File MCConfig) {
-		try {
-			BufferedWriter bw = new BufferedWriter(new FileWriter(MCConfig));
-
-			for(Object configLine : ConfigSettings.keySet().toArray()) {
-				String configKey = (String) configLine;
-				bw.write(configKey + "=" + ConfigSettings.get(configKey) + System.getProperty("line.separator"));
-			}
-			bw.close();
-		}
-		catch (IOException ex) {
-		}		
+		XMLHandler.load();
+		
+		XMLHandler.save();
 	}
 	
 	public void ListSettings(Player player) {

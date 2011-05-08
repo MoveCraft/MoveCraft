@@ -6,11 +6,25 @@ import org.bukkit.entity.Player;
 
 import org.bukkit.block.Sign;
 import org.bukkit.event.block.BlockListener;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
 
 public class MoveCraft_BlockListener extends BlockListener {
 
 	public MoveCraft_BlockListener() {
+	}
+	
+	@Override
+	public void onBlockPlace(BlockPlaceEvent event) {
+		System.out.println("A BLOCK WAS PLACED");
+		Block blockPlaced = event.getBlock();		
+
+		Craft craft = Craft.getCraft(blockPlaced.getX(),
+				blockPlaced.getY(), blockPlaced.getZ());
+		
+		if(craft != null) {
+			
+		}
 	}
 
 	public static void ClickedASign(Player player, Block block) {

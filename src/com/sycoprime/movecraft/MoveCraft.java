@@ -79,14 +79,15 @@ public class MoveCraft extends JavaPlugin {
 		pm.registerEvent(Event.Type.SIGN_CHANGE, blockListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.BLOCK_PLACE, blockListener, Priority.Normal, this);
 		//pm.registerEvent(Event.Type.REDSTONE_CHANGE, blockListener, Priority.Normal, this);
+		
+		PluginDescriptionFile pdfFile = this.getDescription();
+		version = pdfFile.getVersion();
 
 		loadProperties();
 		PermissionInterface.setupPermissions();
 		BlocksInfo.loadBlocksInfo();
 
-		PluginDescriptionFile pdfFile = this.getDescription();
-		System.out.println(pdfFile.getName() + " " + pdfFile.getVersion() + " plugin enabled");
-		version = pdfFile.getVersion();
+		System.out.println(pdfFile.getName() + " " + version + " plugin enabled");
 	}
 
 	public void onDisable() {
@@ -166,7 +167,13 @@ public class MoveCraft extends JavaPlugin {
 	}
 	
 	public String ConfigSetting(String setting) {
-		return configFile.ConfigSettings.get(setting);
+		if(configFile.ConfigSettings.containsKey(setting))
+			return configFile.ConfigSettings.get(setting);
+		else {
+			System.out.println("Sycoprime needs to be notified that a non-existing config setting " +
+					"was attempted to be accessed.");
+			return "";
+		}
 	}
 
 	public static String getDateTime() {
