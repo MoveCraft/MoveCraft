@@ -16,7 +16,6 @@ public class MoveCraft_BlockListener extends BlockListener {
 	
 	@Override
 	public void onBlockPlace(BlockPlaceEvent event) {
-		System.out.println("A BLOCK WAS PLACED");
 		Block blockPlaced = event.getBlock();		
 
 		Craft craft = Craft.getCraft(blockPlaced.getX(),
@@ -90,8 +89,8 @@ public class MoveCraft_BlockListener extends BlockListener {
 			Craft tehCraft = MoveCraft.instance.createCraft(player, craftType, x, y, z, name);
 			
 			if(sign.getLine(3).equalsIgnoreCase("center")) {
-				tehCraft.offX = x;
-				tehCraft.offZ = z;
+				//tehCraft.offX = x;
+				//tehCraft.offZ = z;
 			}
 
 			return;                        
