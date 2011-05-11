@@ -26,7 +26,7 @@ public class XMLHandler {
 		if (!dir.exists())
 			dir.mkdir();
 		
-		File config = new File(MoveCraft.instance.getDataFolder() + "\\" + MoveCraft.instance.configFile.filename);
+		File config = new File(MoveCraft.instance.getDataFolder(), MoveCraft.instance.configFile.filename);
 		if (!config.exists()) {
 			return;
 		}
@@ -62,8 +62,7 @@ public class XMLHandler {
 		if (!dir.exists())
 			dir.mkdir();
 
-		String filePath = MoveCraft.instance.getDataFolder() + "\\" +  MoveCraft.instance.configFile.filename;
-		File configuration = new File(filePath);
+		File configuration = new File(MoveCraft.instance.getDataFolder(), MoveCraft.instance.configFile.filename);
 		//test if filename contains ".xml", if not, freak out a little
 
 		Element setting = null;
