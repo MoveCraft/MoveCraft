@@ -128,17 +128,6 @@ public class MoveCraft extends JavaPlugin {
 			return null;
 		}
 
-		/* Rotation code */
-        craft.offX = Math.round(craft.sizeX / 2);
-        craft.offZ = Math.round(craft.sizeZ / 2);
-
-		//auto-detect and create the craft
-		//if(!craft.createCraft(x, y, z, dirX, dirZ, name)){
-		//   craft = null;
-		//   return;
-		// }
-		/* End Rotation Code */
-
 		if(craft.engineBlocks.size() > 0)
 			craft.timer = new MoveCraft_Timer(0, craft, "engineCheck", false);
 		else {
