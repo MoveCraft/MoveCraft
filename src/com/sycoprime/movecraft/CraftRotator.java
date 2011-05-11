@@ -15,10 +15,18 @@ import com.sycoprime.movecraft.Craft.DataBlock;
 public class CraftRotator {
 	public static MoveCraft plugin;
 	public Craft craft;
+	
+    //offset between the craft origin and the pivot for rotation
+    int offX = 0;
+    //int offY;
+    int offZ = 0;
 
 	public CraftRotator(Craft c, MoveCraft movecraft) {
 		plugin = movecraft;
 		craft = c;
+		
+        offX = Math.round(craft.sizeX / 2);
+        offZ = Math.round(craft.sizeZ / 2);
 	}
 
 	public boolean canGoThrough(int blockId){
@@ -133,18 +141,18 @@ public class CraftRotator {
 		/** get world block id with matrix coordinates and rotation */
 		short blockId;
 
-		blockId = (short) craft.world.getBlockTypeIdAt(craft.minX + rotateX(x - craft.offX, z - craft.offZ, r),
+		blockId = (short) craft.world.getBlockTypeIdAt(craft.minX + rotateX(x - offX, z - offZ, r),
 				craft.minY + y,
-				craft.minZ + rotateZ(x - craft.offX, z - craft.offZ, r));
+				craft.minZ + rotateZ(x - offX, z - offZ, r));
 
 		return blockId;
 	}
 
 	public short getCraftBlockId(int x, int y, int z, int r){
 
-		int nx = rotateX(x - craft.offX, z - craft.offZ , r) + craft.offX;
+		int nx = rotateX(x - offX, z - offZ , r) + offX;
 		int ny = y;
-		int nz = rotateZ(x - craft.offX, z - craft.offZ, r) + craft.offZ;
+		int nz = rotateZ(x - offX, z - offZ, r) + offZ;
 
 		if(!(nx >= 0 && nx < craft.sizeX &&
 				ny >= 0 && ny < craft.sizeY &&
@@ -159,7 +167,8 @@ public class CraftRotator {
 		World world = craft.player.getWorld();
 
 		//new rotation of the craft
-		int newRotation = (craft.rotation + dr + 360) % 360;
+		//int newRotation = (craft.rotation + dr + 360) % 360;
+		int newRotation = (dr + 360) % 360;
 		//int backRotation = (360 - dr) % 360;
 
 		//vertical limit
@@ -386,7 +395,7 @@ public class CraftRotator {
 				for(int y=0;y<craft.sizeY;y++){
 					if(craft.matrix[x][y][z] != -1){
 						int blockId = craft.matrix[x][y][z];	
-						Block block = craft.world.getBlockAt(craft.posX + x, craft.posY + y, craft.posZ + z);
+						Block block = craft.world.getBlockAt(craft.minX + x, craft.minY + y, craft.minZ + z);
 						
 						if(BlocksInfo.needsSupport(blockId)) {
 							
@@ -428,18 +437,18 @@ public class CraftRotator {
 		craft.sizeZ = newSizeZ;
 
 		//craft pivot
-		int posX = craft.minX + craft.offX;
-		int posZ = craft.minZ + craft.offZ;
+		int posX = craft.minX + offX;
+		int posZ = craft.minZ + offZ;
 		
 		MoveCraft.instance.DebugMessage("Min vals start " + craft.minX + ", " + craft.minZ);
 		
-		MoveCraft.instance.DebugMessage("Off was " + craft.offX + ", " + craft.offZ);
+		MoveCraft.instance.DebugMessage("Off was " + offX + ", " + offZ);
 
 		//rotate offset
 		//int newOffX = rotateX(craft.offX, craft.offZ, -dr % 360);
 		//int newOffZ = rotateZ(craft.offX, craft.offZ, -dr % 360);
-		int newOffX = rotateX(craft.offX, craft.offZ, dr);
-		int newOffZ = rotateZ(craft.offX, craft.offZ, dr);
+		int newOffX = rotateX(offX, offZ, dr);
+		int newOffZ = rotateZ(offX, offZ, dr);
 		
 		MoveCraft.instance.DebugMessage("New off is " + newOffX + ", " + newOffZ);
 
@@ -448,14 +457,14 @@ public class CraftRotator {
 		if(newOffZ < 0)
 			newOffZ = newSizeZ - 1 - Math.abs(newOffZ);
 
-		craft.offX = newOffX;
-		craft.offZ = newOffZ;
+		offX = newOffX;
+		offZ = newOffZ;
 		
-		MoveCraft.instance.DebugMessage("Off is " + craft.offX + ", " + craft.offZ);
+		MoveCraft.instance.DebugMessage("Off is " + offX + ", " + offZ);
 
 		//update min/max
-		craft.minX = posX - craft.offX;
-		craft.minZ = posZ - craft.offZ;
+		craft.minX = posX - offX;
+		craft.minZ = posZ - offZ;
 		craft.maxX = craft.minX + craft.sizeX -1;
 		craft.maxZ = craft.minZ + craft.sizeZ -1;
 		
@@ -492,13 +501,15 @@ public class CraftRotator {
 		}
 		
 		craft.restoreDataBlocks(0, 0, 0);
-		craft.restoreComplexBlocks(0, 0, 0);		
+		craft.restoreComplexBlocks(0, 0, 0);
 		
+		/*
 		if(MoveCraft.instance.DebugMode) {
 			setBlock(Material.GLOWSTONE.getId(), craft.minX, craft.minY, craft.minZ);
 			setBlock(Material.BOOKSHELF.getId(), craft.minX + craft.offX, craft.minY, craft.minZ + craft.offZ);
 			return;
 		}
+		*/
 	}
 	
 	public void rotateCardinals(ArrayList<DataBlock> blocksToRotate, int dr) {		
