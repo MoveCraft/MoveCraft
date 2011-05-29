@@ -10,12 +10,19 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
 
 public class MoveCraft_BlockListener extends BlockListener {
+	public static Craft updatedCraft = null;
 
 	public MoveCraft_BlockListener() {
 	}
 	
 	@Override
 	public void onBlockPlace(BlockPlaceEvent event) {
+		if(updatedCraft != null) {
+			System.out.println("Updated craft is " + updatedCraft.name + " of type " + updatedCraft.type.name);
+			updatedCraft.addBlock(event.getBlock());
+			updatedCraft = null;
+		}
+		/*
 		Block blockPlaced = event.getBlock();		
 
 		Craft craft = Craft.getCraft(blockPlaced.getX(),
@@ -24,6 +31,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 		if(craft != null) {
 			
 		}
+		*/
 	}
 
 	public static void ClickedASign(Player player, Block block) {
@@ -65,7 +73,6 @@ public class MoveCraft_BlockListener extends BlockListener {
 			String restriction = sign.getLine(2).trim();
 			if(!restriction.equals("") && restriction != null) {
 				if(restriction != "public" && restriction != player.getName()) {
-					//if(!PermissionInterface.CheckGroupPermission(player, restriction))
 					if(!PermissionInterface.CheckGroupPermission(world, player, restriction))
 						return;
 				}
@@ -86,6 +93,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 			x = x + (direction == 4 ? 1 : (direction == 5 ? -1 : 0));
 			z = z + (direction == 2 ? 1 : (direction == 3 ? -1 : 0));
 
+			@SuppressWarnings("unused")
 			Craft tehCraft = MoveCraft.instance.createCraft(player, craftType, x, y, z, name);
 			
 			if(sign.getLine(3).equalsIgnoreCase("center")) {

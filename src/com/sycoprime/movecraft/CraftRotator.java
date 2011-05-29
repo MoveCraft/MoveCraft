@@ -5,28 +5,22 @@ import java.util.HashMap;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
-
-import com.sycoprime.movecraft.Craft.DataBlock;
+import org.bukkit.entity.Entity;
 
 public class CraftRotator {
-	public static MoveCraft plugin;
 	public Craft craft;
 	
     //offset between the craft origin and the pivot for rotation
-    int offX = 0;
-    //int offY;
-    int offZ = 0;
 
-	public CraftRotator(Craft c, MoveCraft movecraft) {
-		plugin = movecraft;
+	public CraftRotator(Craft c) {
 		craft = c;
 		
-        offX = Math.round(craft.sizeX / 2);
-        offZ = Math.round(craft.sizeZ / 2);
+		if(craft.offX == 0 || craft.offZ == 0) {
+			craft.offX = Math.round(craft.sizeX / 2);
+			craft.offZ = Math.round(craft.sizeZ / 2);
+		}
 	}
 
 	public boolean canGoThrough(int blockId){
@@ -141,18 +135,18 @@ public class CraftRotator {
 		/** get world block id with matrix coordinates and rotation */
 		short blockId;
 
-		blockId = (short) craft.world.getBlockTypeIdAt(craft.minX + rotateX(x - offX, z - offZ, r),
+		blockId = (short) craft.world.getBlockTypeIdAt(craft.minX + rotateX(x - craft.offX, z - craft.offZ, r),
 				craft.minY + y,
-				craft.minZ + rotateZ(x - offX, z - offZ, r));
+				craft.minZ + rotateZ(x - craft.offX, z - craft.offZ, r));
 
 		return blockId;
 	}
 
 	public short getCraftBlockId(int x, int y, int z, int r){
 
-		int nx = rotateX(x - offX, z - offZ , r) + offX;
+		int nx = rotateX(x - craft.offX, z - craft.offZ , r) + craft.offX;
 		int ny = y;
-		int nz = rotateZ(x - offX, z - offZ, r) + offZ;
+		int nz = rotateZ(x - craft.offX, z - craft.offZ, r) + craft.offZ;
 
 		if(!(nx >= 0 && nx < craft.sizeX &&
 				ny >= 0 && ny < craft.sizeY &&
@@ -164,7 +158,7 @@ public class CraftRotator {
 
 	public boolean canMoveBlocks(int dx, int dy, int dz, int dr){
 		// Do not like the following :(
-		World world = craft.player.getWorld();
+		World world = craft.world;
 
 		//new rotation of the craft
 		//int newRotation = (craft.rotation + dr + 360) % 360;
@@ -212,8 +206,6 @@ public class CraftRotator {
 	}	
 
 	public void turn(int dr){
-		Server server = MoveCraft.instance.getServer();
-
 		if(dr < 0)
 			dr = 360 - Math.abs(dr);
 		while(dr > 359)
@@ -221,52 +213,55 @@ public class CraftRotator {
 		
 		/*
 		if(MoveCraft.instance.DebugMode) {
-			int newOffX = rotateX(craft.offX, craft.offZ, dr);
-			int newOffZ = rotateZ(craft.offX, craft.offZ, dr);
+			int newoffX = rotateX(craft.craft.offX, craft.craft.offZ, dr);
+			int newoffZ = rotateZ(craft.craft.offX, craft.craft.offZ, dr);
 
-			MoveCraft.instance.DebugMessage("New off is " + newOffX + ", " + newOffZ);
+			MoveCraft.instance.DebugMessage("New off is " + newoffX + ", " + newoffZ);
 			return;
 		}
 		*/
 
 		//ArrayList<Double> xDists = new ArrayList<Double>();
 		//ArrayList<Double> zDists = new ArrayList<Double>();
-		HashMap<Player, Double> xDists = new HashMap<Player, Double>(); 
-		HashMap<Player, Double> zDists = new HashMap<Player, Double>();
+		HashMap<Entity, Double> xDists = new HashMap<Entity, Double>(); 
+		HashMap<Entity, Double> zDists = new HashMap<Entity, Double>();
 		
-		for (Player p : server.getOnlinePlayers()) {
-			if(craft.isOnCraft(p, false)){
-				Location pLoc = p.getLocation();
+		ArrayList<Entity> craftEntities = craft.getCraftEntities();
+		
+		//for (Player p : server.getOnlinePlayers()) {
+		for (Entity e : craftEntities) {
+				Location pLoc = e.getLocation();
 			
-				//double xDist = pLoc.getX() - (craft.minX + craft.offX);
-				//double zDist = pLoc.getZ() - (craft.minZ + craft.offZ);
+				//double xDist = pLoc.getX() - (craft.minX + craft.craft.offX);
+				//double zDist = pLoc.getZ() - (craft.minZ + craft.craft.offZ);
 				double xDist = pLoc.getX() - craft.minX;
 				double zDist = pLoc.getZ() - craft.minZ;
 				
-				MoveCraft.instance.DebugMessage(p.getName() + " is at " + pLoc.getX() + "," + pLoc.getZ());
-				MoveCraft.instance.DebugMessage(p.getName() + " is " + xDist + "," + zDist + " from center.");
+				//MoveCraft.instance.DebugMessage(p.getName() + " is at " + pLoc.getX() + "," + pLoc.getZ());
+				//MoveCraft.instance.DebugMessage(p.getName() + " is " + xDist + "," + zDist + " from center.");
 			
 				//xDists.add(xDist);
 				//zDists.add(zDist);
-				xDists.put(p, xDist);
-				zDists.put(p, zDist);
-			}
+				xDists.put(e, xDist);
+				zDists.put(e, zDist);
 		}
 		
 		moveBlocks(0, 0, 0, dr);
 
 		//tp all players in the craft area
-		for (Player p : server.getOnlinePlayers()) {
-			if(xDists.containsKey(p)) {
+		for (Entity e : craftEntities) {
 			//if(craft.isOnCraft(p, false)) {
-				Location pLoc = p.getLocation();
+				Location pLoc = e.getLocation();
 			
 				//double xDist = xDists.get(0);
 				//double zDist = zDists.get(0);
 				//xDists.remove(0);
 				//zDists.remove(0);
-				double xDist = xDists.get(p);
-				double zDist = zDists.get(p);
+				double xDist = xDists.get(e);
+				double zDist = zDists.get(e);
+				
+				//double x = craft.minX + (xDist * Math.cos(dr) - zDist * Math.sin(dr));
+		        //double z = craft.minZ + (xDist * Math.sin(dr) + zDist * Math.cos(dr));
 				
 				MoveCraft.instance.DebugMessage("Dists are " + xDist + ", " + zDist);
 				MoveCraft.instance.DebugMessage("Rotated dists are " + rotateX(xDist, zDist, dr) + 
@@ -278,16 +273,14 @@ public class CraftRotator {
 				
 				//MoveCraft.instance.DebugMessage("Putting " + p.getName() + " " + rotateX(xDist, zDist, dr) + 
 						//"," + rotateZ(xDist, zDist, dr) + " from center.");
-				MoveCraft.instance.DebugMessage("Putting " + p.getName() + " at " + x + 
-						"," + z);
+				//MoveCraft.instance.DebugMessage("Putting " + e.getName() + " at " + x +  "," + z);
 
 				pLoc.setX(x);
 				pLoc.setZ(z);
 				pLoc.setYaw(pLoc.getYaw() + dr);
 				//tpTarget.setPitch(tpTarget.getPitch());
 				
-				p.teleport(pLoc);
-			}
+				e.teleport(pLoc);
 		}
 
 	}
@@ -422,12 +415,44 @@ public class CraftRotator {
 		for(int x=0;x<craft.sizeX;x++){
 			for(int y=0;y<craft.sizeY;y++){
 				for(int z=0;z<craft.sizeZ;z++){
-					int blockId = craft.matrix[x][y][z];
+					//int blockId = craft.matrix[x][y][z];
+					
+					/**
+						Added to attempt to resolve water issues...
+					 */
+					
+					/*
+					// old block postion (remove)
+					if (x - dx >= 0 && y - dy >= 0 && z - dz >= 0
+							&& x - dx < craft.sizeX && y - dy < craft.sizeY
+							&& z - dz < craft.sizeZ) {
+						// after moving, this location is not a craft block
+						// anymore
+						if (craft.matrix[x - dx][y - dy][z - dz] == -1
+								|| BlocksInfo.needsSupport(craft.matrix[x - dx][y - dy][z - dz])) {
+							if (y > craft.waterLevel || !(craft.type.canNavigate || craft.type.canDive)) {
+								//|| matrix [ x - dx ] [ y - dy ] [ z - dz ] == 0)
+								setBlock(0, x, y, z);
+							}
+							else
+								setBlock(craft.waterType, x, y, z);
+						}
+						// the back of the craft, remove
+					} else {
+					*/
+						if (y > craft.waterLevel
+								|| !(craft.type.canNavigate || craft.type.canDive))
+							setBlock(0, craft.minX + x, craft.minY + y, craft.minZ + z);
+						else
+							setBlock(craft.waterType, craft.minX + x, craft.minY + y, craft.minZ + z);
+					//}
 
+						/*
 					if(blockId != -1 && !BlocksInfo.needsSupport(blockId))
 						setBlock(0, craft.minX + x, craft.minY + y, craft.minZ + z);
 					//if(craft.matrix[x][y][z] != -1){
 					//}
+					 */
 				}
 			}
 		}
@@ -437,34 +462,34 @@ public class CraftRotator {
 		craft.sizeZ = newSizeZ;
 
 		//craft pivot
-		int posX = craft.minX + offX;
-		int posZ = craft.minZ + offZ;
+		int posX = craft.minX + craft.offX;
+		int posZ = craft.minZ + craft.offZ;
 		
 		MoveCraft.instance.DebugMessage("Min vals start " + craft.minX + ", " + craft.minZ);
 		
-		MoveCraft.instance.DebugMessage("Off was " + offX + ", " + offZ);
+		MoveCraft.instance.DebugMessage("Off was " + craft.offX + ", " + craft.offZ);
 
 		//rotate offset
-		//int newOffX = rotateX(craft.offX, craft.offZ, -dr % 360);
-		//int newOffZ = rotateZ(craft.offX, craft.offZ, -dr % 360);
-		int newOffX = rotateX(offX, offZ, dr);
-		int newOffZ = rotateZ(offX, offZ, dr);
+		//int newoffX = rotateX(craft.craft.offX, craft.craft.offZ, -dr % 360);
+		//int newoffZ = rotateZ(craft.craft.offX, craft.craft.offZ, -dr % 360);
+		int newoffX = rotateX(craft.offX, craft.offZ, dr);
+		int newoffZ = rotateZ(craft.offX, craft.offZ, dr);
 		
-		MoveCraft.instance.DebugMessage("New off is " + newOffX + ", " + newOffZ);
+		MoveCraft.instance.DebugMessage("New off is " + newoffX + ", " + newoffZ);
 
-		if(newOffX < 0)
-			newOffX = newSizeX - 1 - Math.abs(newOffX);
-		if(newOffZ < 0)
-			newOffZ = newSizeZ - 1 - Math.abs(newOffZ);
+		if(newoffX < 0)
+			newoffX = newSizeX - 1 - Math.abs(newoffX);
+		if(newoffZ < 0)
+			newoffZ = newSizeZ - 1 - Math.abs(newoffZ);
 
-		offX = newOffX;
-		offZ = newOffZ;
+		craft.offX = newoffX;
+		craft.offZ = newoffZ;
 		
-		MoveCraft.instance.DebugMessage("Off is " + offX + ", " + offZ);
+		MoveCraft.instance.DebugMessage("Off is " + craft.offX + ", " + craft.offZ);
 
 		//update min/max
-		craft.minX = posX - offX;
-		craft.minZ = posZ - offZ;
+		craft.minX = posX - craft.offX;
+		craft.minZ = posZ - craft.offZ;
 		craft.maxX = craft.minX + craft.sizeX -1;
 		craft.maxZ = craft.minZ + craft.sizeZ -1;
 		
@@ -502,23 +527,14 @@ public class CraftRotator {
 		
 		craft.restoreDataBlocks(0, 0, 0);
 		craft.restoreComplexBlocks(0, 0, 0);
-		
-		/*
-		if(MoveCraft.instance.DebugMode) {
-			setBlock(Material.GLOWSTONE.getId(), craft.minX, craft.minY, craft.minZ);
-			setBlock(Material.BOOKSHELF.getId(), craft.minX + craft.offX, craft.minY, craft.minZ + craft.offZ);
-			return;
-		}
-		*/
 	}
 	
-	public void rotateCardinals(ArrayList<DataBlock> blocksToRotate, int dr) {		
-		//doors are going to need a special case...
-		//as are levers...
+	public void rotateCardinals(ArrayList<DataBlock> blocksToRotate, int dr) {
+		//http://www.minecraftwiki.net/wiki/Data_values#Redstone_Repeater
 		//as are minecart tracks
 		//and beds
 		//cake
-		//repeaters?
+		//repeaters
 		
 		for(DataBlock dataBlock: blocksToRotate) {			
 			//Block theBlock = craft.getWorldBlock(dataBlock.x, dataBlock.y, dataBlock.z);
@@ -527,39 +543,72 @@ public class CraftRotator {
 			//torches, skip 'em if they're centered on the tile on the ground
 			if(blockId == 50 || blockId == 75 || blockId == 76) {
 				if(dataBlock.data == 5)
-					continue;
-				
+					continue;				
 			}
 			
 			byte[] cardinals = BlocksInfo.getCardinals(blockId);
 			
-			if(blockId == 64 || blockId == 71) {	//wooden or steel door
-				int blockData = dataBlock.data;
+			if(blockId == 63) {	//sign post
+				dataBlock.data = (dataBlock.data + 4) % 16;
+				//dataBlock.data = dataBlock.data + 4;
+				//if(dataBlock.data > 14) dataBlock.data -= 16;
+				continue;
+			}
+			
+			if(blockId == 64 || blockId == 71	//wooden or steel door
+					|| blockId == 93 || blockId == 94) {	//repeater
 				
-				if(blockData > 11) {	//if the door is an open top 
+				if(dataBlock.data > 11) {	//if the door is an open top 
 					for(int c = 0; c < 4; c++)
 						cardinals[c] += 11;
-				} else if (blockData > 8) {		//if the door is a top
+				} else if (dataBlock.data > 8) {		//if the door is a top
 					for(int c = 0; c < 4; c++)
 						cardinals[c] += 8; 
-				} else if (blockData > 4) {		//not a top, but open
+				} else if (dataBlock.data > 4) {		//not a top, but open
 					for(int c = 0; c < 4; c++)
-						cardinals[c] += 4;					
+						cardinals[c] += 4;
+				}
+			}
+			
+			if (blockId == 66 ) { // rails
+				if(dataBlock.data == 0) {
+					dataBlock.data = 1;
+					continue;
+				}
+				if(dataBlock.data == 1) {
+					dataBlock.data = 0;
+					continue;
 				}
 			}
 			
 			if(blockId == 69) {	//lever
-				int blockData = dataBlock.data;
 				
-				System.out.println("LEVER DATA IS " + blockData);
-				
-				if(blockData > 7) {
+				if(dataBlock.data == 5 || dataBlock.data == 6 ||	//if it's on the floor
+						dataBlock.data == 13 || dataBlock.data == 14) {
+					cardinals = new byte[]{6, 5, 14, 13};
+				}
+				else if(dataBlock.data > 4) {	//switched on
 					for(int c = 0; c < 4; c++) {
 						cardinals[c] += 8;
-					}
+					}					
 				}
 			}
 			
+			if(blockId == 93 || blockId == 94) {	//repeater
+				if(dataBlock.data > 11) {
+					for(int c = 0; c < 4; c++)
+						cardinals[c] += 12;
+				}
+				else if(dataBlock.data > 7) {
+					for(int c = 0; c < 4; c++)
+						cardinals[c] += 8;
+				}
+				else if(dataBlock.data > 3) {
+					for(int c = 0; c < 4; c++)
+						cardinals[c] += 4;
+				}
+			}
+						
 			if(cardinals != null) {
 				MoveCraft.instance.DebugMessage(Material.getMaterial(blockId) + 
 						" Cardinals are "
@@ -573,14 +622,14 @@ public class CraftRotator {
 					if(dataBlock.data == cardinals[i])
 						break;
 
-				//MoveCraft.instance.DebugMessage("i starts as " + i + " which is " + cardinals[i]);
+				MoveCraft.instance.DebugMessage("i starts as " + i + " which is " + cardinals[i]);
 
 				i += (dr / 90);
 				
 				if(i > 3)
-					i = 0;
+					i = i - 4;
 
-				//MoveCraft.instance.DebugMessage("i ends as " + i + ", which is " + cardinals[i]);
+				MoveCraft.instance.DebugMessage("i ends as " + i + ", which is " + cardinals[i]);
 				
 				dataBlock.data = cardinals[i];
 			}

@@ -16,8 +16,6 @@ import org.bukkit.event.block.Action;
 
 import org.bukkit.event.player.*;
 
-import com.sycoprime.movecraft.Craft.DataBlock;
-
 public class MoveCraft_PlayerListener extends PlayerListener {
 
 	public MoveCraft_PlayerListener() {
@@ -96,6 +94,11 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				
 				MoveCraft.instance.DebugMessage("The action has a block " + block + " associated with it.");
 				
+				if(block.getTypeId() == 63 || block.getTypeId() == 68) {
+					MoveCraft_BlockListener.ClickedASign(player, block);
+					return;
+				}
+				
 				if(block.getTypeId() == 54 || 
 						block.getTypeId() == 23 || 
 						block.getTypeId() == 61 ) {
@@ -113,48 +116,24 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				Craft craft = Craft.getCraft(block.getX(),
 						block.getY(), block.getZ());
 				
-				if(craft != null) {
-					Location blockLoc = block.getLocation();
+				if(craft != null) {			
+					System.out.println("Craft at that loc is " + craft.name + " of type " + craft.type.name);
+					
+					Block changedBlock = block.getFace(event.getBlockFace());
+					Location blockLoc = changedBlock.getLocation();
 					//if(Craft.getCraft(blockLoc.getBlockX(), blockLoc.getBlockX(), blockLoc.getBlockX()) == null) {
 					int cX = ((int) (blockLoc.getX()) - craft.minX);
 					int cY = ((int) (blockLoc.getY()) - craft.minY);
 					int cZ = ((int) (blockLoc.getZ()) - craft.minZ);
-					if(!craft.isitaCraftBlock(cX, cY, cZ)) {
-						System.out.println("Shits not a craft block.");
-						craft.addBlock(block);
+					if(!craft.isCraftBlock(cX, cY, cZ)) {
+						MoveCraft_BlockListener.updatedCraft = craft;
 						return;
 					}
 				}
 				*/
 			}
-			//if (event.hasBlock() || event.hasItem()) {
-			/* Fuck, I thought this worked for a minute. It definitely doesn't now.
-			if (event.hasBlock()) {
-				Block blockPlaced = event.getClickedBlock();
-				Craft craft = Craft.getCraft(blockPlaced.getX(),
-						blockPlaced.getY(), blockPlaced.getZ());
 
-				// if there is a craft, add the block to it
-				if (craft != null) {
-
-					if (blockPlaced.getTypeId() == 321 || // picture
-							blockPlaced.getTypeId() == 323 || // sign
-							blockPlaced.getTypeId() == 324 || // door
-							blockPlaced.getTypeId() == 330) { // door
-
-						player.sendMessage(ChatColor.YELLOW + "please release the " + craft.type.name + " to add this item");
-						return;
-					}
-
-					craft.addBlock(blockPlaced);
-					return;
-				}
-			}
-			*/
-
-			if(event.getClickedBlock().getTypeId() == 63 || event.getClickedBlock().getTypeId() == 68)
-				MoveCraft_BlockListener.ClickedASign(player, event.getClickedBlock());
-			else if (playerCraft != null) {
+			if (playerCraft != null) {
 				if (MoveCraft.instance.ConfigSetting("RequireRemote") == "true" && 
 						event.getItem().getTypeId() != playerCraft.type.remoteControllerItem)
 					return;
@@ -177,6 +156,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			playerUsedAnItem(player, playerCraft);
 		}
 		
+		/*
 		if(action == Action.RIGHT_CLICK_AIR && playerCraft == null && MoveCraft.instance.DebugMode) {
 			Vector pVel = player.getVelocity();
 			int dx = 3;
@@ -185,6 +165,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			pVel = pVel.add(new Vector(dx, dy, dz));
 			player.setVelocity(pVel);
 		}
+		*/
 	}
 	
 	public void playerUsedAnItem(Player player, Craft craft) {
@@ -280,28 +261,67 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				player.sendMessage(Boolean.toString(BlocksInfo.isDataBlock(Integer.parseInt(split[1]))));
 			} else if (split[0].equalsIgnoreCase("isComplexBlock")) {
 				player.sendMessage(Boolean.toString(BlocksInfo.isComplexBlock(Integer.parseInt(split[1]))));
+				/*
 			} else if (split[0].equalsIgnoreCase("findcenter")) {
 				Craft craft = Craft.getCraft(player);
 				Location blockLoc = new Location(player.getWorld(), craft.posX + craft.offX, craft.posY, craft.posZ + craft.offZ);
 				Block mcBlock = player.getWorld().getBlockAt(blockLoc);
 				mcBlock.setType(Material.GOLD_BLOCK);
+				*/
 			} else if (split[0].equalsIgnoreCase("finddatablocks")) {
 				Craft craft = Craft.getCraft(player);
 				for(DataBlock dataBlock : craft.dataBlocks) {
 					Block theBlock = player.getWorld().getBlockAt(new Location(
-							player.getWorld(), craft.posX + dataBlock.x, craft.posY + dataBlock.y, craft.posZ + dataBlock.z));
+							player.getWorld(), craft.minX + dataBlock.x, craft.minY + dataBlock.y, craft.minZ + dataBlock.z));
 					theBlock.setType(Material.GOLD_BLOCK);
 				}			
 			} else if (split[0].equalsIgnoreCase("findcomplexblocks")) {
 				Craft craft = Craft.getCraft(player);
 				for(DataBlock dataBlock : craft.complexBlocks) {
 					Block theBlock = player.getWorld().getBlockAt(new Location(
-							player.getWorld(), craft.posX + dataBlock.x, craft.posY + dataBlock.y, craft.posZ + dataBlock.z));
+							player.getWorld(), craft.minX + dataBlock.x, craft.minY + dataBlock.y, craft.minZ + dataBlock.z));
 					theBlock.setType(Material.GOLD_BLOCK);
 				}
-			} else if (split[0].equalsIgnoreCase("maxmom")) {
-				double MAXIMUM_MOMENTUM = 1E150D;
-				player.sendMessage(MAXIMUM_MOMENTUM + "");
+			} else if (split[0].equalsIgnoreCase("diamondit")) {
+				Craft craft = Craft.getCraft(player);
+				
+				for (int x = 0; x < craft.sizeX; x++) {
+					for (int y = 0; y < craft.sizeY; y++) {
+						for (int z = 0; z < craft.sizeZ; z++) {
+							if(craft.matrix[x][y][z] != -1) {
+								Block theBlock = player.getWorld().getBlockAt(new Location(
+									player.getWorld(), craft.minX + x, craft.minY + y, craft.minZ + z));
+								theBlock.setType(Material.DIAMOND_BLOCK);
+							}
+						}
+					}
+				}
+			} else if (split[0].equalsIgnoreCase("craftvars")) {
+				Craft craft = Craft.getCraft(player);
+				
+				MoveCraft.instance.DebugMessage("Craft type: " + craft.type);
+				MoveCraft.instance.DebugMessage("Craft name: " + craft.name);
+				
+				//may need to make multidimensional
+				MoveCraft.instance.DebugMessage("Craft matrix size: " + craft.matrix.length);
+				MoveCraft.instance.DebugMessage("Craft block count: " + craft.blockCount);
+				MoveCraft.instance.DebugMessage("Craft data block count: " + craft.dataBlocks.size());
+				MoveCraft.instance.DebugMessage("Craft complex block count: " + craft.complexBlocks.size());
+
+				MoveCraft.instance.DebugMessage("Craft speed: " + craft.speed);
+				MoveCraft.instance.DebugMessage("Craft size: " + craft.sizeX + " * " + craft.sizeY + " * " + craft.sizeZ);
+				//MoveCraft.instance.DebugMessage("Craft position: " + craft.posX + ", " + craft.posY + ", " + craft.posZ);
+				MoveCraft.instance.DebugMessage("Craft last move: " + craft.lastMove);
+				//world?
+				MoveCraft.instance.DebugMessage("Craft center: " + craft.centerX + ", " + craft.centerZ);
+				
+				MoveCraft.instance.DebugMessage("Craft water level: " + craft.waterLevel);
+				MoveCraft.instance.DebugMessage("Craft new water level: " + craft.newWaterLevel);
+				MoveCraft.instance.DebugMessage("Craft water type: " + craft.waterType);
+				
+				MoveCraft.instance.DebugMessage("Craft bounds: " + craft.minX + "->" + craft.maxX + ", "
+						+ craft.minY + "->" + craft.maxY + ", "
+						+ craft.minZ + "->" + craft.maxZ);
 			}
 		}
 
@@ -340,6 +360,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					return;
 				} else if (split[1].equalsIgnoreCase("debug")) {
 					MoveCraft.instance.ToggleDebug();
+					event.setCancelled(true);
 					return;
 				}
 				else if (split[1].equalsIgnoreCase("config")) {
@@ -360,6 +381,22 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 		} else if (split[0].equalsIgnoreCase("release")) {
 			MoveCraft.instance.releaseCraft(player, Craft.getCraft(player));
 			event.setCancelled(true);
+		} else if (split[0].equalsIgnoreCase("remote")) {
+			player.sendMessage("0");
+			Craft craft = Craft.getCraft(player);
+			if(craft != null) {
+				split[0] = craft.type.name;
+				split[1] = "remote";
+
+				if (!PermissionInterface.CheckPermission(player, "movecraft." + event.getMessage().substring(1))) {
+					event.setCancelled(true);
+					return;
+				}
+				player.sendMessage("1");
+				if(processCommand(craft.type, player, split) == true)
+					event.setCancelled(true);
+			} else
+				player.sendMessage("You have no craft to remote :( Hurry and get one before they're sold out!");
 		} else {
 			String craftName = split[0];
 
@@ -404,7 +441,9 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 
 		if (split.length >= 2) {
 
-			if( !split[1].equalsIgnoreCase(craftType.driveCommand) && craft == null)
+			if(craft == null &&
+					!split[1].equalsIgnoreCase(craftType.driveCommand) &&
+					!split[1].equalsIgnoreCase("remote"))
 				return false;
 
 			if (split[1].equalsIgnoreCase(craftType.driveCommand)) {
@@ -415,13 +454,17 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					return false;
 				}
 				*/
+				
+				String name = craftType.name; 
+				if(split.length > 2 && split[2] != null)
+					name = split[2];
 
 				// try to detect and create the craft
 				// use the block the player is standing on
 				MoveCraft.instance.createCraft(player, craftType,
 						(int) Math.floor(player.getLocation().getX()),
 						(int) Math.floor(player.getLocation().getY() - 1),
-						(int) Math.floor(player.getLocation().getZ()), null);
+						(int) Math.floor(player.getLocation().getZ()), name);
 
 				return true;
 
@@ -452,6 +495,24 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				return true;
 
 			} else if (split[1].equalsIgnoreCase("remote")) {
+				if(craft == null || craft.type != craftType) {
+					Block targetBlock = player.getTargetBlock(null, 100);
+					
+					if(targetBlock != null) {						
+						MoveCraft.instance.createCraft(player, craftType,
+								targetBlock.getX(),
+								targetBlock.getY(),
+								targetBlock.getZ(), 
+								null);
+						Craft.getCraft(player).isOnBoard = false;
+					} else {
+						player.sendMessage("Couldn't find a target within 100 blocks. " + 
+								"If your admin asks reeeaaaaaally nicely, I might add distance as a config setting.");
+					}					
+					
+					return true;
+				}
+				
 				if (craft.isOnCraft(player, true)) {
 					player.sendMessage(ChatColor.YELLOW + "You are on the " + craftType.name
 							+ ", remote control not possible");
@@ -491,7 +552,6 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 							craft.complexBlocks.size() + " complex Blocks, " + 
 							craft.engineBlocks.size() + " engine Blocks," + 
 							craft.digBlockCount + " drill bits.");
-					player.sendMessage(ChatColor.BLUE + "Rotation angle: " + craft.rotation);
 				}
 
 				String canDo = ChatColor.YELLOW + craftType.name + "s can ";
@@ -559,16 +619,12 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					new MoveCraft_Timer(0, craft, "automove", false);
 
 			} else if (split[1].equalsIgnoreCase("turn")) {
-				CraftRotator cr = new CraftRotator(craft, MoveCraft.instance);
-
 				if(split[2].equalsIgnoreCase("right"))
-					cr.turn(90);
-				//cr.move(0, 0, 0, 90);
+					craft.turn(90);
 				else if (split[2].equalsIgnoreCase("left"))
-					cr.turn(-90);
-				//cr.move(0, 0, 0, -90);
+					craft.turn(270);
 				else if (split[2].equalsIgnoreCase("around"))
-					cr.turn(180);
+					craft.turn(180);
 				return true;
 			} else if (split[1].equalsIgnoreCase("warpdrive")) {
 				if(split.length == 1) {
@@ -580,7 +636,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					{
 						int WorldNum = Integer.parseInt(split[1]);
 						World targetWorld = MoveCraft.instance.getServer().getWorlds().get(WorldNum);
-						craft.WarpToWorld(targetWorld);						
+						craft.WarpToWorld(targetWorld);		
 					}
 					catch (NumberFormatException ex)
 					{

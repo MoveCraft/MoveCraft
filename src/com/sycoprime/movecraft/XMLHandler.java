@@ -86,7 +86,11 @@ public class XMLHandler {
 					Comment comment = doc.createComment(MoveCraft.instance.configFile.ConfigComments.get(configKey));
 					rootElement.insertBefore(comment,setting);
 				}
-			}		
+			}
+			
+			Comment comment = doc.createComment("Do you find this config file strange and confusing? " +
+					"This guy made this nifty GUI editor for it. Get it here: http://bit.ly/ewPebA");
+			rootElement.appendChild(comment);
 
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer;

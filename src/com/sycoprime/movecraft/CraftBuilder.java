@@ -91,8 +91,8 @@ public class CraftBuilder {
        if(x >= 0 && x < craft.sizeX && y >= 0 && y < craft.sizeY && z >= 0 && z < craft.sizeZ &&
           craft.matrix[x][y][z] != -1) return;
 
-       //int blockId = etc.getServer().getBlockIdAt(craft.posX + x, craft.posY + y, craft.posZ + z);
-       Block theBlock = craft.world.getBlockAt(craft.posX + x, craft.posY + y, craft.posZ + z);
+       //Block theBlock = craft.world.getBlockAt(craft.posX + x, craft.posY + y, craft.posZ + z);
+       Block theBlock = craft.world.getBlockAt(craft.minX + x, craft.minY + y, craft.minZ + z);
        int blockId = theBlock.getTypeId();
 
        //found water, record water level and water type
@@ -148,9 +148,9 @@ public class CraftBuilder {
        BlockLoc block = blocksStack.pop();
 
        //this block is out of the craft, return
-        if(block.x < 0 || block.x > craft.maxX - craft.posX ||
-          block.y < 0 || block.y > craft.maxY - craft.posY ||
-          block.z < 0 || block.z > craft.maxZ - craft.posZ){
+        if(block.x < 0 || block.x > craft.maxX - craft.minX ||
+          block.y < 0 || block.y > craft.maxY - craft.minY ||
+          block.z < 0 || block.z > craft.maxZ - craft.minZ){
           return;
         }
 
@@ -178,9 +178,9 @@ public class CraftBuilder {
        BlockLoc block = blocksStack.pop();
 
        //out of the craft, there is a hole
-        if(block.x < 0 || block.x > craft.maxX - craft.posX ||
-          block.y < 0 || block.y > craft.maxY - craft.posY ||
-          block.z < 0 || block.z > craft.maxZ - craft.posZ){
+        if(block.x < 0 || block.x > craft.maxX - craft.minX ||
+          block.y < 0 || block.y > craft.maxY - craft.minY ||
+          block.z < 0 || block.z > craft.maxZ - craft.minZ){
 
           return false;
         }
@@ -231,17 +231,17 @@ public class CraftBuilder {
                    //free space, check there is no block here
                    if(floor && craft.matrix[x][y][z] == -1){
 
-                       Block block = craft.world.getBlockAt(craft.posX + x, craft.posY + y, craft.posZ + z);
+                       Block block = craft.world.getBlockAt(craft.minX + x, craft.minY + y, craft.minZ + z);
                        int blockId = block.getTypeId();
                        
                         craft.matrix[x][y][z] = (short)blockId; // record this block as part of the craft, also fill with air
 
                         if(BlocksInfo.isDataBlock(blockId)){
-                            addDataBlock(blockId, craft.posX + x, craft.posY + y, craft.posZ + z);
+                            addDataBlock(blockId, craft.minX + x, craft.minY + y, craft.minZ + z);
                         }
                         
                         if(BlocksInfo.isComplexBlock(blockId)){
-                            addComplexBlock(blockId, craft.posX + x, craft.posY + y, craft.posZ + z);
+                            addComplexBlock(blockId, craft.minX + x, craft.minY + y, craft.minZ + z);
                         	craft.findFuel(block);
                         }
 
@@ -297,9 +297,9 @@ public class CraftBuilder {
          blocksStack = new Stack<BlockLoc>();
 
          //start with the player's head
-         blocksStack.push(new BlockLoc((int)Math.floor(craft.player.getLocation().getX()) - craft.posX,
-                                          (int)Math.floor(craft.player.getLocation().getY() + 1 - craft.posY),
-                                          (int)Math.floor(craft.player.getLocation().getZ()) - craft.posZ));
+         blocksStack.push(new BlockLoc((int)Math.floor(craft.player.getLocation().getX()) - craft.minX,
+                                          (int)Math.floor(craft.player.getLocation().getY() + 1 - craft.minY),
+                                          (int)Math.floor(craft.player.getLocation().getZ()) - craft.minZ));
 
          //detect all connected empty blocks
            do{
@@ -382,18 +382,18 @@ public class CraftBuilder {
    }
 
    private static void addDataBlock(int id, int x, int y, int z){
-        craft.dataBlocks.add(new Craft.DataBlock(id, x - craft.posX,y - craft.posY,z - craft.posZ,
+        craft.dataBlocks.add(new DataBlock(id, x - craft.minX, y - craft.minY, z - craft.minZ,
         		craft.world.getBlockAt(x, y, z).getData()));
    }
 
    private static void addComplexBlock(int id, int x, int y, int z){
-	   craft.complexBlocks.add(new Craft.DataBlock(id, x - craft.posX,y - craft.posY,z - craft.posZ,
+	   craft.complexBlocks.add(new DataBlock(id, x - craft.minX, y - craft.minY, z - craft.minZ,
 			   craft.world.getBlockAt(x, y, z).getData()));
 	   //craft.complexBlocks.add(world.getBlockAt(x - craft.posX, y - craft.posY, z - craft.posZ));
    }
    
    private static void addEngineBlock(int id, int x, int y, int z){
-	   craft.engineBlocks.add(new Craft.DataBlock(id, x - craft.posX,y - craft.posY,z - craft.posZ,
+	   craft.engineBlocks.add(new DataBlock(id, x - craft.minX, y - craft.minY, z - craft.minZ,
 			   craft.world.getBlockAt(x, y, z).getData()));
    }
 
@@ -401,7 +401,7 @@ public class CraftBuilder {
     private static void createMatrix(){
 
       craft.matrix = new short[craft.sizeX][craft.sizeY][craft.sizeZ];
-      craft.dataBlocks = new ArrayList<Craft.DataBlock>();
+      craft.dataBlocks = new ArrayList<DataBlock>();
       //craft.complexBlocks = new ArrayList();
 
       for(int x=0;x<craft.sizeX;x++){
@@ -423,7 +423,7 @@ public class CraftBuilder {
                    if(blockId == -1)
                        continue;
 
-                   craft.matrix[x - craft.posX][y - craft.posY][z - craft.posZ] = blockId;
+                   craft.matrix[x - craft.minX][y - craft.minY][z - craft.minZ] = blockId;
 
                    if(BlocksInfo.isDataBlock(blockId)){
                         addDataBlock(blockId, x, y, z);
@@ -432,7 +432,7 @@ public class CraftBuilder {
                         addComplexBlock(blockId, x, y, z);
                 	   //addDataBlock(world, x, y, z);
                    }
-                   if(blockId == craft.type.engineBlockId) {
+                   if(craft.type.engineBlockId != 0 && blockId == craft.type.engineBlockId) {
                 	   addEngineBlock(blockId, x, y, z);
                    }
 
@@ -457,8 +457,10 @@ public class CraftBuilder {
        if(craft.type.forbiddenBlocks != null && craft.type.forbiddenBlocks.length > 0) {
     	   for(int i = 0; i < craft.type.forbiddenBlocks.length; i++) {
     		   if(blockType == craft.type.forbiddenBlocks[i]) {
-    			   craft.player.sendMessage("Forbidden block of type " + Material.getMaterial(blockType) + " found.");
+    			   craft.player.sendMessage("Forbidden block of type " + Material.getMaterial(blockType) + " found. " + 
+    					   "Remove all blocks of that type in order to pilot this craft.");
                    set(nullBlock, x, y, z);
+                   MoveCraft.instance.releaseCraft(craft.player, craft);
     			   return;
     		   }
     	   }
@@ -497,7 +499,6 @@ public class CraftBuilder {
        //return when the block type is not part of the craft structure
        //default block list
        if(craft.type.structureBlocks == null){
-    	   System.out.println("I really hope I don't see this.");
 
            //only block types supported to make the base of the craft
            if(!(blockType == 4 ||
@@ -659,17 +660,11 @@ public class CraftBuilder {
            //create the craft matrix
            craft.sizeX = (craft.maxX - craft.minX) + 1;
            craft.sizeY = (craft.maxY - craft.minY) + 1;
-
            craft.sizeZ = (craft.maxZ - craft.minZ) + 1;
-
-           //craft origin and position on the map
-           craft.posX = craft.minX;
-           craft.posY = craft.minY;
-           craft.posZ = craft.minZ;
            
 
            if(craft.waterLevel != -1)
-               craft.waterLevel = craft.waterLevel - craft.posY;
+               craft.waterLevel = craft.waterLevel - craft.minY;
 
            /*
            //player offset from the craft origin
@@ -744,7 +739,7 @@ public class CraftBuilder {
     	   int xMid = craft.matrix.length / 2;
     	   int zMid = craft.matrix[0][0].length / 2;
     	   
-    	   Block belowBlock = craft.world.getBlockAt(craft.posX + xMid, craft.posY - 1, craft.posZ + zMid);
+    	   Block belowBlock = craft.world.getBlockAt(craft.minX + xMid, craft.minY - 1, craft.minZ + zMid);
     	   
     	   if(belowBlock.getType() == Material.RAILS) {
         	   craft.railBlock = belowBlock;

@@ -1,7 +1,7 @@
 package com.sycoprime.movecraft;
 
-import com.nijikokun.bukkit.Permissions.Permissions;
 import com.nijiko.permissions.PermissionHandler;
+import com.nijikokun.bukkit.Permissions.Permissions;
 
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -20,6 +20,17 @@ public class PermissionInterface {
 			Permissions = ((Permissions)test).getHandler();
 		}
 	}
+	
+	public static boolean inGroup(Player player, String group) {
+		if(Permissions == null) {
+			System.out.println("Movecraft: WARNING! A command attempted to check against a group, " + 
+				"but no group handling plugin was found!");
+			//return true;
+		}
+
+		player.sendMessage("Only users in group " + group + " may use that.");
+		return false;
+	}
 
 	public static boolean CheckGroupPermission(String world, Player player, String group) {
 		MoveCraft.instance.DebugMessage("Checking if " + player.getName() + " is in group " + group);
@@ -35,7 +46,7 @@ public class PermissionInterface {
 		if(group.equalsIgnoreCase(player.getName()))
 			return true;
 
-		player.sendMessage("Only users in group " + group + " may use that.");
+		player.sendMessage("Your group does not have permission for that.");
 		return false;
 	}
 	

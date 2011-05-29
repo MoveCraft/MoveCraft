@@ -21,7 +21,11 @@ public class ConfigFile {
 		ConfigSettings.put("ExperimentalMovementMultiplier", "1.0");
 		ConfigSettings.put("TryNudge", "false");
 		ConfigSettings.put("LogLevel", "1");
-		//ConfigSettings.put("RequireRemote", "false");
+		ConfigSettings.put("RequireRemote", "false");
+		ConfigSettings.put("EngineBlockId", "61");
+		ConfigSettings.put("HungryHungryDrill", "true");
+		ConfigSettings.put("WriteDefaultCraft", "true");
+		ConfigSettings.put("ForbiddenBlocks", "null");		
 		
 		ConfigComments.put("CraftReleaseDelay", "<Number:15> The amount of time between when a user exists a craft and when" +
 				" the craft automatically releases.");
@@ -37,6 +41,13 @@ public class ConfigFile {
 				"1 means nothing beyond what Bukkit normally does, 2 means suspected errors, " +
 				"3 means errors and notifications, and 4 means suspected errors, notifications, and status messages.");
 		ConfigComments.put("RequireRemote", "<true/FALSE> The vehicle only moves if the remote item is in the player's hand.");
+		ConfigComments.put("EngineBlockId", "<block ID:61> The ID of the block to use as engines for craft types which do not " +
+				" explicitly define their own individual engine type in their craft type file.");
+		ConfigComments.put("HungryHungryDrill", "<true/FALSE> Any craft types which can drill will eat blocks rather than " +
+				"creating items.");
+		ConfigComments.put("WriteDefaultCraft", "Whether or not to create the default craft type files on plugin enable.");
+		ConfigComments.put("ForbiddenBlocks", "Blocks that prevent craft from being created if they are anywhere in the craft" + 
+				" leave 'null' for none.");
 				
 		MoveCraft.instance.configFile = this;
 		

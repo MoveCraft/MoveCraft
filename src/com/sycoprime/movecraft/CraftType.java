@@ -2,7 +2,6 @@ package com.sycoprime.movecraft;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.logging.*;
 
 import org.bukkit.entity.Player;
 
@@ -67,6 +66,20 @@ public class CraftType {
 		for(int i = 0; i < bob.length; i++)
 			juan[i] = Short.parseShort(bob[i]);
 		structureBlocks = juan;
+		
+		if(MoveCraft.instance.ConfigSetting("ForbiddenBlocks") != "null") {
+			bob = MoveCraft.instance.ConfigSetting("ForbiddenBlocks").split(",");
+			juan = new short[bob.length + 1];
+			for(int i = 0; i < bob.length; i++) {
+				try {
+					juan[i] = Short.parseShort(bob[i]);
+				}
+				catch (Exception ex){
+			
+				}
+			}
+			forbiddenBlocks = juan;
+		}
 	}
 
 	public static CraftType getCraftType(String name) {
@@ -90,7 +103,6 @@ public class CraftType {
 			return false;
 	}
 
-	@SuppressWarnings("unused")
 	private static void loadDefaultCraftTypes() {
 		// if the default craft types are not loaded (first execution), then
 		// load them
@@ -383,7 +395,7 @@ public class CraftType {
 				}				
 			}
 			craftType.structureBlocks = newStructureBlocks;
-		} else if (attribute.equalsIgnoreCase("forbiddenBlocks")) {
+		} else if (attribute.equalsIgnoreCase("forbiddenBlocks")) {			
 			String[] split = value.split(",");
 			craftType.forbiddenBlocks = new short[split.length];
 			for (int i = 0; i < split.length; i++) {
@@ -400,7 +412,6 @@ public class CraftType {
 			try {
 				craftFile.createNewFile();
 			} catch (IOException ex) {
-				MoveCraft.logger.log(Level.SEVERE, null, ex);
 				return;
 			}
 		} else
@@ -450,7 +461,6 @@ public class CraftType {
 			writer.close();
 
 		} catch (IOException ex) {
-			MoveCraft.logger.log(Level.SEVERE, null, ex);
 		}
 	}
 
@@ -511,6 +521,9 @@ public class CraftType {
 					continue;
 
 				CraftType craftType = new CraftType(craftName);
+				
+				craftType.remoteControllerItem = Integer.parseInt(MoveCraft.instance.ConfigSetting("UniversalRemoteId"));
+				craftType.engineBlockId = Integer.parseInt(MoveCraft.instance.ConfigSetting("EngineBlockId"));
 
 				try {
 					BufferedReader reader = new BufferedReader(new FileReader(
@@ -529,13 +542,21 @@ public class CraftType {
 					reader.close();
 
 				} catch (IOException ex) {
-					MoveCraft.logger.log(Level.SEVERE, null, ex);
+				}
+				
+				//check remoteid!
+				
+				if(BlocksInfo.getCardinals(craftType.engineBlockId) == null) {
+					craftType.engineBlockId = 0;
+					System.out.println("Warning, craft type " + craftType.name + " has an invalid engine block ID. " + 
+							"Please use a block which has a facing direction (default is furnace, ID 61).");
 				}
 
 				craftTypes.add(craftType);
 			}
 		}
 
-		//loadDefaultCraftTypes();
+		if(MoveCraft.instance.configFile.ConfigSettings.get("WriteDefaultCraft").equalsIgnoreCase("true"))
+			loadDefaultCraftTypes();
 	}
 }

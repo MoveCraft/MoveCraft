@@ -6,6 +6,8 @@ import java.util.TimerTask;
 import org.bukkit.entity.Player;
 
 public class MoveCraft_Timer {
+	//needs to be migrated to bukkitscheduler. meh.
+	
 	Timer timer;
 	Craft craft;
 	//public String state = "";

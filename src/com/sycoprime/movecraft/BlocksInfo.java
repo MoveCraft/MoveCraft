@@ -5,7 +5,7 @@ import org.bukkit.Material;
 /**
  * BlocksInfo file
  * Defines information on all known blocks that MoveCraft uses for various purposes.
- * @author Joel
+ * @author Joel (Yogoda)
  */
 public class BlocksInfo {
 
@@ -36,7 +36,11 @@ public class BlocksInfo {
 		blocks[19] = new BlockInfo(19,"sponge", false, false, false, false);
 		blocks[20] = new BlockInfo(20,"glass", false, false, false, -1, 0, false);
 		blocks[23] = new BlockInfo(23,"dispenser", true, false, true, new byte[] {4, 2, 5, 3});
+		blocks[25] = new BlockInfo(25,"note", true, false, false, false);
 		blocks[26] = new BlockInfo(26,"bed", true, true, false, 355, 1, false);
+		blocks[27] = new BlockInfo(27,"power rail", true, true, false, false);
+		blocks[28] = new BlockInfo(28,"detector rail", true, true, false, false);
+		blocks[30] = new BlockInfo(30,"web", false, false, false, false);
 		blocks[35] = new BlockInfo(35,"wool", true, false, false, 35, 1, false);
 		blocks[37] = new BlockInfo(37,"yellow flower", false, true, false, true);
 		blocks[38] = new BlockInfo(38,"red flower", false, true, false, true);
@@ -96,6 +100,7 @@ public class BlocksInfo {
 		blocks[91] = new BlockInfo(91,"pumpkin", true, false, false, new byte[] {3, 0, 1, 2});
 		blocks[93] = new BlockInfo(93,"repeater", true, true, false, new byte[] {3, 0, 2, 1});
 		blocks[94] = new BlockInfo(94,"repeater", true, true, false, new byte[] {3, 0, 2, 1});
+		//96 = hatch, will have direction info
 
 		//torch
 		blocks[50].cardinalDirections = new byte[] {2, 4, 1, 3};
@@ -111,9 +116,11 @@ public class BlocksInfo {
 		//cobblestone stairs
 		blocks[67].cardinalDirections = new byte[] {1, 3, 0, 2};
 		//wall sign
-		blocks[68].cardinalDirections = new byte[] {4, 2, 5, 3};
+		//blocks[68].cardinalDirections = new byte[] {4, 2, 5, 3};
+		blocks[68].cardinalDirections = new byte[] {5, 3, 4, 2};
 		//lever
-		blocks[69].cardinalDirections = new byte[] {2, 4, 1, 3};
+		//blocks[69].cardinalDirections = new byte[] {2, 4, 1, 3};
+		blocks[69].cardinalDirections = new byte[] {1, 3, 2, 4};
 		//steel door
 		blocks[71].cardinalDirections = new byte[] {0, 1, 2, 3};
 		//restone torch on
@@ -121,7 +128,12 @@ public class BlocksInfo {
 		//restone torch off
 		blocks[76].cardinalDirections = new byte[] {2, 4, 1, 3};	
 		//button
-		blocks[77].cardinalDirections = new byte[] {2, 4, 1, 3};		
+		//blocks[77].cardinalDirections = new byte[] {2, 4, 1, 3};		
+		blocks[77].cardinalDirections = new byte[] {4, 1, 3, 2};
+		//repeater		
+		blocks[93].cardinalDirections = new byte[] {2, 3, 0, 1};
+		//repeater (on?)		
+		blocks[94].cardinalDirections = new byte[] {2, 3, 0, 1};
 	}
 
 	public static String getName(int blockId) {
@@ -215,10 +227,8 @@ public class BlocksInfo {
 			return blocks[BlockId].cardinalDirections;
 	}
 
-	private static class BlockInfo {
-		@SuppressWarnings("unused")
+	public static class BlockInfo {
 		int id;
-		//String name;
 		boolean isDataBlock;
 		boolean needSupport;
 		boolean isComplexBlock;
@@ -264,6 +274,7 @@ public class BlocksInfo {
 			this.isComplexBlock = isComplexBlock;
 			this.dropItem = dropItem;
 			this.dropQuantity = dropQuantity;
+			this.isGrassCover = isGrassCover;
 		}
 
 	}

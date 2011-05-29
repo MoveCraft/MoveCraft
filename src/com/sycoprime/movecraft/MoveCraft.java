@@ -49,8 +49,7 @@ public class MoveCraft extends JavaPlugin {
 		CraftType.loadTypes(dir);
 		//This setting was removed as of 0.6.9, craft type file creation has been commented out of the whole thing,
 			//craft type files are to be distributed with the plugin 
-		//if(configFile.ConfigSettings.get("WriteDefaultCraft").equalsIgnoreCase("true"))
-			//CraftType.saveTypes(dir);		
+		CraftType.saveTypes(dir);
 	}
 	
 	public void onLoad() {
@@ -75,9 +74,9 @@ public class MoveCraft extends JavaPlugin {
 		PluginDescriptionFile pdfFile = this.getDescription();
 		version = pdfFile.getVersion();
 
+		BlocksInfo.loadBlocksInfo();
 		loadProperties();
 		PermissionInterface.setupPermissions();
-		BlocksInfo.loadBlocksInfo();
 
 		System.out.println(pdfFile.getName() + " " + version + " plugin enabled");
 	}
@@ -159,6 +158,9 @@ public class MoveCraft extends JavaPlugin {
 	}
 
 	public void dropItem(Block block){
+		
+		if(MoveCraft.instance.ConfigSetting("HungryHungryDrill").equalsIgnoreCase("true"))
+			return;
 
 		int itemToDrop = BlocksInfo.getDropItem(block.getTypeId());
 		int quantity = BlocksInfo.getDropQuantity(block.getTypeId());
