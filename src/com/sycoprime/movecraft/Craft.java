@@ -14,6 +14,7 @@ import org.bukkit.util.Vector;
 import org.bukkit.Location;
 import org.bukkit.block.*;
 import org.bukkit.entity.Item;
+import org.bukkit.event.Event;
 
 /**
  * MoveCraft for Bukkit by Yogoda and SycoPrime
@@ -612,7 +613,18 @@ public class Craft {
 			MoveCraft.instance.DebugMessage("Watertype is " + waterType);
 			MoveCraft.instance.DebugMessage("newWaterlevel is " + newWaterLevel);
 		//}
-			
+		
+		MoveCraftMoveEvent event = new MoveCraftMoveEvent(this, dx, dy, dz);	
+		MoveCraft.instance.getServer().getPluginManager().callEvent(event);
+		
+		if (event.isCancelled()) {
+		    return;
+		}
+		
+		dx = (int) event.getMovement().getX();
+		dy = (int) event.getMovement().getY();
+		dz = (int) event.getMovement().getZ();
+		
 			if(type.canDig)
 				waterLevel = newWaterLevel;
 		

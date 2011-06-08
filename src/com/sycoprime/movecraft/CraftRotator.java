@@ -211,6 +211,15 @@ public class CraftRotator {
 		while(dr > 359)
 			dr = dr - 360;
 		
+        MoveCraftTurnEvent event = new MoveCraftTurnEvent(craft, dr);
+        MoveCraft.instance.getServer().getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+            return;
+        }
+
+        dr = event.getDegrees();
+		
 		/*
 		if(MoveCraft.instance.DebugMode) {
 			int newoffX = rotateX(craft.craft.offX, craft.craft.offZ, dr);
