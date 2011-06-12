@@ -5,6 +5,8 @@ import java.util.ArrayList;
 
 import org.bukkit.entity.Player;
 
+import com.sycoprime.movecraft.plugins.PermissionInterface;
+
 /*
  * MoveCraft plugin for Hey0 mod (hMod) by Yogoda
  *
@@ -17,8 +19,8 @@ import org.bukkit.entity.Player;
  */
 public class CraftType {
 	
-	String name = "";
-	String driveCommand = "pilot";
+	public String name = "";
+	public String driveCommand = "pilot";
 
 	int minBlocks = 9;
 	int maxBlocks = 500;
@@ -78,7 +80,8 @@ public class CraftType {
 			
 				}
 			}
-			forbiddenBlocks = juan;
+			if(juan != null && juan.length > 0 && juan[0] != 0)
+				forbiddenBlocks = juan;
 		}
 	}
 
