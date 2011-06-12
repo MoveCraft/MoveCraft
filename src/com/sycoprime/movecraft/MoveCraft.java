@@ -13,6 +13,10 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.PluginManager;
 
+import com.sycoprime.movecraft.config.ConfigFile;
+import com.sycoprime.movecraft.plugins.PermissionInterface;
+
+
 /**
  * MoveCraft plugin for Hey0 mod (hMod) by Yogoda
  * Ported to Bukkit by SycoPrime
@@ -69,6 +73,8 @@ public class MoveCraft extends JavaPlugin {
 
 		pm.registerEvent(Event.Type.SIGN_CHANGE, blockListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.BLOCK_PLACE, blockListener, Priority.Normal, this);
+		
+		pm.registerEvent(Event.Type.BLOCK_PHYSICS, blockListener, Priority.Normal, this);
 		//pm.registerEvent(Event.Type.REDSTONE_CHANGE, blockListener, Priority.Normal, this);
 		
 		PluginDescriptionFile pdfFile = this.getDescription();
@@ -120,7 +126,8 @@ public class MoveCraft extends JavaPlugin {
 			releaseCraft(player, craft);
 		}
 
-		craft = new Craft(craftType, player, name);
+		//float pRot = (float) Math.PI * player.getLocation().getYaw() / 180f;
+		craft = new Craft(craftType, player, name, player.getLocation().getYaw());
 
 		// auto-detect and create the craft
 		if (!CraftBuilder.detect(craft, x, y, z)) {
@@ -131,7 +138,7 @@ public class MoveCraft extends JavaPlugin {
 			craft.timer = new MoveCraft_Timer(0, craft, "engineCheck", false);
 		else {
 			if(craft.type.requiresRails) {
-				craft.railMove();
+				//craft.railMove();
 			}
 		}
 
