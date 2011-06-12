@@ -6,15 +6,19 @@ import org.bukkit.entity.Player;
 
 import org.bukkit.block.Sign;
 import org.bukkit.event.block.BlockListener;
+import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
+
+import com.sycoprime.movecraft.plugins.PermissionInterface;
+
 
 public class MoveCraft_BlockListener extends BlockListener {
 	public static Craft updatedCraft = null;
 
 	public MoveCraft_BlockListener() {
 	}
-	
+
 	@Override
 	public void onBlockPlace(BlockPlaceEvent event) {
 		if(updatedCraft != null) {
@@ -27,11 +31,11 @@ public class MoveCraft_BlockListener extends BlockListener {
 
 		Craft craft = Craft.getCraft(blockPlaced.getX(),
 				blockPlaced.getY(), blockPlaced.getZ());
-		
+
 		if(craft != null) {
-			
+
 		}
-		*/
+		 */
 	}
 
 	public static void ClickedASign(Player player, Block block) {
@@ -41,7 +45,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 		Sign sign = (Sign) block.getState();
 
 		if(sign.getLine(0) == null || sign.getLine(0).trim().equals("")) return;
-		
+
 		String craftTypeName = sign.getLine(0).trim().toLowerCase();;
 
 		//remove colors
@@ -95,7 +99,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 
 			@SuppressWarnings("unused")
 			Craft tehCraft = MoveCraft.instance.createCraft(player, craftType, x, y, z, name);
-			
+
 			if(sign.getLine(3).equalsIgnoreCase("center")) {
 				//tehCraft.offX = x;
 				//tehCraft.offZ = z;
@@ -118,10 +122,10 @@ public class MoveCraft_BlockListener extends BlockListener {
 			sign.setLine(0, "Engage Hyperdrive");
 		}
 	}
-	
+
 	public void onSignChange(SignChangeEvent event) {
 		MoveCraft.instance.DebugMessage("A SIGN CHANGED!");
-		
+
 		Player player = event.getPlayer();
 		String craftTypeName = event.getLine(0).trim().toLowerCase().replaceAll(ChatColor.BLUE.toString(), "");
 
@@ -131,11 +135,26 @@ public class MoveCraft_BlockListener extends BlockListener {
 
 		//if the first line of the sign is a craft type, get the matching craft type.
 		CraftType craftType = CraftType.getCraftType(craftTypeName);
-		
+
 		if (craftType != null &&
 				!PermissionInterface.CheckPermission(player, "movecraft." + craftTypeName + "." + craftType.driveCommand)) {
 			player.sendMessage("You don't have permission to do that!");
 			event.setCancelled(true);
+		}
+	}
+
+	@Override
+	public void onBlockPhysics(final BlockPhysicsEvent event)
+	{
+		if ( !event.isCancelled())
+		{
+			final Block block = event.getBlock();
+			//if (StargateManager.isBlockInGate(block) && (block.getTypeId() != 55))
+			//if(Craft.getCraft(block.getX(), block.getY(), block.getZ()) != null)
+			if(Craft_Hyperspace.hyperspaceBlocks.contains(block))
+			{
+				event.setCancelled(true);
+			}
 		}
 	}
 }
