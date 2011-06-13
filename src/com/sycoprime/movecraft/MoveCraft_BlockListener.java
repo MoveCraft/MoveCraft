@@ -124,7 +124,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 	}
 
 	public void onSignChange(SignChangeEvent event) {
-		MoveCraft.instance.DebugMessage("A SIGN CHANGED!");
+		MoveCraft.instance.DebugMessage("A SIGN CHANGED!", 3);
 
 		Player player = event.getPlayer();
 		String craftTypeName = event.getLine(0).trim().toLowerCase().replaceAll(ChatColor.BLUE.toString(), "");
