@@ -32,22 +32,20 @@ public class CraftMover {
 			return;
 		}
 		
+		/*
 		if(id == 96 && MoveCraft.instance.DebugMode) {
-			//System.out.println("This stack trace is totally expected.");
-			//new Throwable().getStackTrace();
-			//Thread.currentThread().getStackTrace();
-
 			Exception ex = new Exception();
 			ex.printStackTrace();
 		}
+		*/
 		
 		if(block.getTypeId() == id) {
-			MoveCraft.instance.DebugMessage("Tried to change a " + id + " to itself.");
+			MoveCraft.instance.DebugMessage("Tried to change a " + id + " to itself.", 4);
 			return;
 		}
 		
 		MoveCraft.instance.DebugMessage("Attempting to set block at " + block.getX() + ", "
-				 + block.getY() + ", " + block.getZ() + " to " + id);
+				 + block.getY() + ", " + block.getZ() + " to " + id, 5);
 		
 		if (block.setTypeId(id) == false) {
 			if(craft.world.getBlockAt(block.getLocation()).setTypeId(id) == false)
@@ -112,7 +110,7 @@ public class CraftMover {
 			}
 			
 			if(inventory != null) {
-				MoveCraft.instance.DebugMessage("Inventory is " + inventory.getSize());
+				MoveCraft.instance.DebugMessage("Inventory is " + inventory.getSize(), 4);
 				for(int slot = 0; slot < inventory.getSize(); slot++) {
 					if(inventory.getItem(slot).getTypeId() != 0 && inventory.getItem(slot) != null) {
 						//complexBlock.setItem(slot, inventory.getItem(slot).getTypeId(), inventory.getItem(slot).getAmount());
@@ -121,7 +119,7 @@ public class CraftMover {
 
 						MoveCraft.instance.DebugMessage("Inventory has " + inventory.getItem(slot).getAmount() + 
 								" inventory item of craft.type " + inventory.getItem(slot).getTypeId() + 
-								" in slot " + slot);
+								" in slot " + slot, 4);
 						
 						inventory.setItem(slot, null);
 					}
@@ -164,7 +162,7 @@ public class CraftMover {
 			Inventory inventory = null;
 
 			if (complexBlock.id == 63 || complexBlock.id == 68) {
-				MoveCraft.instance.DebugMessage("Restoring a sign.");
+				MoveCraft.instance.DebugMessage("Restoring a sign.", 2);
 				setBlock(complexBlock.id, theBlock);
 				//theBlock.setcraft.typeId(complexBlock.id);
 				theBlock.setData((byte) complexBlock.data);
@@ -195,7 +193,7 @@ public class CraftMover {
 						inventory.setItem(slot, complexBlock.items[slot]);
 						MoveCraft.instance.DebugMessage("Moving " + complexBlock.items[slot].getAmount() + 
 								" inventory item of craft.type " + complexBlock.items[slot].getTypeId() + 
-								" in slot " + slot);
+								" in slot " + slot, 4);
 					}
 				}			
 			}
@@ -208,7 +206,7 @@ public class CraftMover {
 
 
 	public void calculatedMove(int dx, int dy, int dz) {
-		MoveCraft.instance.DebugMessage("DXYZ is (" + dx + ", " + dy + ", " + dz + ")" );
+		MoveCraft.instance.DebugMessage("DXYZ is (" + dx + ", " + dy + ", " + dz + ")", 4);
 		//instead of forcing the craft to move, check some things beforehand
 
 		if(craft.inHyperSpace) {
@@ -295,9 +293,9 @@ public class CraftMover {
 	// move the craft according to a vector d
 	public void move(int dx, int dy, int dz) {
 		//if(craft.type.canDig) {
-		MoveCraft.instance.DebugMessage("craft.waterLevel is " + craft.waterLevel);
-		MoveCraft.instance.DebugMessage("craft.waterType is " + craft.waterType);
-		MoveCraft.instance.DebugMessage("newcraft.waterLevel is " + craft.newWaterLevel);
+		MoveCraft.instance.DebugMessage("craft.waterLevel is " + craft.waterLevel, 4);
+		MoveCraft.instance.DebugMessage("craft.waterType is " + craft.waterType, 4);
+		MoveCraft.instance.DebugMessage("newcraft.waterLevel is " + craft.newWaterLevel, 4);
 		//}
 
 		dx = craft.speed * dx;
@@ -354,7 +352,7 @@ public class CraftMover {
 
 							craft.blockCount--;
 							MoveCraft.instance.DebugMessage("Removing a block of craft.type " + craftBlockId + 
-									" because of craft.type " + blockId);
+									" because of craft.type " + blockId, 4);
 						}
 					}
 				}
@@ -458,11 +456,11 @@ public class CraftMover {
 								int num = ( (new Random()).nextInt( Math.abs( blockDurability - 0 ) + 1 ) ) + 0;
 								
 								if(num == 1) {
-									MoveCraft.instance.DebugMessage("Random = 1");
+									MoveCraft.instance.DebugMessage("Random = 1", 1);
 									continue;
 								}
 								else
-									MoveCraft.instance.DebugMessage("Random number = " + Integer.toString(num));
+									MoveCraft.instance.DebugMessage("Random number = " + Integer.toString(num), 1);
 							}
 
 							// inside the craft, the block is different
@@ -552,7 +550,7 @@ public class CraftMover {
 	}
 	
 	public void teleportPlayer(Entity p, int dx, int dy, int dz) {
-		MoveCraft.instance.DebugMessage("Teleporting entity " + p.getEntityId());
+		MoveCraft.instance.DebugMessage("Teleporting entity " + p.getEntityId(), 4);
 		Location pLoc = p.getLocation();
 		pLoc.setX(pLoc.getX() + dx);
 		pLoc.setY(pLoc.getY() + dy);
@@ -561,7 +559,7 @@ public class CraftMover {
 	}
 	
 	public void movePlayer(Entity p, int dx, int dy, int dz) {
-		MoveCraft.instance.DebugMessage("Moving player");
+		MoveCraft.instance.DebugMessage("Moving player", 4);
 		int mccraftspeed = craft.speed;
 		if(mccraftspeed > 2)
 			mccraftspeed = 2;
