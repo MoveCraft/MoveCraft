@@ -35,7 +35,7 @@ public class PermissionInterface {
 
 	@SuppressWarnings("deprecation")
 	public static boolean CheckGroupPermission(String world, Player player, String group) {
-		MoveCraft.instance.DebugMessage("Checking if " + player.getName() + " is in group " + group);
+		MoveCraft.instance.DebugMessage("Checking if " + player.getName() + " is in group " + group, 4);
 		
 		if(Permissions == null) {
 			System.out.println("Movecraft: WARNING! A command attempted to check against a group, " + 
@@ -54,14 +54,14 @@ public class PermissionInterface {
 	
 	public static boolean CheckPermission(Player player, String command) {		
 		command = command.replace(" ", ".");
-		MoveCraft.instance.DebugMessage("Checking if " + player.getName() + " can " + command);
+		MoveCraft.instance.DebugMessage("Checking if " + player.getName() + " can " + command, 3);
 		
 		if (Permissions != null) {			
 		    if(Permissions.has(player, command) || player.isOp()) {
 		    	MoveCraft.instance.DebugMessage("Player has permissions: " + 
-		    			Permissions.has(player, command));
+		    			Permissions.has(player, command), 3);
 		    	MoveCraft.instance.DebugMessage("Player isop: " + 
-		    			player.isOp());
+		    			player.isOp(), 3);
 		    	return true;
 		    }
 		    else {
@@ -71,7 +71,7 @@ public class PermissionInterface {
 		}
 		else {
 			if(MoveCraft.instance.ConfigSetting("RequireOp").equalsIgnoreCase("true") && !player.isOp()) {
-				MoveCraft.instance.DebugMessage("Op is required, and you don't have it.");
+				MoveCraft.instance.DebugMessage("Op is required, and " + player.getDisplayName() + " doesn't have it.", 4);
 				return false;
 			}
 		}
