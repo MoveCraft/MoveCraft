@@ -107,8 +107,18 @@ public class MoveCraft extends JavaPlugin {
 		System.out.println("Debug mode set to " + this.DebugMode);
 	}
 
-	public boolean DebugMessage(String message) {
-		if(this.DebugMode == true)
+	public boolean DebugMessage(String message, int messageLevel) {
+		/* Message Levels:
+		 * 0: Error
+		 * 1: Something I'm currently testing
+		 * 2: Something I think I just fixed
+		 * 3: Something I'm pretty sure is fixed
+		 * 4: Supporting information
+		 * 5: Nearly frivolous information
+		 */
+		
+		//if(this.DebugMode == true)
+		if(Integer.parseInt(this.ConfigSetting("LogLevel")) >= messageLevel)
 			System.out.println(message);
 		return this.DebugMode;
 	}
