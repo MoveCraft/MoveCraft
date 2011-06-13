@@ -140,7 +140,7 @@ public class CraftBuilder {
                  }
              }
            }
-       }while(updated);
+       } while(updated);
    }
 
    private static void removeAir(){
@@ -173,7 +173,7 @@ public class CraftBuilder {
 
     //detect and create an air bubble surrounding the player
    private static boolean createAirBubble(){
-	   MoveCraft.instance.DebugMessage("Adding an air bubble.");
+	   MoveCraft.instance.DebugMessage("Adding an air bubble.", 4);
 
        BlockLoc block = blocksStack.pop();
 
@@ -216,20 +216,18 @@ public class CraftBuilder {
 
       //boolean needWaterDetection = false;
 
-      for(int x=0;x<craft.sizeX;x++){
-          for(int z=0;z<craft.sizeZ;z++){
+      for(int x=0; x<craft.sizeX; x++){
+          for(int z=0; z<craft.sizeZ; z++){
 
                boolean floor = false; //if we have reached the craft floor
 
-               for(int y=0;y<craft.sizeY;y++){
+               for(int y=0; y<craft.sizeY; y++){
 
                    //we reached the floor of the craft
-                   if(!floor && craft.matrix[x][y][z] != -1){
+                   if(!floor && craft.matrix[x][y][z] != -1){                       
                         floor = true;
                         continue;
-                   } else
-                   //free space, check there is no block here
-                   if(floor && craft.matrix[x][y][z] == -1){
+                   } else if(floor && craft.matrix[x][y][z] == -1) {	//free space, check there is no block here
 
                        Block block = craft.world.getBlockAt(craft.minX + x, craft.minY + y, craft.minZ + z);
                        int blockId = block.getTypeId();
@@ -252,33 +250,21 @@ public class CraftBuilder {
                        }
 
                    }
+                   
+                   //water detected, we do the detection of the water level
+                   if(craft.waterType != 0 && craft.matrix[x][y][z] != -1) {
+                	   detectWater(x + 1, y, z);
+                	   detectWater(x - 1, y, z);
+                	   detectWater(x, y, z + 1);
+                	   detectWater(x, y, z - 1);
+                   }
                }
           }
        }
 
-      //water detected, we do the detection of the water level
-       if(craft.waterType != 0){
-
-           craft.waterLevel = -1;
-
-           // player.sendMessage("need water detection");
-           for(int x=0;x<craft.sizeX;x++){
-               for(int z=0;z<craft.sizeZ;z++){
-                   for(int y=0;y<craft.sizeY;y++){
-                       if(craft.matrix[x][y][z] != -1){
-                           detectWater(x + 1, y, z);
-                           detectWater(x - 1, y, z);
-                           detectWater(x, y, z + 1);
-                           detectWater(x, y, z - 1);
-                       }
-                   }
-               }
-           }
-
-          //remove water blocks that can flow out of the craft
-          if(craft.waterLevel != -1)
-            removeWater();
-       }
+      //remove water blocks that can flow out of the craft
+      if(craft.waterLevel != -1)
+    	  removeWater();
 
       //if the craft can dive, we need to create an air bubble surrounding the player
       //if it touch the bounding box walls, then the submarine has a hole !
@@ -402,7 +388,7 @@ public class CraftBuilder {
 
       craft.matrix = new short[craft.sizeX][craft.sizeY][craft.sizeZ];
       craft.dataBlocks = new ArrayList<DataBlock>();
-      //craft.complexBlocks = new ArrayList();
+      craft.complexBlocks = new ArrayList<DataBlock>();
 
       for(int x=0;x<craft.sizeX;x++){
           for(int z=0;z<craft.sizeZ;z++){
@@ -532,13 +518,16 @@ public class CraftBuilder {
 
            boolean found = false;
            for(short blockId : craft.type.structureBlocks){
-                if(blockType == blockId) found = true;
+                if(blockType == blockId) {
+                	found = true;
+                	break;
+                }
            }
            if(!found){
                set(nullBlock, x, y, z);
                return;
            }
-        }
+        }  
 
        //record block type at this location
        set(blockType, x, y, z);
