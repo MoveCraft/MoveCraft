@@ -1,6 +1,7 @@
 package com.sycoprime.movecraft;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import org.bukkit.Location;
@@ -8,6 +9,8 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
+
+import com.sycoprime.movecraft.events.MoveCraftTurnEvent;
 
 public class CraftRotator {
 	public Craft craft;
@@ -78,7 +81,7 @@ public class CraftRotator {
 		
 		MoveCraft.instance.DebugMessage("r is " + r +
 				", x is " + x +  
-				", z is " + z);
+				", z is " + z, 4);
 		
 		if(r==0)
 			return x;
@@ -109,6 +112,15 @@ public class CraftRotator {
 	public void setBlock(double id, int X, int Y, int Z) {
 		if(Y < 0 || Y > 127 || id < 0 || id > 255){
 			return;
+		}
+
+		if((id == 64 || id == 63) && MoveCraft.instance.DebugMode) {
+			System.out.println("This stack trace is totally expected.");
+			//Thread.currentThread().getStackTrace();
+			//new Throwable().getStackTrace();
+			new Throwable().printStackTrace();
+			//Exception ex = new Exception();
+			//ex.printStackTrace();
 		}
 
 		craft.world.getBlockAt(X, Y, Z).setTypeId((int)id);
@@ -211,6 +223,13 @@ public class CraftRotator {
 		while(dr > 359)
 			dr = dr - 360;
 		
+		 MoveCraftTurnEvent event = new MoveCraftTurnEvent(craft, dr);
+		 MoveCraft.instance.getServer().getPluginManager().callEvent(event);
+		 if (event.isCancelled()) {
+			 return;
+		 }
+		 dr = event.getDegrees();
+		
 		/*
 		if(MoveCraft.instance.DebugMode) {
 			int newoffX = rotateX(craft.craft.offX, craft.craft.offZ, dr);
@@ -263,9 +282,9 @@ public class CraftRotator {
 				//double x = craft.minX + (xDist * Math.cos(dr) - zDist * Math.sin(dr));
 		        //double z = craft.minZ + (xDist * Math.sin(dr) + zDist * Math.cos(dr));
 				
-				MoveCraft.instance.DebugMessage("Dists are " + xDist + ", " + zDist);
+				MoveCraft.instance.DebugMessage("Dists are " + xDist + ", " + zDist, 1);
 				MoveCraft.instance.DebugMessage("Rotated dists are " + rotateX(xDist, zDist, dr) + 
-						", " + rotateZ(xDist, zDist, dr));
+						", " + rotateZ(xDist, zDist, dr), 1);
 				
 				//player is always displaced from the craft minimum by positive numbers
 				double x = craft.minX + Math.abs(rotateX(xDist, zDist, dr));
@@ -293,10 +312,9 @@ public class CraftRotator {
 		dr : delta rotation (90, -90) */
 		
 		dr = dr % 360;
-
-		//craft.player.sendMessage("rotation");
-		//int newRotation = (craft.rotation + dr + 360) % 360;
-
+		
+		CraftMover cm = new CraftMover(craft);
+		
 		//rotate dimensions
 		int newSizeX = craft.sizeX;
 		int newSizeZ = craft.sizeZ;
@@ -312,8 +330,8 @@ public class CraftRotator {
 		                                   [newSizeZ];
 		
 		//store data blocks
-		craft.storeDataBlocks();
-		craft.storeComplexBlocks();
+		cm.storeDataBlocks();
+		cm.storeComplexBlocks();
 		//ArrayList<DataBlock> unMovedDataBlocks = craft.dataBlocks;
 		//ArrayList<DataBlock> unMovedComplexBlocks = craft.complexBlocks;
 		ArrayList<DataBlock> unMovedDataBlocks = new ArrayList<DataBlock>();
@@ -379,8 +397,6 @@ public class CraftRotator {
 				}
 			}
 		}
-
-		//COLLISION DETECTION GOES HERE
 		
 		//remove blocks that need support first
 		for(int x=0;x<craft.sizeX;x++){
@@ -465,9 +481,9 @@ public class CraftRotator {
 		int posX = craft.minX + craft.offX;
 		int posZ = craft.minZ + craft.offZ;
 		
-		MoveCraft.instance.DebugMessage("Min vals start " + craft.minX + ", " + craft.minZ);
+		MoveCraft.instance.DebugMessage("Min vals start " + craft.minX + ", " + craft.minZ, 2);
 		
-		MoveCraft.instance.DebugMessage("Off was " + craft.offX + ", " + craft.offZ);
+		MoveCraft.instance.DebugMessage("Off was " + craft.offX + ", " + craft.offZ, 2);
 
 		//rotate offset
 		//int newoffX = rotateX(craft.craft.offX, craft.craft.offZ, -dr % 360);
@@ -475,7 +491,7 @@ public class CraftRotator {
 		int newoffX = rotateX(craft.offX, craft.offZ, dr);
 		int newoffZ = rotateZ(craft.offX, craft.offZ, dr);
 		
-		MoveCraft.instance.DebugMessage("New off is " + newoffX + ", " + newoffZ);
+		MoveCraft.instance.DebugMessage("New off is " + newoffX + ", " + newoffZ, 2);
 
 		if(newoffX < 0)
 			newoffX = newSizeX - 1 - Math.abs(newoffX);
@@ -485,7 +501,7 @@ public class CraftRotator {
 		craft.offX = newoffX;
 		craft.offZ = newoffZ;
 		
-		MoveCraft.instance.DebugMessage("Off is " + craft.offX + ", " + craft.offZ);
+		MoveCraft.instance.DebugMessage("Off is " + craft.offX + ", " + craft.offZ, 2);
 
 		//update min/max
 		craft.minX = posX - craft.offX;
@@ -493,7 +509,7 @@ public class CraftRotator {
 		craft.maxX = craft.minX + craft.sizeX -1;
 		craft.maxZ = craft.minZ + craft.sizeZ -1;
 		
-		MoveCraft.instance.DebugMessage("Min vals end " + craft.minX + ", " + craft.minZ);
+		MoveCraft.instance.DebugMessage("Min vals end " + craft.minX + ", " + craft.minZ, 2);
 		
 		rotateCardinals(craft.dataBlocks, dr);
 		rotateCardinals(craft.complexBlocks, dr);
@@ -525,20 +541,20 @@ public class CraftRotator {
 			}
 		}
 		
-		craft.restoreDataBlocks(0, 0, 0);
-		craft.restoreComplexBlocks(0, 0, 0);
+		cm.restoreDataBlocks(0, 0, 0);
+		cm.restoreComplexBlocks(0, 0, 0);
 	}
 	
 	public void rotateCardinals(ArrayList<DataBlock> blocksToRotate, int dr) {
-		//http://www.minecraftwiki.net/wiki/Data_values#Redstone_Repeater
-		//as are minecart tracks
+		//http://www.minecraftwiki.net/wiki/Data_values
 		//and beds
-		//cake
-		//repeaters
 		
-		for(DataBlock dataBlock: blocksToRotate) {			
+		byte[] cardinals;
+		int blockId;
+		
+		for(DataBlock dataBlock: blocksToRotate) {
 			//Block theBlock = craft.getWorldBlock(dataBlock.x, dataBlock.y, dataBlock.z);
-			int blockId = dataBlock.id;
+			blockId = dataBlock.id;
 			
 			//torches, skip 'em if they're centered on the tile on the ground
 			if(blockId == 50 || blockId == 75 || blockId == 76) {
@@ -546,13 +562,20 @@ public class CraftRotator {
 					continue;				
 			}
 			
-			byte[] cardinals = BlocksInfo.getCardinals(blockId);
+			cardinals = Arrays.copyOf(BlocksInfo.getCardinals(blockId), 4);
 			
 			if(blockId == 63) {	//sign post
 				dataBlock.data = (dataBlock.data + 4) % 16;
 				//dataBlock.data = dataBlock.data + 4;
 				//if(dataBlock.data > 14) dataBlock.data -= 16;
 				continue;
+			}
+			
+			if(blockId == 26) {	//bed
+				if(dataBlock.data > 8) {
+					for(int c = 0; c < 4; c++)
+						cardinals[c] += 8;
+				}
 			}
 			
 			if(blockId == 64 || blockId == 71	//wooden or steel door
@@ -615,21 +638,21 @@ public class CraftRotator {
 						+ cardinals[0] + ", "
 						+ cardinals[1] + ", "
 						+ cardinals[2] + ", "
-						+ cardinals[3]);
+						+ cardinals[3], 2);
 				
 				int i = 0;
 				for(i = 0; i < 3; i++)
 					if(dataBlock.data == cardinals[i])
 						break;
 
-				MoveCraft.instance.DebugMessage("i starts as " + i + " which is " + cardinals[i]);
+				MoveCraft.instance.DebugMessage("i starts as " + i + " which is " + cardinals[i], 2);
 
 				i += (dr / 90);
 				
 				if(i > 3)
 					i = i - 4;
 
-				MoveCraft.instance.DebugMessage("i ends as " + i + ", which is " + cardinals[i]);
+				MoveCraft.instance.DebugMessage("i ends as " + i + ", which is " + cardinals[i], 2);
 				
 				dataBlock.data = cardinals[i];
 			}
