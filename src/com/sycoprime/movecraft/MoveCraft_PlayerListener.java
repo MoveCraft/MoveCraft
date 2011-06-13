@@ -16,6 +16,9 @@ import org.bukkit.event.block.Action;
 
 import org.bukkit.event.player.*;
 
+import com.sycoprime.movecraft.plugins.PermissionInterface;
+
+
 public class MoveCraft_PlayerListener extends PlayerListener {
 
 	public MoveCraft_PlayerListener() {
@@ -76,7 +79,8 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				int dy = toLoc.getBlockY() - fromLoc.getBlockY();
 				int dz = toLoc.getBlockZ() - fromLoc.getBlockZ();					
 
-				craft.calculatedMove(dx, dy, dz);				
+				CraftMover cm = new CraftMover(craft);
+				cm.calculatedMove(dx, dy, dz);				
 			}
 		}
 	}
@@ -92,7 +96,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			if(event.hasBlock()) {
 				Block block = event.getClickedBlock();
 				
-				MoveCraft.instance.DebugMessage("The action has a block " + block + " associated with it.");
+				MoveCraft.instance.DebugMessage("The action has a block " + block + " associated with it.", 1);
 				
 				if(block.getTypeId() == 63 || block.getTypeId() == 68) {
 					MoveCraft_BlockListener.ClickedASign(player, block);
@@ -206,6 +210,24 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				// minimum time between 2 swings
 				if (System.currentTimeMillis() - craft.lastMove < 0.2 * 1000)
 					return;
+				
+				/*
+				int dx = 0, dy = 0, dz = 0;
+				float rotation = player.getLocation().getYaw();
+
+				if(rotation > 45 && rotation < 135)
+					rotation = 90;
+				else if(rotation > 135 && rotation < 225)
+					rotation = 180;
+				else if (rotation > 225 && rotation < 315)
+					rotation = 270;
+				else
+					rotation = 0;
+				
+				if(rotation == craft.rotation) {
+					
+				}
+				*/
 
 				float rotation = (float) Math.PI * player.getLocation().getYaw() / 180f;
 
@@ -215,8 +237,27 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 
 				int dx = (Math.abs(nx) >= 0.5 ? 1 : 0) * (int) Math.signum(nx);
 				int dz = (Math.abs(nz) > 0.5 ? 1 : 0) * (int) Math.signum(nz);
-
 				int dy = 0;
+				
+				if(dx != 0)
+					rotation = dx * 90;
+				else
+					rotation = dz * 180;
+				
+				player.sendMessage("Craft rotation is " + craft.rotation + ". Player rotation is " + rotation);				
+
+				rotation = player.getLocation().getYaw();
+				if(rotation > 45 && rotation < 135)
+					rotation = 90;
+				else if(rotation > 135 && rotation < 225)
+					rotation = 180;
+				else if (rotation > 225 && rotation < 315)
+					rotation = 270;
+				else
+					rotation = 0;
+				
+				player.sendMessage("Craft rotation is " + craft.rotation + ". Player rotation is " + rotation + 
+						"Difference is " + (craft.rotation - rotation));
 
 				// we are on a flying object, handle height change
 				if (craft.type.canFly || craft.type.canDive || craft.type.canDig) {
@@ -232,8 +273,18 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 						dz = 0;
 					}
 				}
-
-				craft.calculatedMove(dx, dy, dz);
+				
+				if(rotation != craft.rotation && dy == 0) {
+					player.sendMessage("I want to turn sooooo bad...");
+				}
+				
+				//if(rotation != craft.rotation && dy == 0) {
+					//CraftRotator cr = new CraftRotator(craft);
+					//cr.turn((int)rotation - craft.rotation);
+				{//} else {
+					CraftMover cm = new CraftMover(craft);
+					cm.calculatedMove(dx, dy, dz);
+				}
 	}
 
 	@Override
@@ -299,29 +350,29 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 			} else if (split[0].equalsIgnoreCase("craftvars")) {
 				Craft craft = Craft.getCraft(player);
 				
-				MoveCraft.instance.DebugMessage("Craft type: " + craft.type);
-				MoveCraft.instance.DebugMessage("Craft name: " + craft.name);
+				MoveCraft.instance.DebugMessage("Craft type: " + craft.type, 4);
+				MoveCraft.instance.DebugMessage("Craft name: " + craft.name, 4);
 				
 				//may need to make multidimensional
-				MoveCraft.instance.DebugMessage("Craft matrix size: " + craft.matrix.length);
-				MoveCraft.instance.DebugMessage("Craft block count: " + craft.blockCount);
-				MoveCraft.instance.DebugMessage("Craft data block count: " + craft.dataBlocks.size());
-				MoveCraft.instance.DebugMessage("Craft complex block count: " + craft.complexBlocks.size());
+				MoveCraft.instance.DebugMessage("Craft matrix size: " + craft.matrix.length, 4);
+				MoveCraft.instance.DebugMessage("Craft block count: " + craft.blockCount, 4);
+				MoveCraft.instance.DebugMessage("Craft data block count: " + craft.dataBlocks.size(), 4);
+				MoveCraft.instance.DebugMessage("Craft complex block count: " + craft.complexBlocks.size(), 4);
 
-				MoveCraft.instance.DebugMessage("Craft speed: " + craft.speed);
-				MoveCraft.instance.DebugMessage("Craft size: " + craft.sizeX + " * " + craft.sizeY + " * " + craft.sizeZ);
-				//MoveCraft.instance.DebugMessage("Craft position: " + craft.posX + ", " + craft.posY + ", " + craft.posZ);
-				MoveCraft.instance.DebugMessage("Craft last move: " + craft.lastMove);
+				MoveCraft.instance.DebugMessage("Craft speed: " + craft.speed, 4);
+				MoveCraft.instance.DebugMessage("Craft size: " + craft.sizeX + " * " + craft.sizeY + " * " + craft.sizeZ, 4);
+				//MoveCraft.instance.DebugMessage("Craft position: " + craft.posX + ", " + craft.posY + ", " + craft.posZ, 4);
+				MoveCraft.instance.DebugMessage("Craft last move: " + craft.lastMove, 4);
 				//world?
-				MoveCraft.instance.DebugMessage("Craft center: " + craft.centerX + ", " + craft.centerZ);
+				MoveCraft.instance.DebugMessage("Craft center: " + craft.centerX + ", " + craft.centerZ, 4);
 				
-				MoveCraft.instance.DebugMessage("Craft water level: " + craft.waterLevel);
-				MoveCraft.instance.DebugMessage("Craft new water level: " + craft.newWaterLevel);
-				MoveCraft.instance.DebugMessage("Craft water type: " + craft.waterType);
+				MoveCraft.instance.DebugMessage("Craft water level: " + craft.waterLevel, 4);
+				MoveCraft.instance.DebugMessage("Craft new water level: " + craft.newWaterLevel, 4);
+				MoveCraft.instance.DebugMessage("Craft water type: " + craft.waterType, 4);
 				
 				MoveCraft.instance.DebugMessage("Craft bounds: " + craft.minX + "->" + craft.maxX + ", "
 						+ craft.minY + "->" + craft.maxY + ", "
-						+ craft.minZ + "->" + craft.maxZ);
+						+ craft.minZ + "->" + craft.maxZ, 4);
 			}
 		}
 
@@ -485,15 +536,10 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 
 			} else if (split[1].equalsIgnoreCase("setname")) {
 				craft.name = split[2];
-				player.sendMessage(ChatColor.YELLOW + craft.name + "'s name set to "
+				player.sendMessage(ChatColor.YELLOW + craft.type.name + "'s name set to "
 						+ craft.name);
 				return true;
-
-			} else if (split[1].equalsIgnoreCase("size")) {
-				player.sendMessage(ChatColor.YELLOW + "The " + craft.name + " is built with "
-						+ craft.blockCount + " blocks");
-				return true;
-
+				
 			} else if (split[1].equalsIgnoreCase("remote")) {
 				if(craft == null || craft.type != craftType) {
 					Block targetBlock = player.getTargetBlock(null, 100);
@@ -539,9 +585,10 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 
 				player.sendMessage(ChatColor.WHITE + craftType.name);
 				if(craft != null)
-					player.sendMessage(ChatColor.YELLOW +
-							Integer.toString(craftType.minBlocks) + "-" + craftType.maxBlocks + " blocks." + 
-							" (Using " + craft.blockCount + ".)");
+					player.sendMessage(ChatColor.YELLOW + "Using " + craft.blockCount + " of " + 
+							craftType.maxBlocks + " blocks (minimum " + craftType.minBlocks + ").");
+							//Integer.toString(craftType.minBlocks) + "-" + craftType.maxBlocks + " blocks." + 
+							//" (Using " +  + ".)");
 				else
 					player.sendMessage(ChatColor.YELLOW + 
 							Integer.toString(craftType.minBlocks) + "-" + craftType.maxBlocks + " blocks.");
@@ -594,7 +641,7 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					Craft_Hyperspace.enterHyperSpace(craft);
 				else
 					Craft_Hyperspace.exitHyperSpace(craft);
-
+				return true;
 			} else if (split[1].equalsIgnoreCase("addwaypoint")) {
 				//if(split[2].equalsIgnoreCase("absolute"))
 				if(split[2].equalsIgnoreCase("relative")) {
