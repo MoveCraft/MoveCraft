@@ -413,6 +413,17 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					MoveCraft.instance.ToggleDebug();
 					event.setCancelled(true);
 					return;
+				} else if (split[1].equalsIgnoreCase("loglevel")) {
+					try
+					{
+						Integer.parseInt(split[2]);
+						MoveCraft.instance.configFile.ConfigSettings.put("LogLevel", split[2]);
+					}
+					catch (Exception ex) {
+						player.sendMessage("Invalid loglevel.");
+					}
+					event.setCancelled(true);
+					return;	
 				}
 				else if (split[1].equalsIgnoreCase("config")) {
 					MoveCraft.instance.configFile.ListSettings(player);
