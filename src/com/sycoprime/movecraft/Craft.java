@@ -1,7 +1,6 @@
 package com.sycoprime.movecraft;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -30,8 +29,8 @@ public class Craft {
 	// list of craft
 	public static ArrayList<Craft> craftList = new ArrayList<Craft>();
 
-	CraftType type;
-	String name; // name, a different name can be set
+	public CraftType type;
+	public String name; // name, a different name can be set
 
 	short matrix[][][];
 	ArrayList<DataBlock> dataBlocks;
@@ -90,13 +89,22 @@ public class Craft {
 	// Added engine block to test having blocks that propel the craft
 	ArrayList<DataBlock> engineBlocks = new ArrayList<DataBlock>();
 
-	Craft(CraftType type, Player player, String customName) {
-
+	Craft(CraftType type, Player player, String customName, float Rotation) {
+		if(Rotation > 45 && Rotation < 135)
+			Rotation = 90;
+		else if(Rotation > 135 && Rotation < 225)
+			Rotation = 180;
+		else if (Rotation > 225 && Rotation < 315)
+			Rotation = 270;
+		else
+			Rotation = 0;
+		
 		this.type = type;
 		this.name = type.name;
 		this.customName = customName;
 		this.player = player;
 		this.world = player.getWorld();
+		this.rotation = (int) Rotation;
 	}
 
 	public static Craft getCraft(Player player) {
@@ -129,7 +137,7 @@ public class Craft {
 
 	// add a block to the craft, if it is connected to a craft block
 	public void addBlock(Block block) {
-		MoveCraft.instance.DebugMessage("Adding a block...");
+		MoveCraft.instance.DebugMessage("Adding a block...", 4);
 
 		// to craft coordinates
 		int x = block.getX() - minX;
@@ -300,37 +308,6 @@ public class Craft {
 		return false;
 	}
 
-	// SAFE ! setblock
-	public void setBlock(int id, Block block) {		
-		// if(y < 0 || y > 127 || id < 0 || id > 255){
-		if (id < 0 || id > 255) {
-			// + " x=" + x + " y=" + y + " z=" + z);
-			System.out.println("Invalid block type ID. Begin panic.");
-			return;
-		}
-		
-		if(block.getTypeId() == id) {
-			MoveCraft.instance.DebugMessage("Tried to change a " + id + " to itself.");
-			return;
-		}
-		
-		MoveCraft.instance.DebugMessage("Attempting to set block at " + block.getX() + ", "
-				 + block.getY() + ", " + block.getZ() + " to " + id);
-		
-		if (block.setTypeId(id) == false) {
-			if(world.getBlockAt(block.getLocation()).setTypeId(id) == false)
-				System.out.println("Could not set block of type " + block.getTypeId() + 
-						" to type " + id + ". I tried to fix it, but I couldn't.");
-			else
-				System.out.println("I hope to whatever God you believe in that this fix worked.");
-		}
-		/*
-		 call an onblockflow event, or otherwise somehow handle worldguard's sponge fix
-		 BlockFromToEvent blockFlow = new BlockFromToEvent(Type.BLOCK_FLOW, source, blockFace);
-		  getServer().getMoveCraft.instanceManager().callEvent(blockFlow);
-		 */
-	}
-
 	public boolean isCraftBlock(int x, int y, int z) {
 
 		if (x >= 0 && y >= 0 && z >= 0 && x < sizeX && y < sizeY && z < sizeZ) {
@@ -361,7 +338,7 @@ public class Craft {
 
 		// vertical limit
 		if (minY + dy < 0 || maxY + dy > 128) {
-			MoveCraft.instance.DebugMessage("Craft prevented from moving due to vertical limit.");
+			MoveCraft.instance.DebugMessage("Craft prevented from moving due to vertical limit.", 4);
 			return false;
 		}
 
@@ -378,7 +355,7 @@ public class Craft {
 					&& !canGoThrough(0, targetBlock1.getTypeId(), 0)
 					|| !isCraftBlock(X - minX, Y + 1 - minY, Z - minZ)
 					&& !canGoThrough(0, targetBlock2.getTypeId(), 0)) {
-				MoveCraft.instance.DebugMessage("Craft prevented from because...can't go through?");
+				MoveCraft.instance.DebugMessage("Craft prevented from because...can't go through?", 4);
 				return false;
 			}
 		}
@@ -423,7 +400,7 @@ public class Craft {
 							}
 						
 						if (!canGoThrough(matrix[x][y][z], blockId, blockData) ) {
-							MoveCraft.instance.DebugMessage("Craft prevented from moving because can't go through.");
+							MoveCraft.instance.DebugMessage("Craft prevented from moving because can't go through.", 4);
 							return false;
 						}
 						
@@ -447,7 +424,7 @@ public class Craft {
 					world.loadChunk(checkChunk);
 				}
 				catch (Exception ex) {
-					MoveCraft.instance.DebugMessage("Craft prevented from moving because destination chunk is not loaded.");
+					MoveCraft.instance.DebugMessage("Craft prevented from moving because destination chunk is not loaded.", 3);
 					return false;
 				}
 			}
@@ -468,463 +445,41 @@ public class Craft {
 				posZ + CraftRotator.rotateZ(x - offX, z - offZ, rotation));
 	}
 	*/
-	public Block getWorldBlock(int x, int y, int z) {
-		//return world.getBlockAt(posX + x, posY + y, posZ + z);
-		return world.getBlockAt(minX + x, minY + y, minZ + z);
-	}
-	
-	public void storeDataBlocks() {
-		for (DataBlock dataBlock : dataBlocks) {
-			dataBlock.data = getWorldBlock(dataBlock.x, dataBlock.y, dataBlock.z).getData();
-		}
-	}
-	
-	public void storeComplexBlocks() {
-		// store the data of all complex blocks, or die trying
-		for (DataBlock complexBlock : complexBlocks) {
-			Block currentBlock = getWorldBlock(complexBlock.x, complexBlock.y, complexBlock.z);
-			complexBlock.id = currentBlock.getTypeId();
-			complexBlock.data = currentBlock.getData();
-			
-			Inventory inventory = null;
-			
-			if (currentBlock.getState() instanceof Sign) {
-				Sign sign = (Sign) currentBlock.getState();
-				
-				complexBlock.signLines = sign.getLines();
-				
-				/*
-				ArrayList<String> myLines = new ArrayList<String>();
-				
-				if(sign.getLine(0) != null) {
-					myLines.add(sign.getLine(0));
-					myLines.add(sign.getLine(1));
-					myLines.add(sign.getLine(2));
-					myLines.add(sign.getLine(3));
-					//signLines.add(myLines);
-				}
-				*/
-				
-			} else if (currentBlock.getTypeId() == 54) {
-				Chest chest = ((Chest)currentBlock.getState());
-				inventory = chest.getInventory();
-			} else if (currentBlock.getTypeId() == 23) {
-				Dispenser dispenser = (Dispenser) currentBlock.getState();
-				inventory = dispenser.getInventory();
-			} else if (currentBlock.getTypeId() == 61) {
-				Furnace furnace = (Furnace) currentBlock.getState();
-				inventory = furnace.getInventory();				
-			}
-			
-			if(inventory != null) {
-				MoveCraft.instance.DebugMessage("Inventory is " + inventory.getSize());
-				for(int slot = 0; slot < inventory.getSize(); slot++) {
-					if(inventory.getItem(slot).getTypeId() != 0 && inventory.getItem(slot) != null) {
-						//complexBlock.setItem(slot, inventory.getItem(slot).getTypeId(), inventory.getItem(slot).getAmount());
-						complexBlock.setItem(slot, inventory.getItem(slot));
-						//inventory.setItem(slot, new ItemStack(0));
-
-						MoveCraft.instance.DebugMessage("Inventory has " + inventory.getItem(slot).getAmount() + 
-								" inventory item of type " + inventory.getItem(slot).getTypeId() + 
-								" in slot " + slot);
-						
-						inventory.setItem(slot, null);
-					}
-				}
-			}
-		}
-	}
-	
-	public void restoreDataBlocks(int dx, int dy, int dz) {
-		Block block;
-		
-		for (DataBlock dataBlock : dataBlocks) {
-			// this is a pop item, the block needs to be created
-			if (BlocksInfo.needsSupport(matrix[dataBlock.x][dataBlock.y][dataBlock.z])) {
-				block = getWorldBlock(dx + dataBlock.x, dy + dataBlock.y, dz + dataBlock.z);
-
-				block.setTypeId(matrix[dataBlock.x][dataBlock.y][dataBlock.z]);
-				block.setData((byte) dataBlock.data);
-			} else { //the block is already there, just set the data
-				getWorldBlock(dx + dataBlock.x,
-						dy + dataBlock.y,
-						dz + dataBlock.z)
-						.setData((byte)dataBlock.data);
-			}
-		}
-	}
-	
-	public void restoreComplexBlocks(int dx, int dy, int dz) {
-		for (DataBlock complexBlock : complexBlocks) {
-			Block theBlock = getWorldBlock(dx + complexBlock.x,
-					dy + complexBlock.y,
-					dz + complexBlock.z);
-			
-			theBlock.setData((byte) complexBlock.data);
-			
-			Inventory inventory = null;
-
-			if (complexBlock.id == 63 || complexBlock.id == 68) {
-				MoveCraft.instance.DebugMessage("Restoring a sign.");
-				theBlock.setTypeId(complexBlock.id);
-				theBlock.setData((byte) complexBlock.data);
-				Sign sign = (Sign) theBlock.getState();
-				
-				sign.setLine(0, complexBlock.signLines[0]);
-				sign.setLine(1, complexBlock.signLines[1]);
-				sign.setLine(2, complexBlock.signLines[2]);
-				sign.setLine(3, complexBlock.signLines[3]);
-
-				sign.update();
-			}  else if (theBlock.getTypeId() == 54) {
-				Chest chest = ((Chest)theBlock.getState());
-				inventory = chest.getInventory();
-			} else if (theBlock.getTypeId() == 23) {
-				Dispenser dispenser = (Dispenser) theBlock.getState();
-				inventory = dispenser.getInventory();
-			} else if (theBlock.getTypeId() == 61) {
-				Furnace furnace = (Furnace) theBlock.getState();
-				inventory = furnace.getInventory();				
-			}
-
-			//https://github.com/Afforess/MinecartMania/blob/master/src/com/afforess/minecartmaniacore/MinecartManiaChest.java
-			//restore the block's inventory
-			if (inventory != null) {
-				for(int slot = 0; slot < inventory.getSize(); slot++) {
-					if(complexBlock.items[slot] != null && complexBlock.items[slot].getTypeId() != 0) {
-						inventory.setItem(slot, complexBlock.items[slot]);
-						MoveCraft.instance.DebugMessage("Moving " + complexBlock.items[slot].getAmount() + 
-								" inventory item of type " + complexBlock.items[slot].getTypeId() + 
-								" in slot " + slot);
-					}
-				}			
-			}
-			
-			if(theBlock.getTypeId() == 54)
-				((Chest)theBlock.getState()).update();
-		}		
-	}
-
-	// move the craft according to a vector d
-	public void move(int dx, int dy, int dz) {
-		//if(type.canDig) {
-			MoveCraft.instance.DebugMessage("Waterlevel is " + waterLevel);
-			MoveCraft.instance.DebugMessage("Watertype is " + waterType);
-			MoveCraft.instance.DebugMessage("newWaterlevel is " + newWaterLevel);
-		//}
-			
-			if(type.canDig)
-				waterLevel = newWaterLevel;
-		
-		//Server server = MoveCraft.instance.getServer();
-
-		dx = speed * dx;
-		dz = speed * dz;
-		
-		ArrayList<Entity> checkEntities;
-
-		if (Math.abs(speed * dy) > 1) {
-			dy = speed * dy / 2;
-			if (Math.abs(dy) == 0)
-				dy = (int) Math.signum(dy);
-		}
-
-		// scan to know if any of the craft blocks are now missing (blocks removed, TNT damage, creeper ?)
-		// and update the structure
-		for (int x = 0; x < sizeX; x++) {
-			for (int y = 0; y < sizeY; y++) {
-				for (int z = 0; z < sizeZ; z++) {
-					int craftBlockId = matrix[x][y][z];
-
-					// remove blocks from the structure if it is not there anymore
-					if (craftBlockId != -1 && craftBlockId != 0
-							&& !(craftBlockId >= 8 && craftBlockId <= 11)) {
-
-						//int blockId = world.getBlockAt(posX + x, posY + y, posZ + z).getTypeId();
-						int blockId = world.getBlockAt(minX + x, minY + y, minZ + z).getTypeId();
-
-						 // regenerate TNT on a bomber
-						if (craftBlockId == 46 && type.bomber)
-							continue;
-
-						// block is not here anymore, remove it
-						if (blockId == 0 || blockId >= 8 && blockId <= 11) {
-							// air, water, or lava
-							if (waterType != 0 && y <= waterLevel)
-								matrix[x][y][z] = 0;
-							else
-								matrix[x][y][z] = -1; // make a hole in the craft
-
-							blockCount--;
-							MoveCraft.instance.DebugMessage("Removing a block of type " + craftBlockId + 
-									" because of type " + blockId);
-						}
-					}
-				}
-			}
-		}
-		
-		storeDataBlocks();
-		
-		storeComplexBlocks();
-		
-		checkEntities = getCraftEntities();
-
-		// first pass, remove all items that need a support
-		for (int x = 0; x < sizeX; x++) {
-			for (int z = 0; z < sizeZ; z++) {
-				for (int y = sizeY - 1; y >0; y--) {
-				//for (int y = 0; y < sizeY; y++) {
-
-					short blockId = matrix[x][y][z];
-
-					// craft block, replace by air
-					if (BlocksInfo.needsSupport(blockId)) {
-
-						//Block block = world.getBlockAt(posX + x, posY + y, posZ + z);
-						Block block = getWorldBlock(x, y, z);
-
-						// special case for doors
-						// we need to remove the lower part of the door only, or the door will pop
-						// lower part have data 0 - 7, upper part have data 8 - 15
-						if (blockId == 64 || blockId == 71) { // wooden door and steel door
-							if (block.getData() >= 8)
-								continue;
-						}
-						
-						if(blockId == 26) { //bed
-							if(block.getData() > 4)
-								continue;
-						}
-
-						setBlock(0, block);
-					}
-				}
-			}
-		}
-
-		// second pass, the regular blocks
-		for (int x = 0; x < sizeX; x++) {
-			for (int z = 0; z < sizeZ; z++) {
-				//for (int y = sizeY - 1; y > -1; y--) {
-				for (int y = 0; y < sizeY; y++) {
-
-					short blockId = matrix[x][y][z];
-
-					// if(blockId==8)
-					// System.out.println("water !");
-
-					//Block block = world.getBlockAt(posX + x, posY + y, posZ + z);
-					Block block = getWorldBlock(x, y, z);
-
-					// craft block
-					if (blockId != -1) {
-
-						// old block postion (remove)
-						if (x - dx >= 0 && y - dy >= 0 && z - dz >= 0
-								&& x - dx < sizeX && y - dy < sizeY
-								&& z - dz < sizeZ) {
-							// after moving, this location is not a craft block anymore
-							if (matrix[x - dx][y - dy][z - dz] == -1
-									|| BlocksInfo.needsSupport(matrix[x - dx][y - dy][z - dz])) {
-								if (y > waterLevel || !(type.canNavigate || type.canDive)) {
-									//|| matrix [ x - dx ] [ y - dy ] [ z - dz ] == 0)
-									setBlock(0, block);
-								}
-								else
-									setBlock(waterType, block);
-							}
-							// the back of the craft, remove
-						} else {
-							if (y > waterLevel ||
-									!(type.canNavigate || type.canDive) ||
-									type.canDig)
-								setBlock(0, block);
-							else
-								setBlock(waterType, block);
-						}
-
-						// new block position (place)
-						if (!BlocksInfo.needsSupport(blockId)) {
-
-							//Block innerBlock = world.getBlockAt(posX + dx + x,posY + dy + y, posZ + dz + z);
-							Block innerBlock = getWorldBlock(dx + x, dy + y, dz + z);
-
-							//drop the item corresponding to the block if it is not a craft block
-							if(!isCraftBlock(dx + x,dy + y, dz + z)){
-								MoveCraft.instance.dropItem(innerBlock);
-							}
-							
-							//A BREAKA THE DRILL BLOCKA
-							if(type.digBlockDurability > 0) {
-								int blockDurability = block.getType().getMaxDurability();
-								int num = ( (new Random()).nextInt( Math.abs( blockDurability - 0 ) + 1 ) ) + 0;
-								
-								if(num == 1) {
-									MoveCraft.instance.DebugMessage("Random = 1");
-									continue;
-								}
-								else
-									MoveCraft.instance.DebugMessage("Random number = " + Integer.toString(num));
-							}
-
-							// inside the craft, the block is different
-							if (x + dx >= 0 && y + dy >= 0 && z + dz >= 0
-									&& x + dx < sizeX && y + dy < sizeY
-									&& z + dz < sizeZ) {
-								if (matrix[x][y][z] != matrix[x + dx][y + dy][z + dz]) {
-									// setBlock(world, blockId, posX + dx + x,
-									// posY + dy + y, posZ + dz + z);
-									setBlock(blockId, innerBlock);
-								}
-							}
-							// outside of the previous bounding box
-							else {
-								setBlock(blockId, innerBlock);
-							}
-						}
-					}
-				}
-			}
-		}
-
-		restoreDataBlocks(dx, dy, dz);
-		restoreComplexBlocks(dx, dy, dz);
-
-		// restore items that need a support but are not data blocks
-		for (int x = 0; x < sizeX; x++) {
-			for (int z = 0; z < sizeZ; z++) {
-				for (int y = 0; y < sizeY; y++) {
-
-					short blockId = matrix[x][y][z];
-
-					if (BlocksInfo.needsSupport(blockId)
-							&& !BlocksInfo.isDataBlock(blockId)
-							&& !BlocksInfo.isComplexBlock(blockId)) {
-						//setBlock(blockId, world.getBlockAt(posX + dx + x, posY + dy + y, posZ + dz + z));
-						setBlock(blockId, getWorldBlock(dx + x, dy + y, dz + z));						
-					}
-				}
-			}
-		}
-		
-		for(Entity e : checkEntities) {
-			if(isOnCraft(e, false)) {
-				if(MoveCraft.instance.ConfigSetting("TryNudge").equalsIgnoreCase("true") &&
-						(type.listenMovement == false || e != player) ) {
-					movePlayer(e, dx, dy, dz);
-				} else {
-					teleportPlayer(e, dx, dy, dz);
-				}
-			}
-		}
-
-		minX += dx;
-		minY += dy;
-		minZ += dz;
-		maxX = minX + sizeX - 1;
-		maxY = minY + sizeY - 1;
-		maxZ = minZ + sizeZ - 1;
-
-		// adjust water level
-		// if(waterLevel <= -1)
-
-		if (waterLevel == sizeY - 1 && newWaterLevel < waterLevel) {
-			waterLevel = newWaterLevel;
-		} else if (waterLevel <= -1 && newWaterLevel > waterLevel) {
-			waterLevel = newWaterLevel;
-		} else if (waterLevel >= 0 && waterLevel < sizeY - 1) {
-			waterLevel -= dy;
-		}
-
-		lastMove = System.currentTimeMillis();
-
-		if(type.requiresRails) {
-			int xMid = matrix.length / 2;
-			int zMid = matrix[0][0].length / 2;
-
-			//Block belowBlock = world.getBlockAt(posX + xMid, posY - 1, posZ + zMid);
-			Block belowBlock = getWorldBlock(xMid, -1, zMid);
-			railBlock = belowBlock;
-
-			if(belowBlock.getType() == Material.RAILS) {
-				railMove();
-			}
-		}
-
-	}
-	
-	public void teleportPlayer(Entity p, int dx, int dy, int dz) {
-		MoveCraft.instance.DebugMessage("Teleporting entity " + p.getEntityId());
-		Location pLoc = p.getLocation();
-		pLoc.setX(pLoc.getX() + dx);
-		pLoc.setY(pLoc.getY() + dy);
-		pLoc.setZ(pLoc.getZ() + dz);
-		p.teleport(pLoc);
-	}
-	
-	public void movePlayer(Entity p, int dx, int dy, int dz) {
-		MoveCraft.instance.DebugMessage("Moving player");
-		int mcSpeed = speed;
-		if(mcSpeed > 2)
-			mcSpeed = 2;
-		
-		//double emm = Double.parseDouble(MoveCraft.instance.ConfigSetting("ExperimentalMovementMultiplier"));
-		Vector pVel = p.getVelocity();
-		//pVel = pVel.add(new Vector(dx * speed, dy * speed, dz * speed));
-		//MoveCraft.instance.DebugMessage("Moving player X by " + dx + " * " + mcSpeed + " * " + emm);
-		//MoveCraft.instance.DebugMessage("Moving player Z by " + dz + " * " + mcSpeed + " * " + emm);
-		if(dx > 0) dx = speed;
-		else dx = speed * -1;
-		if(dy > 0) dy = speed;
-		else dy = speed * -1;
-		if(dz > 0) dz = speed;
-		else dz = speed * -1;
-		pVel = pVel.add(new Vector(dx, dy, dz));
-		//pVel = new Vector(dx * mcSpeed, dy * mcSpeed, dz * mcSpeed);
-		//pVel.setY(pVel.getY() / 2);
-		
-		if(pVel.getX() > 10 || pVel.getZ() > 10 || pVel.getY() > 10) {
-			//p.sendMessage("I have to teleport you.");
-			System.out.println("Velocity is too high, have to teleport " + p.getEntityId());
-			Location pLoc = p.getLocation();
-			pLoc.setX(pLoc.getX() + pVel.getX());
-			pLoc.setY(pLoc.getY() + pVel.getY());
-			pLoc.setZ(pLoc.getZ() + pVel.getZ());
-			p.teleport(pLoc);						
-		} else {
-			p.setVelocity(pVel);
-		}		
-	}
 	
 	public ArrayList<Entity> getCraftEntities() {
 		ArrayList<Entity> checkEntities = new ArrayList<Entity>();
 
 		Chunk firstChunk = world.getChunkAt(new Location(world, minX, minY, minZ));
 		Chunk lastChunk = world.getChunkAt(new Location(world, minX + sizeX, minY + sizeY, minZ + sizeZ));
+		
+		int targetX = 0;
+		int targetZ = 0;
+		Chunk addChunk;
+		Entity[] ents;
 
 		for(int x = 0; Math.abs(firstChunk.getX() - lastChunk.getX()) >= x; x++) {
-			int targetX = 0;
+			targetX = 0;
 			if(firstChunk.getX() < lastChunk.getX()) {
 				targetX = firstChunk.getX() + x;
 			} else {
 				targetX = firstChunk.getX() - x;
 			}
 			for(int z = 0; Math.abs(firstChunk.getZ() - lastChunk.getZ()) >= z; z++) {
-				int targetZ = 0;
+				targetZ = 0;
 				if(firstChunk.getZ() < lastChunk.getZ()) {
 					targetZ = firstChunk.getZ() + z;
 				} else {
 					targetZ = firstChunk.getZ() - z;
 				}
 
-				Chunk addChunk = world.getChunkAt(targetX, targetZ);
+				addChunk = world.getChunkAt(targetX, targetZ);
 
 				try {
-					Entity[] ents = addChunk.getEntities();
+					ents = addChunk.getEntities();
 					for(Entity e : ents) {
-						if(!(e instanceof Item))
+						if(!(e instanceof Item) && this.isOnCraft(e, false)) {
 							checkEntities.add(e);
+						}
 					}
 				}
 				catch (Exception ex) {
@@ -946,109 +501,6 @@ public class Craft {
 
 	public int getSpeed() {
 		return speed;
-	}
-	
-	public boolean AsyncMove(int dx, int dy, int dz) {
-		if(MoveCraft.instance.getServer().getScheduler().isCurrentlyRunning(asyncTaskId))
-			return false;
-		
-		final int changeX = dx; 
-		final int changeY = dy;
-		final int changeZ = dz;
-		Runnable r = new Runnable() {
-			public void run() {
-				//calculatedMove(changeX, changeY, changeZ);
-				move(changeX, changeY, changeZ);
-			}
-		};
-		
-		asyncTaskId = MoveCraft.instance.getServer().getScheduler().scheduleAsyncDelayedTask(MoveCraft.instance, r);
-		return true;
-	}
-
-	public void calculatedMove(int dx, int dy, int dz) {
-		MoveCraft.instance.DebugMessage("DXYZ is (" + dx + ", " + dy + ", " + dz + ")" );
-		//instead of forcing the craft to move, check some things beforehand
-
-		if(this.inHyperSpace) {
-			if(dx > 0)
-				dx = 1;
-			else if (dx < 0)
-				dx = -1;
-			if(dy > 0)
-				dy = 1;
-			else if (dy < 0)
-				dy = -1;
-			if(dz > 0)
-				dz = 1;
-			else if (dz < 0)
-				dz = -1;
-			
-			Craft_Hyperspace.hyperSpaceMove(this, dx, dy, dz);
-			return;
-		}			
-
-		if(type.obeysGravity && canMove(dx, dy - 1, dz) && (engineBlocks.size() == 0)) {
-			dy -= 1;
-		}
-
-		// speed decrease with time
-		setSpeed(speed - (int) ((System.currentTimeMillis() - lastMove) / 500));
-
-		if (speed <= 0)
-			speed = 1;
-
-		// prevent submarines from getting out of water
-		if ( (type.canDive || type.canDig) && !type.canFly && waterLevel <= 0 && dy > 0)
-			dy = 0;
-
-		// check the craft can move there. If not, reduce the speed and try
-		// again until speed = 1
-		while (!canMove(dx, dy, dz)) {
-
-			// player.sendMessage("can't move !");
-			//if (speed == 1 && type.obeysGravity) {	//vehicles which obey gravity can go over certain terrain
-			if (speed == 1 && type.isTerrestrial) {	//vehicles which are terrestrial (ground-dwelling) can go over certain terrain
-				if(canMove(dx, dy + 1, dz)) {
-					dy += 1;
-					break;
-				}
-			}
-
-			if (speed == 1) {
-
-				// try to remove horizontal displacement, and just go up
-				if (type.canFly && dy >= 0) {
-					dx = 0;
-					dz = 0;
-					dy = 1;
-					if (canMove(dx, dy, dz))
-						break;
-				}
-
-				player.sendMessage(ChatColor.RED + "the " + name + " won't go any further");
-				return;
-			}
-
-			setSpeed(speed - 1);
-
-		}
-		
-		if(!(dx == 0 && dy == 0 && dz == 0)) {
-			//if async movement is not configured, or the craft can't asyncmove
-			//if(!MoveCraft.instance.configFile.ConfigSettings.get("EnableAsyncMovement").equalsIgnoreCase("true") ||
-			//		!AsyncMove(dx, dy, dz))
-			
-			//If the MoveCraft.instance is configured for async movement, it will be used
-			//However, using this, if the craft hasn't finished moving before, it won't continue to move...
-			if(!MoveCraft.instance.ConfigSetting("EnableAsyncMovement").equalsIgnoreCase("true"))
-				move(dx, dy, dz);
-			else
-				AsyncMove(dx, dy, dz);
-		}
-
-		// the craft goes faster every click
-		setSpeed(speed + 1);
 	}
 	
 	public void turn(int dr) {
@@ -1103,27 +555,10 @@ public class Craft {
 				sign.setLine(3, "OOOO");
 			}
 		}
-		if(dx != 0 || dy != 0 || dz != 0) {			
-			calculatedMove(dx, dy, dz);
+		if(dx != 0 || dy != 0 || dz != 0) {
+			CraftMover cm = new CraftMover(this);
+			cm.calculatedMove(dx, dy, dz);
 		}
-	}
-	
-	public void railMove() {
-		Byte deets = railBlock.getData();
-
-		if(deets == 1 || deets == 2 || deets == 3) {
-			//player.sendMessage("HEADIN NORTH! Or south. Depends on what da orders say.");
-			//norf is X
-			calculatedMove(1, 0, 0);
-		} else
-		if(deets == 0 || deets == 4 || deets == 5) {
-			calculatedMove(0, 0, 1);			
-		}
-		//6-9 are turns
-
-		//get the next block
-		//check if its material is rails
-		//if so, prep another move?
 	}
 	
 	public boolean addWayPoint(Location loc) {
