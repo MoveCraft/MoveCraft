@@ -22,7 +22,7 @@ public class ConfigFile {
 		ConfigSettings.put("EnableAsyncMovement", "false");
 		ConfigSettings.put("ExperimentalMovementMultiplier", "1.0");
 		ConfigSettings.put("TryNudge", "false");
-		ConfigSettings.put("LogLevel", "1");
+		ConfigSettings.put("LogLevel", "0");
 		ConfigSettings.put("RequireRemote", "false");
 		ConfigSettings.put("EngineBlockId", "61");
 		ConfigSettings.put("HungryHungryDrill", "true");
