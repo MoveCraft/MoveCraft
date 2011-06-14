@@ -25,7 +25,7 @@ public class ConfigFile {
 		ConfigSettings.put("LogLevel", "0");
 		ConfigSettings.put("RequireRemote", "false");
 		ConfigSettings.put("EngineBlockId", "61");
-		ConfigSettings.put("HungryHungryDrill", "true");
+		ConfigSettings.put("HungryHungryDrill", "false");
 		ConfigSettings.put("WriteDefaultCraft", "true");
 		ConfigSettings.put("ForbiddenBlocks", "null");		
 		
