@@ -33,14 +33,15 @@ public class CraftMover {
 		}
 		
 		/*
-		if(id == 96 && MoveCraft.instance.DebugMode) {
+		if(id == 65 && MoveCraft.instance.DebugMode) {
+			System.out.println("I expectificated this.");
 			Exception ex = new Exception();
 			ex.printStackTrace();
 		}
 		*/
 		
 		if(block.getTypeId() == id) {
-			MoveCraft.instance.DebugMessage("Tried to change a " + id + " to itself.", 4);
+			MoveCraft.instance.DebugMessage("Tried to change a " + id + " to itself.", 5);
 			return;
 		}
 		
@@ -72,10 +73,11 @@ public class CraftMover {
 		}
 	}
 	
-	public void storeComplexBlocks() {
-		// store the data of all complex blocks, or die trying
+	public void storeComplexBlocks() {	// store the data of all complex blocks, or die trying
+		Block currentBlock;
+		
 		for (DataBlock complexBlock : craft.complexBlocks) {
-			Block currentBlock = getWorldBlock(complexBlock.x, complexBlock.y, complexBlock.z);
+			currentBlock = getWorldBlock(complexBlock.x, complexBlock.y, complexBlock.z);
 			complexBlock.id = currentBlock.getTypeId();
 			complexBlock.data = currentBlock.getData();
 			
@@ -131,10 +133,7 @@ public class CraftMover {
 	public void restoreDataBlocks(int dx, int dy, int dz) {
 		Block block;
 		
-		for (DataBlock dataBlock : craft.dataBlocks) {
-			if(dataBlock.id == 63)
-				System.out.println("Hi");
-			
+		for (DataBlock dataBlock : craft.dataBlocks) {			
 			// this is a pop item, the block needs to be created
 			if (BlocksInfo.needsSupport(craft.matrix[dataBlock.x][dataBlock.y][dataBlock.z])) {
 				block = getWorldBlock(dx + dataBlock.x, dy + dataBlock.y, dz + dataBlock.z);
@@ -152,14 +151,17 @@ public class CraftMover {
 	}
 	
 	public void restoreComplexBlocks(int dx, int dy, int dz) {
+		Block theBlock;
+		Inventory inventory;
+		
 		for (DataBlock complexBlock : craft.complexBlocks) {
-			Block theBlock = getWorldBlock(dx + complexBlock.x,
+			theBlock = getWorldBlock(dx + complexBlock.x,
 					dy + complexBlock.y,
 					dz + complexBlock.z);
 			
 			theBlock.setData((byte) complexBlock.data);
 			
-			Inventory inventory = null;
+			inventory = null;
 
 			if (complexBlock.id == 63 || complexBlock.id == 68) {
 				MoveCraft.instance.DebugMessage("Restoring a sign.", 2);
@@ -314,8 +316,6 @@ public class CraftMover {
 		if(craft.type.canDig)
 			craft.waterLevel = craft.newWaterLevel;
 
-		//Server server = MoveCraft.instance.getServer();
-
 		ArrayList<Entity> checkEntities;
 
 		if (Math.abs(craft.speed * dy) > 1) {
@@ -324,40 +324,7 @@ public class CraftMover {
 				dy = (int) Math.signum(dy);
 		}
 
-		// scan to know if any of the craft blocks are now missing (blocks removed, TNT damage, creeper ?)
-		// and update the structure
-		for (int x = 0; x < craft.sizeX; x++) {
-			for (int y = 0; y < craft.sizeY; y++) {
-				for (int z = 0; z < craft.sizeZ; z++) {
-					int craftBlockId = craft.matrix[x][y][z];
-
-					// remove blocks from the structure if it is not there anymore
-					if (craftBlockId != -1 && craftBlockId != 0
-							&& !(craftBlockId >= 8 && craftBlockId <= 11)) {
-
-						//int blockId = world.getBlockAt(posX + x, posY + y, posZ + z).getTypeId();
-						int blockId = craft.world.getBlockAt(craft.minX + x, craft.minY + y, craft.minZ + z).getTypeId();
-
-						 // regenerate TNT on a bomber
-						if (craftBlockId == 46 && craft.type.bomber)
-							continue;
-
-						// block is not here anymore, remove it
-						if (blockId == 0 || blockId >= 8 && blockId <= 11) {
-							// air, water, or lava
-							if (craft.waterType != 0 && y <= craft.waterLevel)
-								craft.matrix[x][y][z] = 0;
-							else
-								craft.matrix[x][y][z] = -1; // make a hole in the craft
-
-							craft.blockCount--;
-							MoveCraft.instance.DebugMessage("Removing a block of craft.type " + craftBlockId + 
-									" because of craft.type " + blockId, 4);
-						}
-					}
-				}
-			}
-		}
+		structureUpdate();
 		
 		storeDataBlocks();
 		
@@ -366,59 +333,30 @@ public class CraftMover {
 		checkEntities = craft.getCraftEntities();
 
 		// first pass, remove all items that need a support
+		removeSupportBlocks();
+
+		short blockId;
+		Block block;
+		Block innerBlock;
+		
+		// second pass, the regular blocks				
 		for (int x = 0; x < craft.sizeX; x++) {
 			for (int z = 0; z < craft.sizeZ; z++) {
-				for (int y = craft.sizeY - 1; y >0; y--) {
-				//for (int y = 0; y < craft.sizeY; y++) {
-
-					short blockId = craft.matrix[x][y][z];
-
-					// craft block, replace by air
-					if (BlocksInfo.needsSupport(blockId)) {
-
-						//Block block = world.getBlockAt(posX + x, posY + y, posZ + z);
-						Block block = getWorldBlock(x, y, z);
-
-						// special case for doors
-						// we need to remove the lower part of the door only, or the door will pop
-						// lower part have data 0 - 7, upper part have data 8 - 15
-						if (blockId == 64 || blockId == 71) { // wooden door and steel door
-							if (block.getData() >= 8)
-								continue;
-						}
-						
-						if(blockId == 26) { //bed
-							if(block.getData() > 4)
-								continue;
-						}
-
-						setBlock(0, block);
-					}
-				}
-			}
-		}
-
-		// second pass, the regular blocks
-		for (int x = 0; x < craft.sizeX; x++) {
-			for (int z = 0; z < craft.sizeZ; z++) {
-				//for (int y = craft.sizeY - 1; y > -1; y--) {
 				for (int y = 0; y < craft.sizeY; y++) {
+					//for (int y = craft.sizeY - 1; y > -1; y--) {
 
-					short blockId = craft.matrix[x][y][z];
+					blockId = craft.matrix[x][y][z];
 
-					// if(blockId==8)
-					// System.out.println("water !");
+					block = getWorldBlock(x, y, z);
 
-					//Block block = world.getBlockAt(posX + x, posY + y, posZ + z);
-					Block block = getWorldBlock(x, y, z);
+					if (blockId == -1)
+						continue;
 
-					// craft block
-					if (blockId != -1) {
-
-						// old block postion (remove)
+						// old block position (remove)
 						if (x - dx >= 0 && y - dy >= 0 && z - dz >= 0
 								&& x - dx < craft.sizeX && y - dy < craft.sizeY
 								&& z - dz < craft.sizeZ) {
+							
 							// after moving, this location is not a craft block anymore
 							if (craft.matrix[x - dx][y - dy][z - dz] == -1
 									|| BlocksInfo.needsSupport(craft.matrix[x - dx][y - dy][z - dz])) {
@@ -429,12 +367,11 @@ public class CraftMover {
 								else
 									setBlock(craft.waterType, block);
 							}
-							// the back of the craft, remove
-						} else {
+						} else { // the back of the craft, remove
 							if (y > craft.waterLevel ||
 									!(craft.type.canNavigate || craft.type.canDive) ||
 									craft.type.canDig)
-								setBlock(0, block);
+								setBlock(0, block);		//the promised land!!!
 							else
 								setBlock(craft.waterType, block);
 						}
@@ -443,15 +380,14 @@ public class CraftMover {
 						if (!BlocksInfo.needsSupport(blockId)) {
 
 							//Block innerBlock = world.getBlockAt(posX + dx + x,posY + dy + y, posZ + dz + z);
-							Block innerBlock = getWorldBlock(dx + x, dy + y, dz + z);
+							innerBlock = getWorldBlock(dx + x, dy + y, dz + z);
 
 							//drop the item corresponding to the block if it is not a craft block
-							if(!craft.isCraftBlock(dx + x,dy + y, dz + z)){
+							if(!craft.isCraftBlock(dx + x,dy + y, dz + z)) {
 								MoveCraft.instance.dropItem(innerBlock);
 							}
 							
-							//A BREAKA THE DRILL BLOCKA
-							if(craft.type.digBlockDurability > 0) {
+							if(craft.type.digBlockDurability > 0) { //break drill bits
 								int blockDurability = block.getType().getMaxDurability();
 								int num = ( (new Random()).nextInt( Math.abs( blockDurability - 0 ) + 1 ) ) + 0;
 								
@@ -478,30 +414,14 @@ public class CraftMover {
 								setBlock(blockId, innerBlock);
 							}
 						}
-					}
 				}
 			}
 		}
 
 		restoreDataBlocks(dx, dy, dz);
 		restoreComplexBlocks(dx, dy, dz);
-
-		// restore items that need a support but are not data blocks
-		for (int x = 0; x < craft.sizeX; x++) {
-			for (int z = 0; z < craft.sizeZ; z++) {
-				for (int y = 0; y < craft.sizeY; y++) {
-
-					short blockId = craft.matrix[x][y][z];
-
-					if (BlocksInfo.needsSupport(blockId)
-							&& !BlocksInfo.isDataBlock(blockId)
-							&& !BlocksInfo.isComplexBlock(blockId)) {
-						//setBlock(blockId, world.getBlockAt(posX + dx + x, posY + dy + y, posZ + dz + z));
-						setBlock(blockId, getWorldBlock(dx + x, dy + y, dz + z));						
-					}
-				}
-			}
-		}
+		
+		restoreSupportBlocks(dx, dy, dz);
 		
 		for(Entity e : checkEntities) {
 			if(craft.isOnCraft(e, false)) {
@@ -547,6 +467,104 @@ public class CraftMover {
 			}
 		}
 
+	}
+
+	// scan to know if any of the craft blocks are now missing (blocks removed, TNT damage, creeper ?)
+	// and update the structure
+	public void structureUpdate() {
+		short craftBlockId;
+		int blockId;
+		
+		for (int x = 0; x < craft.sizeX; x++) {
+			for (int y = 0; y < craft.sizeY; y++) {
+				for (int z = 0; z < craft.sizeZ; z++) {
+					craftBlockId = craft.matrix[x][y][z];
+
+					// remove blocks from the structure if it is not there anymore
+					if (craftBlockId != -1 && craftBlockId != 0
+							&& !(craftBlockId >= 8 && craftBlockId <= 11)) {
+
+						//int blockId = world.getBlockAt(posX + x, posY + y, posZ + z).getTypeId();
+						blockId = craft.world.getBlockAt(craft.minX + x, craft.minY + y, craft.minZ + z).getTypeId();
+
+						 // regenerate TNT on a bomber
+						if (craftBlockId == 46 && craft.type.bomber)
+							continue;
+
+						// block is not here anymore, remove it
+						if (blockId == 0 || blockId >= 8 && blockId <= 11) {
+							// air, water, or lava
+							if (craft.waterType != 0 && y <= craft.waterLevel)
+								craft.matrix[x][y][z] = 0;
+							else
+								craft.matrix[x][y][z] = -1; // make a hole in the craft
+
+							craft.blockCount--;
+							MoveCraft.instance.DebugMessage("Removing a block of craft.type " + craftBlockId + 
+									" because of craft.type " + blockId, 4);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	public void removeSupportBlocks() {
+		short blockId;
+		Block block;
+		
+		for (int x = 0; x < craft.sizeX; x++) {
+			for (int z = 0; z < craft.sizeZ; z++) {
+				for (int y = craft.sizeY - 1; y > -1; y--) {
+				//for (int y = 0; y < craft.sizeY; y++) {
+
+					blockId = craft.matrix[x][y][z];
+
+					// craft block, replace by air
+					if (BlocksInfo.needsSupport(blockId)) {
+
+						//Block block = world.getBlockAt(posX + x, posY + y, posZ + z);
+						block = getWorldBlock(x, y, z);
+
+						// special case for doors
+						// we need to remove the lower part of the door only, or the door will pop
+						// lower part have data 0 - 7, upper part have data 8 - 15
+						if (blockId == 64 || blockId == 71) { // wooden door and steel door
+							if (block.getData() >= 8)
+								continue;
+						}
+						
+						if(blockId == 26) { //bed
+							if(block.getData() > 4)
+								continue;
+						}
+
+						setBlock(0, block);
+					}
+				}
+			}
+		}
+	}
+
+	// restore items that need a support but are not data blocks
+	public void restoreSupportBlocks(int dx, int dy, int dz) {
+		short blockId;
+
+		for (int x = 0; x < craft.sizeX; x++) {
+			for (int z = 0; z < craft.sizeZ; z++) {
+				for (int y = 0; y < craft.sizeY; y++) {
+
+					blockId = craft.matrix[x][y][z];
+
+					if (BlocksInfo.needsSupport(blockId)
+							&& !BlocksInfo.isDataBlock(blockId)
+							&& !BlocksInfo.isComplexBlock(blockId)) {
+						//setBlock(blockId, world.getBlockAt(posX + dx + x, posY + dy + y, posZ + dz + z));
+						setBlock(blockId, getWorldBlock(dx + x, dy + y, dz + z));						
+					}
+				}
+			}
+		}
 	}
 	
 	public void teleportPlayer(Entity p, int dx, int dy, int dz) {
