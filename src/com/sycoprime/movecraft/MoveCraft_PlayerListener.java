@@ -242,11 +242,11 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				if(dx != 0)
 					rotation = dx * 90;
 				else
-					rotation = dz * 180;
-				
-				player.sendMessage("Craft rotation is " + craft.rotation + ". Player rotation is " + rotation);				
+					rotation = dz * 180;		
 
 				rotation = player.getLocation().getYaw();
+				if(rotation < 0)
+					rotation = 360 + rotation;
 				if(rotation > 45 && rotation < 135)
 					rotation = 90;
 				else if(rotation > 135 && rotation < 225)
@@ -256,8 +256,8 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				else
 					rotation = 0;
 				
-				player.sendMessage("Craft rotation is " + craft.rotation + ". Player rotation is " + rotation + 
-						"Difference is " + (craft.rotation - rotation));
+				//player.sendMessage("Craft rotation is " + craft.rotation + ". Player rotation is " + rotation + 
+						//"Difference is " + (rotation - craft.rotation));
 
 				// we are on a flying object, handle height change
 				if (craft.type.canFly || craft.type.canDive || craft.type.canDig) {
@@ -274,14 +274,16 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					}
 				}
 				
-				if(rotation != craft.rotation && dy == 0) {
-					player.sendMessage("I want to turn sooooo bad...");
-				}
+				int dr = (int)rotation - craft.rotation;
+				if(dr < 0)
+					dr = 360 + dr;
+				if(dr > 360)
+					dr = dr - 360;
 				
-				//if(rotation != craft.rotation && dy == 0) {
-					//CraftRotator cr = new CraftRotator(craft);
-					//cr.turn((int)rotation - craft.rotation);
-				{//} else {
+				if(dr != 0 && dy == 0) {
+					CraftRotator cr = new CraftRotator(craft);
+					cr.turn(dr);
+				} else {
 					CraftMover cm = new CraftMover(craft);
 					cm.calculatedMove(dx, dy, dz);
 				}
@@ -407,7 +409,8 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					}
 				} else if (split[1].equalsIgnoreCase("reload")) {
 					MoveCraft.instance.loadProperties();
-					player.sendMessage(ChatColor.YELLOW + "configuration reloaded");
+					player.sendMessage(ChatColor.YELLOW + "MoveCraft configuration reloaded");
+					event.setCancelled(true);
 					return;
 				} else if (split[1].equalsIgnoreCase("debug")) {
 					MoveCraft.instance.ToggleDebug();
