@@ -442,7 +442,7 @@ public class CraftBuilder {
 		int BlockData = craft.world.getBlockAt(x, y, z).getData();
 
 		//check for fobidden blocks
-		if(craft.type.forbiddenBlocks != null && craft.type.forbiddenBlocks.length > 0) {
+		if(craft.type.forbiddenBlocks != null && craft.type.forbiddenBlocks.length > 0 && waitStopMakingThatCraft == false) {
 			for(int i = 0; i < craft.type.forbiddenBlocks.length; i++) {
 				if(blockType == craft.type.forbiddenBlocks[i]) {
 					craft.player.sendMessage("Forbidden block of type " + Material.getMaterial(blockType) + " found. " + 
