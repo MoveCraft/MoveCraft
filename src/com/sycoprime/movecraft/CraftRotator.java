@@ -217,7 +217,7 @@ public class CraftRotator {
 		return true;
 	}	
 
-	public void turn(int dr){
+	public void turn(int dr) {
 		if(dr < 0)
 			dr = 360 - Math.abs(dr);
 		while(dr > 359)
@@ -279,16 +279,20 @@ public class CraftRotator {
 				double xDist = xDists.get(e);
 				double zDist = zDists.get(e);
 				
-				//double x = craft.minX + (xDist * Math.cos(dr) - zDist * Math.sin(dr));
-		        //double z = craft.minZ + (xDist * Math.sin(dr) + zDist * Math.cos(dr));
-				
 				MoveCraft.instance.DebugMessage("Dists are " + xDist + ", " + zDist, 1);
-				MoveCraft.instance.DebugMessage("Rotated dists are " + rotateX(xDist, zDist, dr) + 
-						", " + rotateZ(xDist, zDist, dr), 1);
+				//MoveCraft.instance.DebugMessage("Rotated dists are " + rotateX(xDist, zDist, dr) + 
+						//", " + rotateZ(xDist, zDist, dr), 1);
 				
 				//player is always displaced from the craft minimum by positive numbers
 				double x = craft.minX + Math.abs(rotateX(xDist, zDist, dr));
 				double z = craft.minZ + Math.abs(rotateZ(xDist, zDist, dr));
+		        
+		        MoveCraft.instance.DebugMessage("Rotated dists are " + x + ", " + z, 1);
+				
+				//x = craft.minX + (xDist * Math.cos(dr) - zDist * Math.sin(dr));
+		        //z = craft.minZ + (xDist * Math.sin(dr) + zDist * Math.cos(dr));
+		        
+		        MoveCraft.instance.DebugMessage("Rotated dists are " + x + ", " + z, 1);
 				
 				//MoveCraft.instance.DebugMessage("Putting " + p.getName() + " " + rotateX(xDist, zDist, dr) + 
 						//"," + rotateZ(xDist, zDist, dr) + " from center.");
@@ -296,12 +300,18 @@ public class CraftRotator {
 
 				pLoc.setX(x);
 				pLoc.setZ(z);
-				pLoc.setYaw(pLoc.getYaw() + dr);
+				if(e != craft.player)
+					pLoc.setYaw(pLoc.getYaw() + dr);
 				//tpTarget.setPitch(tpTarget.getPitch());
 				
 				e.teleport(pLoc);
 		}
-
+		
+		craft.rotation += dr;
+		if(craft.rotation > 360)
+			craft.rotation -= 360;
+		else if(craft.rotation < 0)
+			craft.rotation = 360 - Math.abs(craft.rotation);
 	}
 
 	public void moveBlocks(int dx, int dy, int dz, int dr){
@@ -325,15 +335,12 @@ public class CraftRotator {
 		}
 
 		//new matrix
-		short newMatrix[][][] = new short[newSizeX]
-		                                  [craft.sizeY]
-		                                   [newSizeZ];
+		short newMatrix[][][] = new short[newSizeX][craft.sizeY][newSizeZ];
 		
 		//store data blocks
 		cm.storeDataBlocks();
 		cm.storeComplexBlocks();
-		//ArrayList<DataBlock> unMovedDataBlocks = craft.dataBlocks;
-		//ArrayList<DataBlock> unMovedComplexBlocks = craft.complexBlocks;
+		
 		ArrayList<DataBlock> unMovedDataBlocks = new ArrayList<DataBlock>();
 		ArrayList<DataBlock> unMovedComplexBlocks = new ArrayList<DataBlock>();
 		
@@ -398,16 +405,18 @@ public class CraftRotator {
 			}
 		}
 		
+		int blockId;
+		Block block;
+		
 		//remove blocks that need support first
 		for(int x=0;x<craft.sizeX;x++){
 			for(int z=0;z<craft.sizeZ;z++){
 				for(int y=0;y<craft.sizeY;y++){
 					if(craft.matrix[x][y][z] != -1){
-						int blockId = craft.matrix[x][y][z];	
-						Block block = craft.world.getBlockAt(craft.minX + x, craft.minY + y, craft.minZ + z);
+						blockId = craft.matrix[x][y][z];	
+						block = craft.world.getBlockAt(craft.minX + x, craft.minY + y, craft.minZ + z);
 						
-						if(BlocksInfo.needsSupport(blockId)) {
-							
+						if(BlocksInfo.needsSupport(blockId)) {							
 							if (blockId == 64 || blockId == 71) { // wooden door and steel door						
 								if (block.getData() >= 8) {
 								//if(belowBlock.getTypeId() == 64 || belowBlock.getTypeId() == 71) {
@@ -415,9 +424,9 @@ public class CraftRotator {
 								}
 							}
 							
-							if(blockId == 26) { //bed
-								if(block.getData() > 4)
-									continue;
+							if(blockId == 26 && block.getData() > 4) { //bed
+								continue;
+								//if(block.getData() > 4)
 							}
 							
 							setBlock(0, craft.minX + x, craft.minY + y, craft.minZ + z);
@@ -518,7 +527,7 @@ public class CraftRotator {
 		for(int x=0;x<craft.sizeX;x++){
 			for(int y=0;y<craft.sizeY;y++){
 				for(int z=0;z<craft.sizeZ;z++){
-					short blockId = newMatrix[x][y][z];
+					blockId = newMatrix[x][y][z];
 
 					if(blockId != -1 
 							&& !BlocksInfo.needsSupport(blockId))
@@ -531,7 +540,7 @@ public class CraftRotator {
 		for(int x=0;x<craft.sizeX;x++){
 			for(int y=0;y<craft.sizeY;y++){
 				for(int z=0;z<craft.sizeZ;z++){
-					short blockId = newMatrix[x][y][z];
+					blockId = newMatrix[x][y][z];
 
 					if (BlocksInfo.needsSupport(blockId)
 							&& !BlocksInfo.isDataBlock(blockId)) {
@@ -562,7 +571,10 @@ public class CraftRotator {
 					continue;				
 			}
 			
-			cardinals = Arrays.copyOf(BlocksInfo.getCardinals(blockId), 4);
+			if(BlocksInfo.getCardinals(blockId) != null)
+				cardinals = Arrays.copyOf(BlocksInfo.getCardinals(blockId), 4);
+			else
+				cardinals = null;
 			
 			if(blockId == 63) {	//sign post
 				dataBlock.data = (dataBlock.data + 4) % 16;
