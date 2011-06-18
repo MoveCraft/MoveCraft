@@ -71,13 +71,12 @@ public class CraftType {
 		
 		if(MoveCraft.instance.ConfigSetting("ForbiddenBlocks") != "null") {
 			bob = MoveCraft.instance.ConfigSetting("ForbiddenBlocks").split(",");
-			juan = new short[bob.length + 1];
+			juan = new short[bob.length];
 			for(int i = 0; i < bob.length; i++) {
 				try {
 					juan[i] = Short.parseShort(bob[i]);
 				}
 				catch (Exception ex){
-			
 				}
 			}
 			if(juan != null && juan.length > 0 && juan[0] != 0)
