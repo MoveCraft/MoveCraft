@@ -174,8 +174,7 @@ public class MoveCraft extends JavaPlugin {
 		}
 	}
 
-	public void dropItem(Block block){
-		
+	public void dropItem(Block block) {		
 		if(MoveCraft.instance.ConfigSetting("HungryHungryDrill").equalsIgnoreCase("true"))
 			return;
 
