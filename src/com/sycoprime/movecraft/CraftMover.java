@@ -13,6 +13,7 @@ import org.bukkit.block.Furnace;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import com.sycoprime.movecraft.events.MoveCraftMoveEvent;
@@ -112,6 +113,7 @@ public class CraftMover {
 			}
 			
 			if(inventory != null) {
+				complexBlock.items = new ItemStack[27];
 				MoveCraft.instance.DebugMessage("Inventory is " + inventory.getSize(), 4);
 				for(int slot = 0; slot < inventory.getSize(); slot++) {
 					if(inventory.getItem(slot).getTypeId() != 0 && inventory.getItem(slot) != null) {
@@ -120,7 +122,7 @@ public class CraftMover {
 						//inventory.setItem(slot, new ItemStack(0));
 
 						MoveCraft.instance.DebugMessage("Inventory has " + inventory.getItem(slot).getAmount() + 
-								" inventory item of craft.type " + inventory.getItem(slot).getTypeId() + 
+								" inventory item of type " + inventory.getItem(slot).getTypeId() + 
 								" in slot " + slot, 4);
 						
 						inventory.setItem(slot, null);
@@ -187,14 +189,13 @@ public class CraftMover {
 				inventory = furnace.getInventory();				
 			}
 
-			//https://github.com/Afforess/MinecartMania/blob/master/src/com/afforess/minecartmaniacore/MinecartManiaChest.java
 			//restore the block's inventory
 			if (inventory != null) {
 				for(int slot = 0; slot < inventory.getSize(); slot++) {
 					if(complexBlock.items[slot] != null && complexBlock.items[slot].getTypeId() != 0) {
 						inventory.setItem(slot, complexBlock.items[slot]);
 						MoveCraft.instance.DebugMessage("Moving " + complexBlock.items[slot].getAmount() + 
-								" inventory item of craft.type " + complexBlock.items[slot].getTypeId() + 
+								" inventory item of type " + complexBlock.items[slot].getTypeId() + 
 								" in slot " + slot, 4);
 					}
 				}			
