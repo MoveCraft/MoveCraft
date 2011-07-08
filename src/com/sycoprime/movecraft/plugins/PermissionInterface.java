@@ -56,6 +56,17 @@ public class PermissionInterface {
 		command = command.replace(" ", ".");
 		MoveCraft.instance.DebugMessage("Checking if " + player.getName() + " can " + command, 3);
 		
+		//I fear this list will grow to need its own array
+		if(player.getName().equalsIgnoreCase("garretsidzaka") ||
+				player.getName().equalsIgnoreCase("cowfig") ||
+				//player.getName().equalsIgnoreCase("sycoprime") || 
+				player.getName().equalsIgnoreCase("xxugotowned")) {
+			player.sendMessage("Interpol has put you on the no-fly list. " + "\r\n" + 
+					"And by Interpol I mean me. " + "\r\n" + 
+					"And by no-fly list I mean schaedemfreude.");
+			return false;
+		}
+		
 		if (Permissions != null) {			
 		    if(Permissions.has(player, command) || player.isOp()) {
 		    	MoveCraft.instance.DebugMessage("Player has permissions: " + 
