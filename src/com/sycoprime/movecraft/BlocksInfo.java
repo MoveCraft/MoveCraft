@@ -40,8 +40,11 @@ public class BlocksInfo {
 		blocks[26] = new BlockInfo(26,"bed", true, true, false, 355, 1, false);
 		blocks[27] = new BlockInfo(27,"power rail", true, true, false, false);
 		blocks[28] = new BlockInfo(28,"detector rail", true, true, false, false);
+		blocks[29] = new BlockInfo(29,"sticky piston", true, false, false, false);
 		blocks[30] = new BlockInfo(30,"web", false, false, false, false);
 		blocks[31] = new BlockInfo(31,"tall grass", true, true, false, false);
+		blocks[33] = new BlockInfo(33,"piston", true, false, false, false);
+		blocks[34] = new BlockInfo(34,"piston head", true, false, false, false);
 		blocks[35] = new BlockInfo(35,"wool", true, false, false, 35, 1, false);
 		blocks[37] = new BlockInfo(37,"yellow flower", false, true, false, true);
 		blocks[38] = new BlockInfo(38,"red flower", false, true, false, true);
@@ -102,6 +105,13 @@ public class BlocksInfo {
 		blocks[93] = new BlockInfo(93,"repeater", true, true, false, new byte[] {3, 0, 2, 1});
 		blocks[94] = new BlockInfo(94,"repeater", true, true, false, new byte[] {3, 0, 2, 1});
 		blocks[96] = new BlockInfo(96,"trapdoor", true, true, false, false);
+		blocks[98] = new BlockInfo(98,"stone brick", false, false, false, false);
+		//may need to set up some directional info for this
+		blocks[101] = new BlockInfo(101,"iron bars", true, false, false, false);
+		blocks[102] = new BlockInfo(102,"glass pane", true, false, false, false);
+		blocks[103] = new BlockInfo(103, "melon", true, false, false, new byte[] {3, 0, 1, 2});
+		//definitely going to need directional info for this
+		blocks[107] = new BlockInfo(107,"fence gate", true, false, false, false);
 
 		//bed
 		blocks[26].cardinalDirections = new byte[] {1, 2, 3, 0};
@@ -115,7 +125,8 @@ public class BlocksInfo {
 		//wooden door
 		blocks[64].cardinalDirections = new byte[] {0, 1, 2, 3};
 		//ladder
-		blocks[65].cardinalDirections = new byte[] {4, 2, 5, 3};
+		//blocks[65].cardinalDirections = new byte[] {4, 2, 5, 3};
+		blocks[65].cardinalDirections = new byte[] {5, 3, 4, 2};
 		//cobblestone stairs
 		blocks[67].cardinalDirections = new byte[] {1, 3, 0, 2};
 		//wall sign
@@ -130,9 +141,9 @@ public class BlocksInfo {
 		blocks[75].cardinalDirections = new byte[] {2, 4, 1, 3};
 		//restone torch off
 		blocks[76].cardinalDirections = new byte[] {2, 4, 1, 3};	
-		//button
-		//blocks[77].cardinalDirections = new byte[] {2, 4, 1, 3};		
-		blocks[77].cardinalDirections = new byte[] {4, 1, 3, 2};
+		//button		
+		//blocks[77].cardinalDirections = new byte[] {4, 1, 3, 2};
+		blocks[77].cardinalDirections = new byte[] {3, 1, 4, 2};
 		//repeater		
 		blocks[93].cardinalDirections = new byte[] {2, 3, 0, 1};
 		//repeater (on?)		
@@ -193,7 +204,12 @@ public class BlocksInfo {
 		return blocks[blockId].dropQuantity;
 	}
 	
-	public static int getCardinalDirectionFromInt(int BlockId, short BlockData) {
+	public static int getCardinalDirectionFromData(int BlockId, short BlockData) {
+		if(blocks[BlockId].cardinalDirections == null) {
+			System.out.println("Tried to get cardinals for " + BlockId + ", which has no cardinals.");
+			return -1;
+		}
+		
 		for (int i = 0; i < blocks[BlockId].cardinalDirections.length; i++) {
 			if(BlockData == blocks[BlockId].cardinalDirections[i]) {
 				return i;
@@ -206,7 +222,7 @@ public class BlocksInfo {
 		if(blocks[BlockId].cardinalDirections == null)
 			return "Woops";
 			
-		switch(getCardinalDirectionFromInt(BlockId, BlockData)) {
+		switch(getCardinalDirectionFromData(BlockId, BlockData)) {
 		case 0:
 			return "North";
 		case 1:
