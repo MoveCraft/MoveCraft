@@ -2,7 +2,6 @@ package com.sycoprime.movecraft;
 
 import java.util.ArrayList;
 
-import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -37,6 +36,8 @@ public class Craft {
 	//convert to LinkedList for preformance boost?
 	ArrayList<DataBlock> complexBlocks = new ArrayList<DataBlock>();
 	//ArrayList<ArrayList<String>> signLines = new ArrayList<ArrayList<String>>();
+	
+	short displacedBlocks[][][];
 
 	// size of the craft
 	int sizeX, sizeZ, sizeY = 0;
@@ -360,11 +361,6 @@ public class Craft {
 			}
 		}
 
-		if(type.canDig)
-			newWaterLevel = -1;
-		else
-			newWaterLevel = waterLevel;
-
 		// check all blocks can move
 		for (int x = 0; x < sizeX; x++) {
 			for (int z = 0; z < sizeZ; z++) {
@@ -509,59 +505,106 @@ public class Craft {
 	}
 
 	public void engineTick() {
+		//CraftMover cm = new CraftMover(this);
 		int dx = 0;
 		int dy = 0;
 		int dz = 0;
+		int[] returnVals = new int[3]; 
 		
 		if (type.obeysGravity)
 			dy -= 1;
 		
+		//later these will be config options
+		//returnVals = enginesByEngineFace(cm);
+		returnVals = enginesByPlayerFacing(player, engineBlocks.size());
+		dx = returnVals[0];
+		dy = returnVals[1];
+		dz = returnVals[2];
+		
+		if(dx != 0 || dy != 0 || dz != 0) {
+			//cm.calculatedMove(dx, dy, dz);
+		}
+	}
+	
+	public int[] enginesByEngineFace(CraftMover cm) {
+		int dx = 0, dy = 0, dz = 0;
+		
 		for (DataBlock edb : engineBlocks) {
-			Block engineBlock = world.getBlockAt(this.minX + edb.x, this.minY + edb.y, this.minZ + edb.z);
+			//Block engineBlock = world.getBlockAt(this.minX + edb.x, this.minY + edb.y, this.minZ + edb.z);
+			Block engineBlock = cm.getWorldBlock(edb.x, edb.y, edb.z);
 			Block underBlock = world.getBlockAt(engineBlock.getX(), engineBlock.getY() - 1, engineBlock.getZ());			
-			Sign sign = (Sign) engineBlock.getState();
+			//Sign sign = (Sign) engineBlock.getState();
+			
+			if(engineBlock.getBlockPower() != 0) {
+				//System.out.println("Powered engine.");
+			} else {
+				//System.out.println("Unpowered engine.");
+			}
+			
+			//0,1,2,3
+			//north, east, west, south
+			
+			//north is dx - 1
+			//south is dx + 1
+			//east is dz - 1
+			//west is dz + 1
+			
+			int engineDirection = BlocksInfo.getCardinalDirectionFromData(engineBlock.getTypeId(), engineBlock.getData());
+			switch(engineDirection) {
+			case 0:
+				dx -= 1;
+				break;
+			case 1:
+				dz -= 1;
+				break;
+			case 2:
+				dz += 1;
+				break;
+			case 3:
+				dx += 1;
+				break;
+			}
 			
 			if(underBlock.getType() == Material.REDSTONE_WIRE && underBlock.getData() != 0) {
 			//if(engineBlock.isBlockPowered()) {
-
-				switch(engineBlock.getData()) {
-				case 4:
-					System.out.println("NORTH FACING ENGINE");
-					dx += 1;
-					break;
-				case 5:
-					System.out.println("SOUTH FACING ENGINE");
-					dx -= 1;
-					break;
-				case 2:
-					System.out.println("EAST FACING ENGINE");
-					dz += 1;
-					break;
-				case 3:
-					System.out.println("WEST FACING ENGINE");
-					dz -= 1;
-					break;
-				}
+				/*
 				sign.setLine(0, ChatColor.YELLOW + "OOOO");
 				sign.setLine(1, ChatColor.YELLOW + "OO" + ChatColor.RED + "OO" + ChatColor.YELLOW + "OO");
 				sign.setLine(2, ChatColor.YELLOW + "OO" + ChatColor.RED + "OO" + ChatColor.YELLOW + "OO");
 				sign.setLine(3, ChatColor.YELLOW + "OOOO");
+				*/
 			}
 			else
 			{
+				/*
 				sign.setLine(0, "OOOO");
 				sign.setLine(1, "OOOOOO");
 				sign.setLine(2, "OOOOOO");
 				sign.setLine(3, "OOOO");
+				*/
 			}
 		}
-		if(dx != 0 || dy != 0 || dz != 0) {
-			CraftMover cm = new CraftMover(this);
-			cm.calculatedMove(dx, dy, dz);
-		}
+		
+		return new int[] {dx, dy, dz};
+	}
+	
+	public int[] enginesByPlayerFacing(Player player, int engineCount) {
+		float rotation = (float) Math.PI * player.getLocation().getYaw() / 180f;
+
+		float nx = -(float) Math.sin(rotation);
+		float nz = (float) Math.cos(rotation);
+		
+		int[] returnVals = new int[3];
+		
+		returnVals[0] = engineCount * (Math.abs(nx) >= 0.5 ? 1 : 0) * (int) Math.signum(nx);
+		returnVals[1] = engineCount * (Math.abs(nz) > 0.5 ? 1 : 0) * (int) Math.signum(nz);
+		returnVals[2] = 0;
+		
+		return returnVals;
 	}
 	
 	public boolean addWayPoint(Location loc) {
+		/*
 			if(WayPoints.size() != 0) {
 				Location lastWP = WayPoints.get(WayPoints.size() - 1);
 				int matches = 0;
@@ -576,6 +619,7 @@ public class Craft {
 				if(matches != 2)
 					return false;
 			}
+			*/
 			WayPoints.add(loc);
 		return true;
 	}
@@ -605,7 +649,26 @@ public class Craft {
 	}
 	
 	public void WarpToWorld(World targetWorld) {
+		World oldWorld = this.world;
+		CraftMover cm = new CraftMover(this);
 		
+		//assemble the craft in the new world
+		this.world = targetWorld;
+		
+		cm.move(0, 0, 0);
+		
+		this.world = oldWorld;
+
+		for (int x = 0; x < sizeX; x++) {
+			for (int z = 0; z < sizeZ; z++) {
+				for (int y = 0; y < sizeY; y++) {
+					Block theBlock = cm.getWorldBlock(x, y, z);
+					theBlock.setTypeId(0);
+				}
+			}
+		}
+
+		this.world = targetWorld;
 	}
 	
 	public void SelfDestruct(boolean justTheTip) {

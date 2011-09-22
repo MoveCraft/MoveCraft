@@ -27,7 +27,8 @@ public class ConfigFile {
 		ConfigSettings.put("EngineBlockId", "61");
 		ConfigSettings.put("HungryHungryDrill", "false");
 		ConfigSettings.put("WriteDefaultCraft", "true");
-		ConfigSettings.put("ForbiddenBlocks", "null");		
+		ConfigSettings.put("ForbiddenBlocks", "null");
+		ConfigSettings.put("DisableHyperSpaceField", "false");		
 		
 		ConfigComments.put("CraftReleaseDelay", "<Number:15> The amount of time between when a user exists a craft and when" +
 				" the craft automatically releases.");
@@ -50,6 +51,7 @@ public class ConfigFile {
 		ConfigComments.put("WriteDefaultCraft", "Whether or not to create the default craft type files on plugin enable.");
 		ConfigComments.put("ForbiddenBlocks", "Blocks that prevent craft from being created if they are anywhere in the craft" + 
 				" leave 'null' for none.");
+		ConfigComments.put("DisableHyperSpaceField", "Prevents the hyperspace field blocks from appearing.");
 				
 		MoveCraft.instance.configFile = this;
 		

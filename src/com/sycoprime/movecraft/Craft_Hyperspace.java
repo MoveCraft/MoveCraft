@@ -8,6 +8,7 @@ import org.bukkit.block.Block;
 public class Craft_Hyperspace {	
 	//Craft-based functions relating specifically to hyperspace
 	public static ArrayList<Block> hyperspaceBlocks = new ArrayList<Block>();
+	public static Material hyperSpaceBlock = Material.PORTAL;
 	
 	public static void enterHyperSpace(Craft craft) {
 		//surround the craft with portal blocks
@@ -56,7 +57,7 @@ public class Craft_Hyperspace {
 	public static void setBlock(Block block, Boolean fieldOn) {		
 		if(fieldOn) {
 			hyperspaceBlocks.add(block);
-			block.setType(Material.PORTAL);
+			block.setType(hyperSpaceBlock);
 		}
 		else {
 			hyperspaceBlocks.remove(block);
@@ -66,6 +67,10 @@ public class Craft_Hyperspace {
 	}
 	
 	public static void surroundCraft(Craft craft, Boolean fieldOn) {
+		if(MoveCraft.instance.ConfigSetting("DisableHyperSpaceField").equalsIgnoreCase("true")) {
+			return;
+		}
+		
 		Block fieldBlock;
 		int bufferAmount = 2;
 		

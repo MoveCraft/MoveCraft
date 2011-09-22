@@ -85,13 +85,13 @@ public class CraftBuilder {
 		if(type==null){
 			yRow.put(new Integer(z), new Short(blockType));
 		}
-
 	}
 
 	private static void detectWater(int x, int y, int z){
+		if(craft.isCraftBlock(x, y, z)) return;
 		//craft block
-		if(x >= 0 && x < craft.sizeX && y >= 0 && y < craft.sizeY && z >= 0 && z < craft.sizeZ &&
-				craft.matrix[x][y][z] != -1) return;
+		//if(x >= 0 && x < craft.sizeX && y >= 0 && y < craft.sizeY && z >= 0 && z < craft.sizeZ &&
+				//craft.matrix[x][y][z] != -1) return;
 
 		//Block theBlock = craft.world.getBlockAt(craft.posX + x, craft.posY + y, craft.posZ + z);
 		Block theBlock = craft.world.getBlockAt(craft.minX + x, craft.minY + y, craft.minZ + z);
@@ -215,7 +215,6 @@ public class CraftBuilder {
 	//second pass detection, we have the craft blocks, now we go from bottom to top,
 	//add all missing blocks, detect water level
 	private static boolean secondPassDetection(){
-
 		//boolean needWaterDetection = false;
 
 		for(int x=0; x<craft.sizeX; x++){
@@ -243,6 +242,10 @@ public class CraftBuilder {
 						if(BlocksInfo.isComplexBlock(blockId)){
 							addComplexBlock(blockId, craft.minX + x, craft.minY + y, craft.minZ + z);
 							craft.findFuel(block);
+						}
+						
+						if(craft.type.engineBlockId != 0 && blockId == craft.type.engineBlockId) {
+							addEngineBlock(blockId, craft.minX + x, craft.minY + y, craft.minZ + z);
 						}
 
 						//there is a problem with ice that spawn a source block, we can't have ice
@@ -389,6 +392,7 @@ public class CraftBuilder {
 	private static void createMatrix(){
 
 		craft.matrix = new short[craft.sizeX][craft.sizeY][craft.sizeZ];
+		craft.displacedBlocks = new short[craft.matrix[0].length + 1][craft.matrix[1].length + 1][craft.matrix[2].length + 1];
 		craft.dataBlocks = new ArrayList<DataBlock>();
 		craft.complexBlocks = new ArrayList<DataBlock>();
 
@@ -413,17 +417,12 @@ public class CraftBuilder {
 
 					craft.matrix[x - craft.minX][y - craft.minY][z - craft.minZ] = blockId;
 
-					if(BlocksInfo.isDataBlock(blockId)){
-						addDataBlock(blockId, x, y, z);
-					}
-					if(BlocksInfo.isComplexBlock(blockId)){
-						addComplexBlock(blockId, x, y, z);
-						//addDataBlock(world, x, y, z);
-					}
-					if(craft.type.engineBlockId != 0 && blockId == craft.type.engineBlockId) {
-						addEngineBlock(blockId, x, y, z);
-					}
-
+	                   if(BlocksInfo.isDataBlock(blockId)){
+	                        addDataBlock(blockId, x, y, z);
+	                   }
+	                   if(BlocksInfo.isComplexBlock(blockId)){
+	                        addComplexBlock(blockId, x, y, z);
+	                   }
 				}
 			}
 		}
@@ -532,8 +531,8 @@ public class CraftBuilder {
 
 		//record block type at this location
 		set(blockType, x, y, z);
-
 		craft.blockCount++;
+		
 		if(craft.blockCount > craft.type.maxBlocks){
 			return;
 		}

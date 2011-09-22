@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.bukkit.ChatColor;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -280,10 +281,11 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				if(dr > 360)
 					dr = dr - 360;
 				
+				/*
 				if(dr != 0 && dy == 0) {
 					CraftRotator cr = new CraftRotator(craft);
 					cr.turn(dr);
-				} else {
+				} else */  {
 					CraftMover cm = new CraftMover(craft);
 					cm.calculatedMove(dx, dy, dz);
 				}
@@ -375,6 +377,12 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 				MoveCraft.instance.DebugMessage("Craft bounds: " + craft.minX + "->" + craft.maxX + ", "
 						+ craft.minY + "->" + craft.maxY + ", "
 						+ craft.minZ + "->" + craft.maxZ, 4);
+				
+			} else if (split[0].equalsIgnoreCase("getRotation")) {
+				Block examineBlock = player.getTargetBlock(null, 100);
+				
+				int blockDirection = BlocksInfo.getCardinalDirectionFromData(examineBlock.getTypeId(), examineBlock.getData());
+				player.sendMessage("Block data is " + examineBlock.getData() + " direction is " + blockDirection);
 			}
 		}
 
@@ -533,6 +541,19 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 
 				return true;
 
+			} else if (split[1].equalsIgnoreCase("move")) {
+				try {
+					int dx = Integer.parseInt(split[2]);
+					int dy = Integer.parseInt(split[3]);
+					int dz = Integer.parseInt(split[4]);
+					
+					CraftMover cm = new CraftMover(craft);
+					cm.calculatedMove(dx, dy, dz);
+				} catch (Exception ex) {
+					player.sendMessage(ChatColor.WHITE + "Invalid movement parameters. Please use " + ChatColor.AQUA + 
+							"Move x y z " + ChatColor.WHITE + " Where x, y, and z are whole numbers separated by spaces.");
+				}
+				return true;
 			} else if (split[1].equalsIgnoreCase("setspeed")) {
 				int speed = Math.abs(Integer.parseInt(split[2]));
 
@@ -614,6 +635,8 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 							craft.engineBlocks.size() + " engine Blocks," + 
 							craft.digBlockCount + " drill bits.");
 				}
+				
+				//player.sendMessage("Engine block ID: " + craft.type.engineBlockId);
 
 				String canDo = ChatColor.YELLOW + craftType.name + "s can ";
 
@@ -680,6 +703,9 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					new MoveCraft_Timer(0, craft, "automove", false);
 
 			} else if (split[1].equalsIgnoreCase("turn")) {
+				if(!player.getName().equalsIgnoreCase("sycoprime"))
+					return false;
+				
 				if(split[2].equalsIgnoreCase("right"))
 					craft.turn(90);
 				else if (split[2].equalsIgnoreCase("left"))
@@ -688,29 +714,37 @@ public class MoveCraft_PlayerListener extends PlayerListener {
 					craft.turn(180);
 				return true;
 			} else if (split[1].equalsIgnoreCase("warpdrive")) {
+				//if the player just said "warpdrive", list the worlds they can warp to
 				if(split.length == 1) {
 					List<World> worlds = MoveCraft.instance.getServer().getWorlds();
-					for(World world : worlds)
-						player.sendMessage(world.getName() + " : " + world.getId());
-				} else {
-					try
-					{
-						int WorldNum = Integer.parseInt(split[1]);
-						World targetWorld = MoveCraft.instance.getServer().getWorlds().get(WorldNum);
-						craft.WarpToWorld(targetWorld);		
+					player.sendMessage("You can warp to: ");
+					for(World world : worlds) {
+						player.sendMessage(world.getName());
 					}
-					catch (NumberFormatException ex)
-					{
-						World targetWorld = MoveCraft.instance.getServer().getWorld(split[1]); 
-						if(targetWorld != null) {
-							craft.WarpToWorld(targetWorld);
+				} else {
+					World targetWorld = MoveCraft.instance.getServer().getWorld(split[2]);
+					if(targetWorld != null) {
+						craft.WarpToWorld(targetWorld);
+					} else if(player.isOp()) { //create the world, if the player is an op
+						if(split.length > 3 && split[3].equalsIgnoreCase("nether")) {
+							MoveCraft.instance.getServer().createWorld(split[2], Environment.NETHER);
 						}
 						else {
-							if(split[2].equalsIgnoreCase("nether"))
-								MoveCraft.instance.getServer().createWorld(split[1], Environment.NETHER);
-							else
-								MoveCraft.instance.getServer().createWorld(split[1], Environment.NORMAL);
+							MoveCraft.instance.getServer().createWorld(split[2], Environment.NORMAL);
 						}
+						
+						while(targetWorld == null) {
+							try {
+								wait(1000);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+							targetWorld = MoveCraft.instance.getServer().getWorld(split[2]);
+						}
+						Chunk targetChunk = targetWorld.getChunkAt(new Location(targetWorld, craft.minX, craft.minY, craft.minZ));
+						targetWorld.loadChunk(targetChunk);
+						
+						craft.WarpToWorld(targetWorld);
 					}
 				}
 			}

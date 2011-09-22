@@ -1,6 +1,9 @@
 package com.sycoprime.movecraft;
 
+import java.util.ArrayList;
+
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.block.*;
 import org.bukkit.entity.Player;
 
@@ -8,6 +11,7 @@ import org.bukkit.block.Sign;
 import org.bukkit.event.block.BlockListener;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.block.SignChangeEvent;
 
 import com.sycoprime.movecraft.plugins.PermissionInterface;
@@ -74,6 +78,8 @@ public class MoveCraft_BlockListener extends BlockListener {
 				}
 			 */
 
+			//need to update this so that partial player names work
+			//will do so when Bukkit permissions are implemented
 			String restriction = sign.getLine(2).trim();
 			if(!restriction.equals("") && restriction != null) {
 				if(restriction != "public" && restriction != player.getName()) {
@@ -93,7 +99,7 @@ public class MoveCraft_BlockListener extends BlockListener {
 
 			int direction = block.getData();
 
-			//get the block the sign is attached to (not rly needed lol)
+			//get the block the sign is attached to
 			x = x + (direction == 4 ? 1 : (direction == 5 ? -1 : 0));
 			z = z + (direction == 2 ? 1 : (direction == 3 ? -1 : 0));
 
@@ -120,6 +126,25 @@ public class MoveCraft_BlockListener extends BlockListener {
 			}
 			Craft_Hyperspace.exitHyperSpace(playerCraft);
 			sign.setLine(0, "Engage Hyperdrive");
+		}
+	}
+	
+	public static Player matchPlayerName(String subName) {
+		Player[] uL = MoveCraft.instance.getServer().getOnlinePlayers();
+		ArrayList<Player> userList = new ArrayList<Player>();
+		
+		for (Player p : uL) {
+			if(!p.getName().contains(subName)) {
+				userList.add(p);
+			}
+		}
+		
+		if(userList.size() == 1) {
+			return userList.get(0);
+		}
+		else {
+			System.out.println("Attempted to find player matching " + subName + " but failed.");
+			return null;
 		}
 	}
 
@@ -154,6 +179,20 @@ public class MoveCraft_BlockListener extends BlockListener {
 			if(Craft_Hyperspace.hyperspaceBlocks.contains(block))
 			{
 				event.setCancelled(true);
+			}
+		}
+	}
+	
+	public void onBlockRedstoneChange(BlockRedstoneEvent event) {
+		int blockId = event.getBlock().getTypeId();
+		Location loc = event.getBlock().getLocation();
+		//System.out.println(blockId);
+		
+		if(blockId == 29 || blockId == 33) {	//piston / sticky piston (base)
+			Craft craft = Craft.getCraft(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+			
+			if (craft != null) {
+				craft.player.sendMessage("You just did something with a piston, didn't you?");
 			}
 		}
 	}

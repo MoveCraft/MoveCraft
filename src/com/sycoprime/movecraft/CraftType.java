@@ -549,7 +549,7 @@ public class CraftType {
 				//check remoteid!
 				
 				if(BlocksInfo.getCardinals(craftType.engineBlockId) == null) {
-					craftType.engineBlockId = 0;
+					craftType.engineBlockId = -1;
 					System.out.println("Warning, craft type " + craftType.name + " has an invalid engine block ID. " + 
 							"Please use a block which has a facing direction (default is furnace, ID 61).");
 				}

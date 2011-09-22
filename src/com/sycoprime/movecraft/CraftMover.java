@@ -19,7 +19,7 @@ import org.bukkit.util.Vector;
 import com.sycoprime.movecraft.events.MoveCraftMoveEvent;
 
 public class CraftMover {
-	public Craft craft;
+	private Craft craft;
 
 	public CraftMover(Craft c) {
 		craft = c;
@@ -135,7 +135,8 @@ public class CraftMover {
 	public void restoreDataBlocks(int dx, int dy, int dz) {
 		Block block;
 		
-		for (DataBlock dataBlock : craft.dataBlocks) {			
+		for (DataBlock dataBlock : craft.dataBlocks) {
+			
 			// this is a pop item, the block needs to be created
 			if (BlocksInfo.needsSupport(craft.matrix[dataBlock.x][dataBlock.y][dataBlock.z])) {
 				block = getWorldBlock(dx + dataBlock.x, dy + dataBlock.y, dz + dataBlock.z);
@@ -345,76 +346,82 @@ public class CraftMover {
 			for (int z = 0; z < craft.sizeZ; z++) {
 				for (int y = 0; y < craft.sizeY; y++) {
 					//for (int y = craft.sizeY - 1; y > -1; y--) {
+					
+					//handle displaced blocks
 
 					blockId = craft.matrix[x][y][z];
 
+					if (blockId == -1) {
+						continue;
+					}
+
 					block = getWorldBlock(x, y, z);
 
-					if (blockId == -1)
-						continue;
+					// old block position (remove)
+					if (x - dx >= 0 && y - dy >= 0 && z - dz >= 0
+							&& x - dx < craft.sizeX && y - dy < craft.sizeY
+							&& z - dz < craft.sizeZ) {
 
-						// old block position (remove)
-						if (x - dx >= 0 && y - dy >= 0 && z - dz >= 0
-								&& x - dx < craft.sizeX && y - dy < craft.sizeY
-								&& z - dz < craft.sizeZ) {
-							
-							// after moving, this location is not a craft block anymore
-							if (craft.matrix[x - dx][y - dy][z - dz] == -1
-									|| BlocksInfo.needsSupport(craft.matrix[x - dx][y - dy][z - dz])) {
-								if (y > craft.waterLevel || !(craft.type.canNavigate || craft.type.canDive)) {
-									//|| craft.matrix [ x - dx ] [ y - dy ] [ z - dz ] == 0)
-									setBlock(0, block);
-								}
-								else
-									setBlock(craft.waterType, block);
+						// after moving, this location is not a craft block anymore
+						if (craft.matrix[x - dx][y - dy][z - dz] == -1
+								|| BlocksInfo.needsSupport(craft.matrix[x - dx][y - dy][z - dz])) {
+							if (y > craft.waterLevel || !(craft.type.canNavigate || craft.type.canDive)) {
+								//|| craft.matrix [ x - dx ] [ y - dy ] [ z - dz ] == 0)
+								setBlock(0, block);
 							}
-						} else { // the back of the craft, remove
-							if (y > craft.waterLevel ||
-									!(craft.type.canNavigate || craft.type.canDive) ||
-									craft.type.canDig)
-								setBlock(0, block);		//the promised land!!!
-							else
+							else {
 								setBlock(craft.waterType, block);
+							}
+						}
+					} else { // the back of the craft, remove
+						if (y > craft.waterLevel ||
+								!(craft.type.canNavigate || craft.type.canDive) ||
+								craft.type.canDig) {
+							setBlock(0, block);
+						}
+						else {
+							setBlock(craft.waterType, block);
+						}
+					}
+
+					// new block position (place)
+					if (!BlocksInfo.needsSupport(blockId)) {
+
+						//Block innerBlock = world.getBlockAt(posX + dx + x,posY + dy + y, posZ + dz + z);
+						innerBlock = getWorldBlock(dx + x, dy + y, dz + z);
+
+						//drop the item corresponding to the block if it is not a craft block
+						if(!craft.isCraftBlock(dx + x,dy + y, dz + z)) {
+							MoveCraft.instance.dropItem(innerBlock);
 						}
 
-						// new block position (place)
-						if (!BlocksInfo.needsSupport(blockId)) {
+						if(craft.type.digBlockDurability > 0) { //break drill bits
+							int blockDurability = block.getType().getMaxDurability();
+							int num = ( (new Random()).nextInt( Math.abs( blockDurability - 0 ) + 1 ) ) + 0;
 
-							//Block innerBlock = world.getBlockAt(posX + dx + x,posY + dy + y, posZ + dz + z);
-							innerBlock = getWorldBlock(dx + x, dy + y, dz + z);
+							if(num == 1) {
+								MoveCraft.instance.DebugMessage("Random = 1", 1);
+								continue;
+							}
+							else
+								MoveCraft.instance.DebugMessage("Random number = " + Integer.toString(num), 1);
+						}
 
-							//drop the item corresponding to the block if it is not a craft block
-							if(!craft.isCraftBlock(dx + x,dy + y, dz + z)) {
-								MoveCraft.instance.dropItem(innerBlock);
-							}
-							
-							if(craft.type.digBlockDurability > 0) { //break drill bits
-								int blockDurability = block.getType().getMaxDurability();
-								int num = ( (new Random()).nextInt( Math.abs( blockDurability - 0 ) + 1 ) ) + 0;
-								
-								if(num == 1) {
-									MoveCraft.instance.DebugMessage("Random = 1", 1);
-									continue;
-								}
-								else
-									MoveCraft.instance.DebugMessage("Random number = " + Integer.toString(num), 1);
-							}
-
-							// inside the craft, the block is different
-							if (x + dx >= 0 && y + dy >= 0 && z + dz >= 0
-									&& x + dx < craft.sizeX && y + dy < craft.sizeY
-									&& z + dz < craft.sizeZ) {
-								if (craft.matrix[x][y][z] != craft.matrix[x + dx][y + dy][z + dz]) {
-									// setBlock(world, blockId, posX + dx + x,
-									// posY + dy + y, posZ + dz + z);
-									setBlock(blockId, innerBlock);
-								}
-							}
-							// outside of the previous bounding box
-							else {
+						// inside the craft, the block is different
+						if (x + dx >= 0 && y + dy >= 0 && z + dz >= 0
+								&& x + dx < craft.sizeX && y + dy < craft.sizeY
+								&& z + dz < craft.sizeZ) {
+							if (craft.matrix[x][y][z] != craft.matrix[x + dx][y + dy][z + dz]) {
+								// setBlock(world, blockId, posX + dx + x,
+								// posY + dy + y, posZ + dz + z);
 								setBlock(blockId, innerBlock);
 							}
 						}
+						// outside of the previous bounding box
+						else {
+							setBlock(blockId, innerBlock);
+						}
+					}
 				}
 			}
 		}
@@ -425,14 +432,14 @@ public class CraftMover {
 		restoreSupportBlocks(dx, dy, dz);
 		
 		for(Entity e : checkEntities) {
-			if(craft.isOnCraft(e, false)) {
+			//if(craft.isOnCraft(e, false)) {
 				if(MoveCraft.instance.ConfigSetting("TryNudge").equalsIgnoreCase("true") &&
 						(craft.type.listenMovement == false || e != craft.player) ) {
 					movePlayer(e, dx, dy, dz);
 				} else {
 					teleportPlayer(e, dx, dy, dz);
 				}
-			}
+			//}
 		}
 
 		craft.minX += dx;
@@ -501,8 +508,8 @@ public class CraftMover {
 								craft.matrix[x][y][z] = -1; // make a hole in the craft
 
 							craft.blockCount--;
-							MoveCraft.instance.DebugMessage("Removing a block of craft.type " + craftBlockId + 
-									" because of craft.type " + blockId, 4);
+							MoveCraft.instance.DebugMessage("Removing a block of type " + craftBlockId + 
+									" because of type " + blockId, 4);
 						}
 					}
 				}
@@ -571,6 +578,7 @@ public class CraftMover {
 	public void teleportPlayer(Entity p, int dx, int dy, int dz) {
 		MoveCraft.instance.DebugMessage("Teleporting entity " + p.getEntityId(), 4);
 		Location pLoc = p.getLocation();
+		pLoc.setWorld(craft.world);
 		pLoc.setX(pLoc.getX() + dx);
 		pLoc.setY(pLoc.getY() + dy);
 		pLoc.setZ(pLoc.getZ() + dz);
